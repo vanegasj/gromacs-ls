@@ -259,6 +259,7 @@ int gmx_mdrun(int argc, char *argv[])
         { efDAT, "-membed", "membed",   ffOPTRD },
         { efTOP, "-mp",     "membed",   ffOPTRD },
         { efNDX, "-mn",     "membed",   ffOPTRD },
+        { efDAT, "-ols",    "localstress", ffWRITE },
         { efXVG, "-if",     "imdforces", ffOPTWR },
         { efXVG, "-swap",   "swapions", ffOPTWR }
     };
@@ -304,6 +305,17 @@ int gmx_mdrun(int argc, char *argv[])
     gmx_bool          bKeepAndNumCPT        = FALSE;
     gmx_bool          bResetCountersHalfWay = FALSE;
     gmx_output_env_t *oenv                  = NULL;
+    
+    /* Local Stress parameters
+     */
+    real localsgridspacing=0.1;
+    int nstlocals=0;
+    int localsgridx=0;
+    int localsgridy=0;
+    int localsgridz=0;
+    const char *localsenum   = "all";
+    const char *localsfdenum = "ccfd";
+    const char *localssanum  = "spat";
 
     /* Non transparent initialization of a complex gmx_hw_opt_t struct.
      * But unfortunately we are not allowed to call a function here,
@@ -395,6 +407,22 @@ int gmx_mdrun(int argc, char *argv[])
           "Number of random exchanges to carry out each exchange interval (N^3 is one suggestion).  -nex zero or not specified gives neighbor replica exchange." },
         { "-reseed",  FALSE, etINT, {&repl_ex_seed},
           "Seed for replica exchange, -1 is generate a seed" },
+        { "-localsgrid",  FALSE, etREAL, {&localsgridspacing},
+          "Spacing for local stress grid (default = 0.1 nm)" },
+        { "-nstlp",  FALSE, etINT, {&nstlocals},
+          "HIDDENFrequency of writing local stress grid to file (default = 0)" },
+        { "-lsgridx", FALSE, etINT, {&localsgridx},
+          "Set the local stress grid size in the x direction (default use box[XX][XX]/localsgrid)"},
+        { "-lsgridy", FALSE, etINT, {&localsgridy},
+          "Set the local stress grid size in the y direction (default use box[YY][YY]/localsgrid)"},
+        { "-lsgridz", FALSE, etINT, {&localsgridz},
+          "Set the local stress grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
+        { "-lscont", FALSE, etSTR, {&localsenum},
+          "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel"},
+        { "-lsfd", FALSE, etSTR, {&localsfdenum},
+          "Select the type of force decomposition to be used: ccfd (covariant central force decomposition, default), ncfd (non-covariant central force decomposition), gld (Goetz-Lipowsky decomposition), or mop (method of planes)"},
+        { "-lssa", FALSE, etSTR, {&localssanum},
+          "Select the type of stress to calculate: spat (spatial stress from IKN theory, default), atom (stress per atom)"},
         { "-imdport",    FALSE, etINT, {&imdport},
           "HIDDENIMD listening port" },
         { "-imdwait",  FALSE, etBOOL, {&bIMDwait},
@@ -417,6 +445,9 @@ int gmx_mdrun(int argc, char *argv[])
     unsigned long   Flags;
     ivec            ddxyz;
     int             dd_rank_order;
+    int             localscontrib;
+    int             localsfdecomp;
+    int             localsspatialatom;
     gmx_bool        bDoAppendFiles, bStartFromCpt;
     FILE           *fplog;
     int             rc;
@@ -452,10 +483,78 @@ int gmx_mdrun(int argc, char *argv[])
         return 0;
     }
 
-
     dd_rank_order = nenum(ddrank_opt);
-
     hw_opt.thread_affinity = nenum(thread_aff_opt);
+
+    if (strncmp(localssanum,"spat",4) == 0) {
+      localsspatialatom = mds_spat;
+      printf("\nSelected spatial stress tensor\n");
+    }else if (strncmp(localssanum,"atom",4) == 0) {
+      localsspatialatom = mds_atom;
+      printf("\nSelected stress tensor by atom. Will not use force decomposition flag.\n");
+    }else{
+      printf("\nOption not recognized, will use spatial stress tensor\n");
+      localsspatialatom = mds_spat;
+    }
+    
+    if (strncmp(localsfdenum,"ccfd",4) == 0) {
+      localsfdecomp = mds_ccfd;
+      printf("\nSelected force decomposition: %s\n", localsfdenum);
+    }else if (strncmp(localsfdenum,"ncfd",4) == 0) {
+      localsfdecomp = mds_ncfd;
+      printf("\nSelected force decomposition: %s\n", localsfdenum);
+    }else if(strncmp(localsfdenum,"gld",4) == 0){
+      localsfdecomp = mds_gld;
+      printf("\nSelected force decomposition: %s\n", localsfdenum);
+    }else{
+      printf("\nOption not recognized, will use covariant central force decomposition\n");
+      localsfdecomp = mds_ccfd;
+    }
+
+    printf("\nSelected contribution: %s\n",localsenum);
+    if (strncmp(localsenum,"all",5) == 0) {
+      printf("\nWill write all contributions to the local stress\n");
+      localscontrib = mds_all;
+    }else if(strncmp(localsenum,"vdw",5) == 0){
+      printf("\nWill only write vdw contributions to the local stress\n");
+      localscontrib = mds_vdw;
+    }else if(strncmp(localsenum,"coul",5) == 0){
+      printf("\nWill only write coulomb contributions to the local stress\n");
+      localscontrib = mds_cou;
+    }else if(strncmp(localsenum,"angles",5) == 0){
+      printf("\nWill only write angle contributions to the local stress\n");
+      localscontrib = mds_ang;
+    }else if(strncmp(localsenum,"bonds",5) == 0){
+      printf("\nWill only write bonding contributions to the local stress\n");
+      localscontrib = mds_bnd;
+    }else if(strncmp(localsenum,"dihp",5) == 0){
+      printf("\nWill only write proper dihedral contributions to the local stress\n");
+      localscontrib = mds_dip;
+    }else if(strncmp(localsenum,"dihi",5) == 0){
+      printf("\nWill only write inproper dihedral contributions to the local stress\n");
+      localscontrib = mds_dii;
+    }else if(strncmp(localsenum,"dihrb",5) == 0){
+      printf("\nWill only write RB dihedral contributions to the local stress\n");
+      localscontrib = mds_drb;
+    }else if(strncmp(localsenum,"lincs",5) == 0){
+      printf("\nWill only write LINCS constraints contributions to the local stress\n");
+      localscontrib = mds_lin;
+    }else if(strncmp(localsenum,"settle",5) == 0){
+      printf("\nWill only write SETTLE water constraints contributions to the local stress\n");
+      localscontrib = mds_set;
+    }else if(strncmp(localsenum,"shake",5) == 0){
+      printf("\nWill only write SHAKE constraints contributions to the local stress\n");
+      localscontrib = mds_sha;
+    }else if(strncmp(localsenum,"vel",5) == 0){
+      printf("\nWill only write velocity contributions to the local stress\n");
+      localscontrib = mds_kin;
+    }else if(strncmp(localsenum,"cmap",5) == 0){
+      printf("\nWill only write CMAP contributions to the local stress\n");
+      localscontrib = mds_cmp;
+    }else{
+      printf("\nOption not recognized, will write all contributions to the local stress\n");
+      localscontrib = mds_all;
+    }
 
     /* now check the -multi and -multidir option */
     if (opt2bSet("-multidir", NFILE, fnm))
@@ -546,7 +645,9 @@ int gmx_mdrun(int argc, char *argv[])
                        nbpu_opt[0], nstlist,
                        nsteps, nstepout, resetstep,
                        nmultisim, repl_ex_nst, repl_ex_nex, repl_ex_seed,
-                       pforce, cpt_period, max_hours, imdport, Flags);
+                       pforce, cpt_period, max_hours, imdport, localsgridspacing,
+                       nstlocals, localsgridx, localsgridy, localsgridz,
+                       localscontrib, localsfdecomp, localsspatialatom, Flags);
 
     /* Log file has to be closed in mdrunner if we are appending to it
        (fplog not set here) */
