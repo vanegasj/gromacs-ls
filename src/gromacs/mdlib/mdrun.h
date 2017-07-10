@@ -41,6 +41,7 @@
 #include <time.h>
 
 #include "gromacs/timing/wallcycle.h"
+#include "mdstress/mds_stressgrid.h"
 
 struct df_history_t;
 struct gmx_constr;
