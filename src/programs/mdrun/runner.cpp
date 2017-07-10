@@ -165,6 +165,14 @@ struct mdrunner_arglist
     real                    cpt_period;
     real                    max_hours;
     int                     imdport;
+    real                    localsgridspacing;
+    int                     nstlocals;
+    int                     localsgridx;
+    int                     localsgridy;
+    int                     localsgridz;
+    int                     localscontrib;
+    int                     localsfdecomp;
+    int                     localsspatialatom;
     unsigned long           Flags;
 };
 
@@ -202,7 +210,9 @@ static void mdrunner_start_fn(void *arg)
                       mc.nbpu_opt, mc.nstlist_cmdline,
                       mc.nsteps_cmdline, mc.nstepout, mc.resetstep,
                       mc.nmultisim, mc.repl_ex_nst, mc.repl_ex_nex, mc.repl_ex_seed, mc.pforce,
-                      mc.cpt_period, mc.max_hours, mc.imdport, mc.Flags);
+                      mc.cpt_period, mc.max_hours, mc.imdport, mc.localsgridspacing, mc.nstlocals,
+                      mc.localsgridx, mc.localsgridy, mc.localsgridz, mc.localscontrib,
+                      mc.localsfdecomp, mc.localsspatialatom, mc.Flags);
     }
     GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR;
 }
@@ -224,7 +234,9 @@ static t_commrec *mdrunner_start_threads(gmx_hw_opt_t *hw_opt,
                                          gmx_int64_t nsteps_cmdline,
                                          int nstepout, int resetstep,
                                          int nmultisim, int repl_ex_nst, int repl_ex_nex, int repl_ex_seed,
-                                         real pforce, real cpt_period, real max_hours,
+                                         real pforce, real cpt_period, real max_hours, real localsgridspacing,
+                                         int nstlocals, int localsgridx, int localsgridy, int localsgridz,
+                                         int localscontrib, int localsfdecomp, int localsspatialatom, 
                                          unsigned long Flags)
 {
     int                      ret;
@@ -244,39 +256,47 @@ static t_commrec *mdrunner_start_threads(gmx_hw_opt_t *hw_opt,
 
     /* fill the data structure to pass as void pointer to thread start fn */
     /* hw_opt contains pointers, which should all be NULL at this stage */
-    mda->hw_opt          = *hw_opt;
-    mda->fplog           = fplog;
-    mda->cr              = cr;
-    mda->nfile           = nfile;
-    mda->fnm             = fnmn;
-    mda->oenv            = oenv;
-    mda->bVerbose        = bVerbose;
-    mda->nstglobalcomm   = nstglobalcomm;
-    mda->ddxyz[XX]       = ddxyz[XX];
-    mda->ddxyz[YY]       = ddxyz[YY];
-    mda->ddxyz[ZZ]       = ddxyz[ZZ];
-    mda->dd_rank_order   = dd_rank_order;
-    mda->npme            = npme;
-    mda->rdd             = rdd;
-    mda->rconstr         = rconstr;
-    mda->dddlb_opt       = dddlb_opt;
-    mda->dlb_scale       = dlb_scale;
-    mda->ddcsx           = ddcsx;
-    mda->ddcsy           = ddcsy;
-    mda->ddcsz           = ddcsz;
-    mda->nbpu_opt        = nbpu_opt;
-    mda->nstlist_cmdline = nstlist_cmdline;
-    mda->nsteps_cmdline  = nsteps_cmdline;
-    mda->nstepout        = nstepout;
-    mda->resetstep       = resetstep;
-    mda->nmultisim       = nmultisim;
-    mda->repl_ex_nst     = repl_ex_nst;
-    mda->repl_ex_nex     = repl_ex_nex;
-    mda->repl_ex_seed    = repl_ex_seed;
-    mda->pforce          = pforce;
-    mda->cpt_period      = cpt_period;
-    mda->max_hours       = max_hours;
-    mda->Flags           = Flags;
+    mda->hw_opt            = *hw_opt;
+    mda->fplog             = fplog;
+    mda->cr                = cr;
+    mda->nfile             = nfile;
+    mda->fnm               = fnmn;
+    mda->oenv              = oenv;
+    mda->bVerbose          = bVerbose;
+    mda->nstglobalcomm     = nstglobalcomm;
+    mda->ddxyz[XX]         = ddxyz[XX];
+    mda->ddxyz[YY]         = ddxyz[YY];
+    mda->ddxyz[ZZ]         = ddxyz[ZZ];
+    mda->dd_rank_order     = dd_rank_order;
+    mda->npme              = npme;
+    mda->rdd               = rdd;
+    mda->rconstr           = rconstr;
+    mda->dddlb_opt         = dddlb_opt;
+    mda->dlb_scale         = dlb_scale;
+    mda->ddcsx             = ddcsx;
+    mda->ddcsy             = ddcsy;
+    mda->ddcsz             = ddcsz;
+    mda->nbpu_opt          = nbpu_opt;
+    mda->nstlist_cmdline   = nstlist_cmdline;
+    mda->nsteps_cmdline    = nsteps_cmdline;
+    mda->nstepout          = nstepout;
+    mda->resetstep         = resetstep;
+    mda->nmultisim         = nmultisim;
+    mda->repl_ex_nst       = repl_ex_nst;
+    mda->repl_ex_nex       = repl_ex_nex;
+    mda->repl_ex_seed      = repl_ex_seed;
+    mda->pforce            = pforce;
+    mda->cpt_period        = cpt_period;
+    mda->max_hours         = max_hours;
+    mda->localsgridspacing = localsgridspacing;
+    mda->nstlocals         = nstlocals;
+    mda->localsgridx       = localsgridx;
+    mda->localsgridy       = localsgridy;
+    mda->localsgridz       = localsgridz;
+    mda->localscontrib     = localscontrib;
+    mda->localsspatialatom = localsspatialatom;
+    mda->localsfdecomp     = localsfdecomp;
+    mda->Flags             = Flags;
 
     /* now spawn new threads that start mdrunner_start_fn(), while
        the main thread returns, we set thread affinity later */
@@ -685,7 +705,9 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
              gmx_int64_t nsteps_cmdline, int nstepout, int resetstep,
              int gmx_unused nmultisim, int repl_ex_nst, int repl_ex_nex,
              int repl_ex_seed, real pforce, real cpt_period, real max_hours,
-             int imdport, unsigned long Flags)
+             int imdport, real localsgridspacing, int nstlocals, 
+             int localsgridx, int localsgridy, int localsgridz, int localscontrib,
+             int localsfdecomp, int localsspatialatom, unsigned long Flags)
 {
     gmx_bool                  bForceUseGPU, bTryUseGPU, bRerunMD;
     t_inputrec               *inputrec;
@@ -848,6 +870,8 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
                                         nsteps_cmdline, nstepout, resetstep, nmultisim,
                                         repl_ex_nst, repl_ex_nex, repl_ex_seed, pforce,
                                         cpt_period, max_hours,
+                                        localsgridspacing, nstlocals, localsgridx,
+                                        localsgridy, localsgridz, localscontrib, localsfdecomp,localsspatialatom,
                                         Flags);
             /* the main thread continues here with a new cr. We don't deallocate
                the old cr because other threads may still be reading it. */
@@ -1337,6 +1361,14 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
                                      membed,
                                      cpt_period, max_hours,
                                      imdport,
+                                     localsgridspacing,
+                                     nstlocals,
+                                     localsgridx,
+                                     localsgridy,
+                                     localsgridz,
+                                     localscontrib,
+                                     localsfdecomp,
+                                     localsspatialatom,
                                      Flags,
                                      walltime_accounting);
 
