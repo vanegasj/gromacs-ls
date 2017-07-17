@@ -196,6 +196,7 @@ mark_as_advanced(GMX_COOL_QUOTES)
 gmx_add_cache_dependency(GMX_COOL_QUOTES BOOL "NOT GMX_FAHCORE" OFF)
 
 option(GMX_USE_OPENCL "Enable OpenCL acceleration" OFF)
+option(GMX_USE_CUDA "Enable CUDA acceleration" OFF)
 
 # Decide on GPU settings based on user-settings and GPU/CUDA detection.
 # GCC 4.6 requires CUDA 5.0 and VS2015 requires CUDA 8.0
@@ -206,25 +207,28 @@ else()
 endif()
 set(REQUIRED_CUDA_COMPUTE_CAPABILITY 2.0)
 
-# OpenCL required version: 1.1 or newer
-set(REQUIRED_OPENCL_MIN_VERSION 1.1)
-
-if(NOT GMX_USE_OPENCL)
-    # CUDA detection is done only if GMX_USE_OPENCL is OFF.
-    include(gmxManageGPU)
-    set(GMX_USE_CUDA ${GMX_GPU})
-    if(GMX_GPU)
-        set(GMX_GPU_ACCELERATION_FRAMEWORK "GMX_GPU_CUDA")
-    else()
-        set(GMX_GPU_ACCELERATION_FRAMEWORK "GMX_GPU_NONE")
-    endif()
+if (NOT GMX_USE_OPENCL AND NOT GMX_USE_CUDA)
+    set(GMX_GPU_ACCELERATION_FRAMEWORK "GMX_GPU_NONE")
 else()
-    #Now the OpenCL path (for both AMD and NVIDIA)
-    if(GMX_GPU)
-        include(gmxManageOpenCL)
-        set(GMX_GPU_ACCELERATION_FRAMEWORK "GMX_GPU_OPENCL")
+    # OpenCL required version: 1.1 or newer
+    set(REQUIRED_OPENCL_MIN_VERSION 1.1)
+    if(NOT GMX_USE_OPENCL)
+        # CUDA detection is done only if GMX_USE_OPENCL is OFF.
+        include(gmxManageGPU)
+        set(GMX_USE_CUDA ${GMX_GPU})
+        if(GMX_GPU)
+            set(GMX_GPU_ACCELERATION_FRAMEWORK "GMX_GPU_CUDA")
+        else()
+            set(GMX_GPU_ACCELERATION_FRAMEWORK "GMX_GPU_NONE")
+        endif()
     else()
-        message(FATAL_ERROR "OpenCL requested but GPU option is not enabled (try -DGMX_GPU=on) ")
+        #Now the OpenCL path (for both AMD and NVIDIA)
+        if(GMX_GPU)
+            include(gmxManageOpenCL)
+            set(GMX_GPU_ACCELERATION_FRAMEWORK "GMX_GPU_OPENCL")
+        else()
+            message(FATAL_ERROR "OpenCL requested but GPU option is not enabled (try -DGMX_GPU=on) ")
+        endif()
     endif()
 endif()
 
