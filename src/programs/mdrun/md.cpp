@@ -247,7 +247,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     gmx_bool          bMasterState;
     int               force_flags, cglo_flags;
     tensor            force_vir, shake_vir, total_vir, tmp_vir, pres;
-    int               i, m;
+    int               i,j, m;
     t_trxstatus      *status;
     rvec              mu_tot;
     t_vcm            *vcm;
@@ -268,7 +268,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     gmx_shellfc_t    *shellfc;
     gmx_bool          bSumEkinhOld, bDoReplEx, bExchanged, bNeedRepartition;
     gmx_bool          bResetCountersHalfMaxH = FALSE;
-    gmx_bool          bTemp, bPres, bTrotter;
+    gmx_bool          bTemp, bPres, bVV, bTrotter;
     real              dvdl_constr;
     rvec             *cbuf        = NULL;
     int               cbuf_nalloc = 0;
@@ -292,6 +292,17 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
     /* Interactive MD */
     gmx_bool          bIMDstep = FALSE;
+    
+    /* local stress begin */
+
+    char locals_buf[1024];
+    mds::StressGrid locals_grid;
+    real mass;
+    rvec box_size;
+    rvec x_rerun, v_rerun, v_update;
+    int locals_frame_index=0;
+
+    /* local stress end */
 
 #ifdef GMX_FAHCORE
     /* Temporary addition for FAHCORE checkpointing */
@@ -327,6 +338,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     /* md-vv uses averaged full step velocities for T-control
        md-vv-avek uses averaged half step velocities for T-control (but full step ekin for P control)
        md uses averaged half step kinetic energies to determine temperature unless defined otherwise by GMX_EKIN_AVE_VEL; */
+    bVV = EI_VV(ir->eI);
     bTrotter = (EI_VV(ir->eI) && (inputrecNptTrotter(ir) || inputrecNphTrotter(ir) || inputrecNvtTrotter(ir)));
 
     if (bRerunMD)
@@ -505,6 +517,93 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     {
         set_constraints(constr, top, ir, mdatoms, cr);
     }
+    
+    /* local stress begin */
+
+    for(i=0; (i<DIM); i++)
+    {
+        box_size[i]=state->box[i][i];
+    }
+    
+    if (PAR(cr))
+    {
+        printf("This code cannot be run in parallel, it must be run serially.\n");
+        printf("However, each frame in the trajectory is analyzed independently\n");
+        printf("of every other frame, so you can split the trajectory into equal-sized\n");
+        printf("chunks and analyze each one separately.\n");
+        printf("\n");
+        exit(1);
+    }
+
+    if(EEL_PME(ir->coulombtype)) 
+    {
+        printf("STOP!\n");
+        printf("The contributions from PME cannot currently be added to the stress tensor.\n");
+        printf("If you ran your simulation using PME, then create a new tpr file where the\n");
+        printf("electrostatics are treated with a plain cut-off or reaction-field (rcoul >= 2.0 nm).\n");
+        printf("\n");
+        gmx_fatal(FARGS,"Stopping the local stress analysis\n");
+    }
+
+    // initialization
+    locals_grid.SetContribType(localscontrib);
+    locals_grid.SetStressType(localsspatialatom);
+    locals_grid.SetForceDecomposition(localsfdecomp);
+    
+    if (localsspatialatom == mds_spat)
+    {
+        if(localsgridspacing<=0)
+        {
+            gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgrid) <= 0.0\n");
+        }
+        
+        locals_grid.SetSpacing(localsgridspacing);
+        
+        if(localsgridx == 0)
+            locals_grid.SetNumberOfGridCellsX(box_size[XX]/localsgridspacing);
+        else
+            locals_grid.SetNumberOfGridCellsX(localsgridx);
+        if(localsgridy == 0)
+            locals_grid.SetNumberOfGridCellsY(box_size[YY]/localsgridspacing);
+        else
+            locals_grid.SetNumberOfGridCellsY(localsgridy);
+        if(localsgridz == 0)
+            locals_grid.SetNumberOfGridCellsZ(box_size[ZZ]/localsgridspacing);
+        else
+            locals_grid.SetNumberOfGridCellsZ(localsgridz);
+        
+        int ngrid =
+            locals_grid.GetNumberOfGridCellsX()*
+            locals_grid.GetNumberOfGridCellsY()*
+            locals_grid.GetNumberOfGridCellsZ();
+        
+        printf("Spacing requested: %g    Using nx=%d ny=%d nz=%d, grid size %d \n",
+           localsgridspacing,
+           locals_grid.GetNumberOfGridCellsX(),
+           locals_grid.GetNumberOfGridCellsY(),
+           locals_grid.GetNumberOfGridCellsZ(),
+           ngrid);
+    
+        if(locals_grid.GetNumberOfGridCellsX()==0)
+            locals_grid.SetNumberOfGridCellsX(1);
+        if(locals_grid.GetNumberOfGridCellsY()==0)
+            locals_grid.SetNumberOfGridCellsY(1);
+        if(locals_grid.GetNumberOfGridCellsZ()==0)
+            locals_grid.SetNumberOfGridCellsZ(1);
+    }
+    else if(localsspatialatom == mds_atom)
+    {
+        locals_grid.SetNumberOfAtoms(top_global->natoms);
+    }
+
+    // this will initialize locals_grid.current_grid and locals_grid.sum_grid
+    locals_grid.Init();
+
+    locals_grid.SetBox(state->box);
+    //calc_recipbox(state->box,locals_grid.invbox); /**/// possibly call Update() here?
+    //locals_grid.ePBC = ir->ePBC; /**/// I don't see an equivalent for this.
+
+    /* local stress end */
 
     if (repl_ex_nst > 0 && MASTER(cr))
     {
@@ -1589,6 +1688,27 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
              */
             bSumEkinhOld = TRUE;
         }
+        
+        /* begin stress tensor */
+        
+        for(i=0; i < mdatoms->homenr; i++)
+        {
+            mass = mdatoms->massT[i];
+            for(j=0;j<DIM;j++)
+            {
+                x_rerun[j] = rerun_fr.x[i][j];
+                v_rerun[j] = rerun_fr.v[i][j];
+                /* if using the leapfrog integrator we need v at both half steps*/
+                if (bVV)
+                  v_update[j] = rerun_fr.v[i][j];
+                else
+                  v_update[j] = state->v[i][j];
+            }
+            if ((locals_grid.GetContribType() == mds_all) || (locals_grid.GetContribType() == mds_kin))
+                locals_grid.DistributeKinetic(mass, x_rerun, v_rerun, v_update, i);
+        }
+        
+        /* end stress tensor */
 
         /* #########  BEGIN PREPARING EDR OUTPUT  ###########  */
 
@@ -1802,6 +1922,15 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
     }
     /* End of main MD loop */
+
+    /* local stress begin */
+
+    snprintf(locals_buf,1024,"%s%d",opt2fn("-ols",nfile,fnm),locals_frame_index);
+
+    locals_grid.SetFileName(locals_buf);
+    locals_grid.Write();
+
+    /* local stress end */
 
     /* Closing TNG files can include compressing data. Therefore it is good to do that
      * before stopping the time measurements. */
