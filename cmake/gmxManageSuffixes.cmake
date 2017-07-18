@@ -33,7 +33,7 @@
 # the research papers on the package. Check out http://www.gromacs.org.
 
 function(gmx_create_suffix_options)
-    set(_defaults "_d for double, _mpi for MPI, _mpi_d for both")
+    set(_defaults "_ls for double, _mpi for MPI, _mpi_ls for both")
     option(
         GMX_DEFAULT_SUFFIX
         "Use default suffixes for GROMACS binaries and libs (${_defaults}; rerun cmake after changing to see relevant options)"
@@ -60,8 +60,8 @@ if (GMX_DEFAULT_SUFFIX)
         set(GMX_LIBS_SUFFIX "_mpi")
     endif()
     if (GMX_DOUBLE)
-        set(GMX_BINARY_SUFFIX "${GMX_BINARY_SUFFIX}_d")
-        set(GMX_LIBS_SUFFIX "${GMX_LIBS_SUFFIX}_d")
+        set(GMX_BINARY_SUFFIX "${GMX_BINARY_SUFFIX}_ls")
+        set(GMX_LIBS_SUFFIX "${GMX_LIBS_SUFFIX}_ls")
     endif()
     if (SUFFIXES_CHANGED)
         message(STATUS "Using default binary suffix: \"${GMX_BINARY_SUFFIX}\"")
