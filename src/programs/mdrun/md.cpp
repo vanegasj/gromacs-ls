@@ -520,10 +520,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     
     /* local stress begin */
 
-    for(i=0; (i<DIM); i++)
-    {
-        box_size[i]=state->box[i][i];
-    }
     
     if (PAR(cr))
     {
@@ -546,6 +542,15 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     }
 
     // initialization
+    snprintf(locals_buf,1024,"%s%d",opt2fn("-ols",nfile,fnm),locals_frame_index);
+    locals_grid.SetFileName(locals_buf);
+
+    printf("locals_filename info: %s,%s,%s",nfile,fnm,locals_buf);
+    
+    for(i=0; (i<DIM); i++)
+        box_size[i]=state->box[i][i];
+    locals_grid.SetBox(state->box);
+
     locals_grid.SetContribType(localscontrib);
     locals_grid.SetStressType(localsspatialatom);
     locals_grid.SetForceDecomposition(localsfdecomp);
@@ -599,7 +604,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     // this will initialize locals_grid.current_grid and locals_grid.sum_grid
     locals_grid.Init();
 
-    locals_grid.SetBox(state->box);
     //calc_recipbox(state->box,locals_grid.invbox); /**/// possibly call Update() here?
     //locals_grid.ePBC = ir->ePBC; /**/// I don't see an equivalent for this.
 
@@ -1925,9 +1929,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
     /* local stress begin */
 
-    snprintf(locals_buf,1024,"%s%d",opt2fn("-ols",nfile,fnm),locals_frame_index);
-
-    locals_grid.SetFileName(locals_buf);
     locals_grid.Write();
 
     /* local stress end */
