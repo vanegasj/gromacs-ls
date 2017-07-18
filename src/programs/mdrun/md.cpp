@@ -295,12 +295,10 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     
     /* local stress begin */
 
-    char locals_buf[1024];
     mds::StressGrid locals_grid;
     real mass;
     rvec box_size;
     rvec x_rerun, v_rerun, v_update;
-    int locals_frame_index=0;
 
     /* local stress end */
 
@@ -542,10 +540,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     }
 
     // initialization
-    snprintf(locals_buf,1024,"%s%d",opt2fn("-ols",nfile,fnm),locals_frame_index);
-    locals_grid.SetFileName(locals_buf);
-
-    printf("locals_filename info: %s,%s,%s",nfile,fnm,locals_buf);
+    locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
     
     for(i=0; (i<DIM); i++)
         box_size[i]=state->box[i][i];
@@ -1059,6 +1054,13 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         do_log     = do_per_step(step, ir->nstlog) || (bFirstStep && !startingFromCheckpoint) || bLastStep || bRerunMD;
         do_verbose = bVerbose &&
             (step % stepout == 0 || bFirstStep || bLastStep || bRerunMD);
+
+        /* local stress begin */
+
+        locals_grid.SetBox(rerun_fr.box);
+        locals_grid.Update();
+
+        /* local stress end */
 
         if (bNS && !(bFirstStep && ir->bContinuation && !bRerunMD))
         {
