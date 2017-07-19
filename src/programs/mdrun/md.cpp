@@ -1057,8 +1057,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         /* local stress begin */
 
-        locals_grid.SetBox(rerun_fr.box);
-        locals_grid.Update();
+        locals_grid.UpdateBoxSpacings(rerun_fr.box);
 
         /* local stress end */
 
@@ -1885,6 +1884,13 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             step_rel++;
         }
 
+        /* local stress begin */
+
+        //copy the values from locals.current_grid to sum_grid, set current_grid to 0, and update frame counter
+        locals_grid.SumGrid();
+
+        /* local stress end */
+
         /* TODO make a counter-reset module */
         /* If it is time to reset counters, set a flag that remains
            true until counters actually get reset */
@@ -1932,7 +1938,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     /* local stress begin */
 
     locals_grid.Write();
-
+    //should set free all the memory allocated for locals calculations
     /* local stress end */
 
     /* Closing TNG files can include compressing data. Therefore it is good to do that
