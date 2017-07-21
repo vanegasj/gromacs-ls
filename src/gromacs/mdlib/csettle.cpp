@@ -405,6 +405,7 @@ static void settleTemplate(const gmx_settledata_t settled,
                            const real *x, real *xprime,
                            real invdt, real * gmx_restrict v,
                            tensor vir_r_m_dr,
+                           //mds::StressGrid * locals_grid,
                            bool *bErrorHasOccurred)
 {
     /* ******************************************************************* */
@@ -705,10 +706,11 @@ static void settleTemplate(const gmx_settledata_t settled,
                 T mOf    = filter*mO;
                 T mHf    = filter*mH;
 
-                T mdo[DIM], mdb[DIM], mdc[DIM];
+                T mdo[DIM], mda[DIM], mdb[DIM], mdc[DIM]; // added mda for locals
 
                 for (int d = 0; d < DIM; d++)
                 {
+                    mda[d] = mOf*da[d]; // added for locals
                     mdb[d] = mHf*db[d];
                     mdc[d] = mHf*dc[d];
                     mdo[d] = mOf*da[d] + mdb[d] + mdc[d];
@@ -725,6 +727,89 @@ static void settleTemplate(const gmx_settledata_t settled,
                     }
                 }
                 /* 71 flops */
+
+                /* begin stress tensor */
+
+                T ccc;
+                ccc = invdt*invdt; // looks like invdt is already scaled (no invdts found)?
+                for (int d = 0; d< DIM; d++)
+                {
+                    mda[d] = ccc*mda[d];
+                    mdb[d] = ccc*mdb[d];
+                    mdc[d] = ccc*mdc[d];
+                }
+
+                T Ri[DIM], Rj[DIM], Rk[DIM];
+                T Fi[DIM], Fj[DIM], Fk[DIM];
+
+                Ri[XX] = x_ow1[0];//b4[ow1];
+                Rj[XX] = x_hw2[0];//b4[hw2];
+                Rk[XX] = x_hw3[0];//b4[hw3];
+                Fi[XX] = mda[0];  
+                Fj[XX] = mdb[0];  
+                Fk[XX] = mdc[0];  
+                switch(DIM) {
+                    case 3:
+                        Ri[ZZ] = x_ow1[2];//b4[ow1+2];
+                        Rj[ZZ] = x_hw2[2];//b4[hw2+2];
+                        Rk[ZZ] = x_hw3[2];//b4[hw3+2];
+                        Fi[ZZ] = mda[2];
+                        Fj[ZZ] = mdb[2];
+                        Fk[ZZ] = mdc[2];
+                        [[fallthrough]];
+                    case 2:
+                        Ri[YY] = x_ow1[1];//b4[ow1+1];
+                        Rj[YY] = x_hw2[1];//b4[hw2+1];
+                        Rk[YY] = x_hw3[1];//b4[hw3+1];
+                        Fi[YY] = mda[1];
+                        Fj[YY] = mdb[1];
+                        Fk[YY] = mdc[1];
+                        [[fallthrough]];
+                }
+      
+                //if ((locals_grid->contrib == enAll) || (locals_grid->contrib == enSettle))
+                //if ((locals_grid->GetContrib() == mds_all) || (locals_grid->GetContrib() == mds_set))
+                {
+                    T lpR[DIM][DIM], lpF[DIM][DIM];
+                    
+                    lpR[0][0] = Ri[0]; 
+                    lpF[0][0] = Fi[0];
+                    switch(DIM) {
+                        case 3:
+                            lpR[0][2] = Ri[2]; 
+                            lpR[1][2] = Rj[2]; 
+                            lpR[2][0] = Rk[0];
+                            lpR[2][1] = Rk[1];
+                            lpR[2][2] = Rk[2]; 
+
+                            lpF[0][2] = Fi[2];
+                            lpF[1][2] = Fj[2];
+                            lpF[2][0] = Fk[0];
+                            lpF[2][1] = Fk[1];
+                            lpF[2][2] = Fk[2];
+                            [[fallthrough]];
+                        case 2:
+                            lpR[0][1] = Ri[1]; 
+                            lpR[1][0] = Rj[0];
+                            lpR[1][1] = Rj[1]; 
+
+                            lpF[0][1] = Fi[1];
+                            lpF[1][0] = Fj[0];
+                            lpF[1][1] = Fj[1];
+                            [[fallthrough]];
+                    }
+
+                    int lpatIDs[3];
+                    lpatIDs[0] = settled->ow1[i];//iatoms[i*nral1+1] is ow1 id (see csettle.cpp:263,331 and csettle.c:217)
+                    lpatIDs[1] = settled->hw2[i];//iatoms[i*nral1+2] is hw2 id
+                    lpatIDs[2] = settled->hw3[i];//iatoms[i*nral1+3] is hw3 id
+
+                    //gmxLS_distribute_stress(locals_grid, -3, lpatIDs, lpR, lpF);
+                    //locals_grid->DistributeInteraction(-3, lpR, lpF, lpatIDs);
+                }
+                /* end stress tensor */
+
+          /* 3*24 - 9 flops */
             }
         }
     }
