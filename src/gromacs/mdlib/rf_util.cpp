@@ -55,7 +55,7 @@
 real RF_excl_correction(const t_forcerec *fr, t_graph *g,
                         const t_mdatoms *mdatoms, const t_blocka *excl,
                         rvec x[], rvec f[], rvec *fshift, const t_pbc *pbc,
-                        real lambda, real *dvdlambda)
+                        real lambda, real *dvdlambda, mds::StressGrid *locals_grid)
 {
     /* Calculate the reaction-field energy correction for this node:
      * epsfac q_i q_j (k_rf r_ij^2 - c_rf)
@@ -72,6 +72,11 @@ real RF_excl_correction(const t_forcerec *fr, t_graph *g,
     int         end   = mdatoms->homenr;
     int         niat;
     gmx_bool    bMolPBC = fr->bMolPBC;
+
+    /* begin stress tensor */
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
+    /* end stress tensor */
 
     if (fr->n_tpi)
     {
@@ -138,6 +143,21 @@ real RF_excl_correction(const t_forcerec *fr, t_graph *g,
                         rvec_dec(f[k], df);
                         rvec_inc(fshift[ki], df);
                         rvec_dec(fshift[CENTRAL], df);
+
+                        /* begin stress tensor */
+                        if (locals_grid != NULL)
+                        {
+                            if (locals_grid->GetContribType() == mds_all || locals_grid->GetContribType() == mds_cou)
+                            {
+                                lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2]; 
+                                lpR[1][0] = x[k][0]; lpR[1][1] = x[k][1]; lpR[1][2] = x[k][2]; 
+                                lpatIDs[0] = i; lpatIDs[1] = k;
+                                lpF[0][0] = df[0];  lpF[0][1] = df[1];  lpF[0][2] = df[2];
+                                lpF[1][0] = -df[0]; lpF[1][1] = -df[1]; lpF[1][2] = -df[2];
+                                locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                            }
+                        }
+                        /* end stress tensor */
                     }
                 }
             }
@@ -188,6 +208,22 @@ real RF_excl_correction(const t_forcerec *fr, t_graph *g,
                         svmul(-2*qqL*ek, dx, df);
                         rvec_inc(f[i], df);
                         rvec_dec(f[k], df);
+
+                        /* begin stress tensor */
+                        if (locals_grid != NULL)
+                        {
+                            if ((locals_grid->GetContribType() == mds_all) || (locals_grid->GetContribType() == mds_cou))
+                            {
+                                lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2]; 
+                                lpR[1][0] = x[k][0]; lpR[1][1] = x[k][1]; lpR[1][2] = x[k][2]; 
+                                lpatIDs[0] = i; lpatIDs[1] = k;
+                                lpF[0][0] = df[0];  lpF[0][1] = df[1];  lpF[0][2] = df[2];
+                                lpF[1][0] = -df[0]; lpF[1][1] = -df[1]; lpF[1][2] = -df[2];
+                                locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                            }
+                        }
+                        /* end stress tensor */
+
                         rvec_inc(fshift[ki], df);
                         rvec_dec(fshift[CENTRAL], df);
                         *dvdlambda += (qqB - qqA)*v;

@@ -796,6 +796,7 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
                          gmx_vsite_t *vsite, rvec mu_tot,
                          double t, FILE *field, gmx_edsam_t ed,
                          gmx_bool bBornRadii,
+                         mds::StressGrid * locals_grid,
                          int flags)
 {
     int                 cg1, i, j;
@@ -1315,8 +1316,10 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
                       cr, nrnb, wcycle, mdatoms,
                       x, hist, f, enerd, fcd, top, fr->born,
                       bBornRadii, box,
-                      inputrec->fepvals, lambda, graph, &(top->excls), fr->mu_tot,
-                      flags, &cycles_pme);
+                      inputrec->fepvals, lambda, graph,
+                      &(top->excls), fr->mu_tot,
+                      flags,
+                      &cycles_pme, locals_grid);
 
     cycles_force += wallcycle_stop(wcycle, ewcFORCE);
 
@@ -1554,6 +1557,7 @@ void do_force_cutsGROUP(FILE *fplog, t_commrec *cr,
                         t_forcerec *fr, gmx_vsite_t *vsite, rvec mu_tot,
                         double t, FILE *field, gmx_edsam_t ed,
                         gmx_bool bBornRadii,
+                        mds::StressGrid *locals_grid,
                         int flags)
 {
     int        cg0, cg1, i, j;
@@ -1817,10 +1821,10 @@ void do_force_cutsGROUP(FILE *fplog, t_commrec *cr,
                       cr, nrnb, wcycle, mdatoms,
                       x, hist, f, enerd, fcd, top, fr->born,
                       bBornRadii, box,
-                      inputrec->fepvals, lambda,
-                      graph, &(top->excls), fr->mu_tot,
+                      inputrec->fepvals, lambda, graph,
+                      &(top->excls), fr->mu_tot,
                       flags,
-                      &cycles_pme);
+                      &cycles_pme, locals_grid);
 
     cycles_force = wallcycle_stop(wcycle, ewcFORCE);
 
@@ -1947,7 +1951,7 @@ void do_force(FILE *fplog, t_commrec *cr,
               t_forcerec *fr,
               gmx_vsite_t *vsite, rvec mu_tot,
               double t, FILE *field, gmx_edsam_t ed,
-              gmx_bool bBornRadii,
+              gmx_bool bBornRadii,mds::StressGrid *locals_grid,
               int flags)
 {
     /* modify force flag if not doing nonbonded */
@@ -1972,6 +1976,7 @@ void do_force(FILE *fplog, t_commrec *cr,
                                 vsite, mu_tot,
                                 t, field, ed,
                                 bBornRadii,
+                                locals_grid,
                                 flags);
             break;
         case ecutsGROUP:
@@ -1987,6 +1992,7 @@ void do_force(FILE *fplog, t_commrec *cr,
                                fr, vsite, mu_tot,
                                t, field, ed,
                                bBornRadii,
+                               locals_grid,
                                flags);
             break;
         default:
@@ -1998,7 +2004,8 @@ void do_force(FILE *fplog, t_commrec *cr,
 void do_constrain_first(FILE *fplog, gmx_constr_t constr,
                         t_inputrec *ir, t_mdatoms *md,
                         t_state *state, t_commrec *cr, t_nrnb *nrnb,
-                        t_forcerec *fr, gmx_localtop_t *top)
+                        t_forcerec *fr, gmx_localtop_t *top,
+                        mds::StressGrid *locals_grid)
 {
     int             i, m, start, end;
     gmx_int64_t     step;
@@ -2035,7 +2042,7 @@ void do_constrain_first(FILE *fplog, gmx_constr_t constr,
               state->x, state->x, NULL,
               fr->bMolPBC, state->box,
               state->lambda[efptBONDED], &dvdl_dum,
-              NULL, NULL, nrnb, econqCoord);
+              NULL, NULL, locals_grid, nrnb, econqCoord);
     if (EI_VV(ir->eI))
     {
         /* constrain the inital velocity, and save it */
@@ -2045,7 +2052,7 @@ void do_constrain_first(FILE *fplog, gmx_constr_t constr,
                   state->x, state->v, state->v,
                   fr->bMolPBC, state->box,
                   state->lambda[efptBONDED], &dvdl_dum,
-                  NULL, NULL, nrnb, econqVeloc);
+                  NULL, NULL, locals_grid, nrnb, econqVeloc);
     }
     /* constrain the inital velocities at t-dt/2 */
     if (EI_STATE_VELOCITY(ir->eI) && ir->eI != eiVV)
@@ -2075,7 +2082,7 @@ void do_constrain_first(FILE *fplog, gmx_constr_t constr,
                   state->x, savex, NULL,
                   fr->bMolPBC, state->box,
                   state->lambda[efptBONDED], &dvdl_dum,
-                  state->v, NULL, nrnb, econqCoord);
+                  state->v, NULL, locals_grid, nrnb, econqCoord);
 
         for (i = start; i < end; i++)
         {

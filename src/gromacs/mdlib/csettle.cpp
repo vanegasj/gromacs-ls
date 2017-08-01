@@ -405,7 +405,7 @@ static void settleTemplate(const gmx_settledata_t settled,
                            const real *x, real *xprime,
                            real invdt, real * gmx_restrict v,
                            tensor vir_r_m_dr,
-                           //mds::StressGrid * locals_grid,
+                           mds::StressGrid * locals_grid,
                            bool *bErrorHasOccurred)
 {
     /* ******************************************************************* */
@@ -706,11 +706,10 @@ static void settleTemplate(const gmx_settledata_t settled,
                 T mOf    = filter*mO;
                 T mHf    = filter*mH;
 
-                T mdo[DIM], mda[DIM], mdb[DIM], mdc[DIM]; // added mda for locals
+                T mdo[DIM], mdb[DIM], mdc[DIM];
 
                 for (int d = 0; d < DIM; d++)
                 {
-                    mda[d] = mOf*da[d]; // added for locals
                     mdb[d] = mHf*db[d];
                     mdc[d] = mHf*dc[d];
                     mdo[d] = mOf*da[d] + mdb[d] + mdc[d];
@@ -730,83 +729,74 @@ static void settleTemplate(const gmx_settledata_t settled,
 
                 /* begin stress tensor */
 
-                T ccc;
-                ccc = invdt*invdt; // looks like invdt is already scaled (no invdts found)?
-                for (int d = 0; d< DIM; d++)
+                if (locals_grid != NULL)
                 {
-                    mda[d] = ccc*mda[d];
-                    mdb[d] = ccc*mdb[d];
-                    mdc[d] = ccc*mdc[d];
-                }
+                    if ((locals_grid->GetContribType() == mds_all)
+                            || (locals_grid->GetContribType() == mds_set))
+                    {
+                        // need this for the scatter/gather operations
+                        int offset[1] = {0,};
 
-                T Ri[DIM], Rj[DIM], Rk[DIM];
-                T Fi[DIM], Fj[DIM], Fk[DIM];
+                        real lpR[DIM][DIM];
 
-                Ri[XX] = x_ow1[0];//b4[ow1];
-                Rj[XX] = x_hw2[0];//b4[hw2];
-                Rk[XX] = x_hw3[0];//b4[hw3];
-                Fi[XX] = mda[0];  
-                Fj[XX] = mdb[0];  
-                Fk[XX] = mdc[0];  
-                switch(DIM) {
-                    case 3:
-                        Ri[ZZ] = x_ow1[2];//b4[ow1+2];
-                        Rj[ZZ] = x_hw2[2];//b4[hw2+2];
-                        Rk[ZZ] = x_hw3[2];//b4[hw3+2];
-                        Fi[ZZ] = mda[2];
-                        Fj[ZZ] = mdb[2];
-                        Fk[ZZ] = mdc[2];
-                        [[fallthrough]];
-                    case 2:
-                        Ri[YY] = x_ow1[1];//b4[ow1+1];
-                        Rj[YY] = x_hw2[1];//b4[hw2+1];
-                        Rk[YY] = x_hw3[1];//b4[hw3+1];
-                        Fi[YY] = mda[1];
-                        Fj[YY] = mdb[1];
-                        Fk[YY] = mdc[1];
-                        [[fallthrough]];
-                }
-      
-                //if ((locals_grid->contrib == enAll) || (locals_grid->contrib == enSettle))
-                //if ((locals_grid->GetContrib() == mds_all) || (locals_grid->GetContrib() == mds_set))
-                {
-                    T lpR[DIM][DIM], lpF[DIM][DIM];
-                    
-                    lpR[0][0] = Ri[0]; 
-                    lpF[0][0] = Fi[0];
-                    switch(DIM) {
-                        case 3:
-                            lpR[0][2] = Ri[2]; 
-                            lpR[1][2] = Rj[2]; 
-                            lpR[2][0] = Rk[0];
-                            lpR[2][1] = Rk[1];
-                            lpR[2][2] = Rk[2]; 
+                        // this is the Ri/j/k = b[ow1/hw2/hw3+i] portion
+                        gatherLoadUTranspose<3>(
+                                x, ow1,
+                                &lpR[0][0],
+                                &lpR[0][1],
+                                &lpR[0][2]);
+                        gatherLoadUTranspose<3>(
+                                x, hw2,
+                                &lpR[1][0],
+                                &lpR[1][1],
+                                &lpR[1][2]);
+                        gatherLoadUTranspose<3>(
+                                x, hw3,
+                                &lpR[2][0],
+                                &lpR[2][1],
+                                &lpR[2][2]);
+                        
+                        T ccc;
+                        real lpF[DIM][DIM];
 
-                            lpF[0][2] = Fi[2];
-                            lpF[1][2] = Fj[2];
-                            lpF[2][0] = Fk[0];
-                            lpF[2][1] = Fk[1];
-                            lpF[2][2] = Fk[2];
-                            [[fallthrough]];
-                        case 2:
-                            lpR[0][1] = Ri[1]; 
-                            lpR[1][0] = Rj[0];
-                            lpR[1][1] = Rj[1]; 
+                        // this is the Fi = mda portion
+                        ccc = invdt*invdt*mOf;
+                        transposeScatterStoreU<0>(
+                                lpF[0], offset, 
+                                ccc*da[0], 
+                                ccc*da[1], 
+                                ccc*da[2]);
 
-                            lpF[0][1] = Fi[1];
-                            lpF[1][0] = Fj[0];
-                            lpF[1][1] = Fj[1];
-                            [[fallthrough]];
+                        // this is the Fj/k = mda/b portion
+                        ccc = invdt*invdt*mHf;
+                        transposeScatterStoreU<0>(
+                                lpF[1], offset,
+                                ccc*db[0],
+                                ccc*db[1],
+                                ccc*db[2]);
+                        transposeScatterStoreU<0>(
+                                lpF[2], offset,
+                                ccc*dc[0],
+                                ccc*dc[1],
+                                ccc*dc[2]);
+
+
+                        int lpatIDs[3];
+
+                        //iatoms[i*nral1+1] is ow1 id (see csettle.cpp:263,331 and csettle.c:217)
+                        lpatIDs[0] = settled->ow1[i];
+
+                        //iatoms[i*nral1+2] is hw2 id
+                        lpatIDs[1] = settled->hw2[i];
+
+                        //iatoms[i*nral1+3] is hw3 id
+                        lpatIDs[2] = settled->hw3[i];
+
+                        // finally the call
+                        locals_grid->DistributeInteraction(-3, lpR, lpF, lpatIDs);
                     }
-
-                    int lpatIDs[3];
-                    lpatIDs[0] = settled->ow1[i];//iatoms[i*nral1+1] is ow1 id (see csettle.cpp:263,331 and csettle.c:217)
-                    lpatIDs[1] = settled->hw2[i];//iatoms[i*nral1+2] is hw2 id
-                    lpatIDs[2] = settled->hw3[i];//iatoms[i*nral1+3] is hw3 id
-
-                    //gmxLS_distribute_stress(locals_grid, -3, lpatIDs, lpR, lpF);
-                    //locals_grid->DistributeInteraction(-3, lpR, lpF, lpatIDs);
                 }
+
                 /* end stress tensor */
 
           /* 3*24 - 9 flops */
@@ -838,6 +828,7 @@ static void settleTemplateWrapper(gmx_settledata_t settled,
                                   const real x[], real xprime[],
                                   real invdt, real *v,
                                   bool bCalcVirial, tensor vir_r_m_dr,
+                                  mds::StressGrid * locals_grid,
                                   bool *bErrorHasOccurred)
 {
     /* We need to assign settles to threads in groups of pack_size */
@@ -859,6 +850,7 @@ static void settleTemplateWrapper(gmx_settledata_t settled,
                 x, xprime,
                 invdt, v,
                 NULL,
+                NULL,
                 bErrorHasOccurred);
         }
         else
@@ -872,6 +864,7 @@ static void settleTemplateWrapper(gmx_settledata_t settled,
                 x, xprime,
                 invdt, v,
                 vir_r_m_dr,
+                locals_grid,
                 bErrorHasOccurred);
         }
     }
@@ -888,6 +881,7 @@ static void settleTemplateWrapper(gmx_settledata_t settled,
                 x, xprime,
                 invdt, v,
                 NULL,
+                NULL,
                 bErrorHasOccurred);
         }
         else
@@ -901,17 +895,23 @@ static void settleTemplateWrapper(gmx_settledata_t settled,
                 x, xprime,
                 invdt, v,
                 vir_r_m_dr,
+                locals_grid,
                 bErrorHasOccurred);
         }
     }
 }
 
 void csettle(gmx_settledata_t settled,
-             int nthread, int thread,
+             int nthread,
+             int thread,
              const t_pbc *pbc,
-             const real x[], real xprime[],
-             real invdt, real *v,
-             bool bCalcVirial, tensor vir_r_m_dr,
+             const real x[],
+             real xprime[],
+             real invdt,
+             real *v,
+             bool bCalcVirial,
+             tensor vir_r_m_dr,
+             mds::StressGrid *locals_grid,
              bool *bErrorHasOccurred)
 {
 #if GMX_SIMD_HAVE_REAL
@@ -929,6 +929,7 @@ void csettle(gmx_settledata_t settled,
                                             invdt,
                                             v,
                                             bCalcVirial, vir_r_m_dr,
+                                            locals_grid,
                                             bErrorHasOccurred);
     }
     else
@@ -956,6 +957,7 @@ void csettle(gmx_settledata_t settled,
                                              invdt,
                                              v,
                                              bCalcVirial, vir_r_m_dr,
+                                             locals_grid,
                                              bErrorHasOccurred);
     }
 }

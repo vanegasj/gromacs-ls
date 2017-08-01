@@ -46,6 +46,7 @@
 #include "gromacs/mdtypes/nblist.h"
 #include "gromacs/topology/block.h"
 #include "gromacs/utility/basedefinitions.h"
+#include "mdstress/mds_stressgrid.h"
 
 void
 gmx_nonbonded_setup(t_forcerec *fr,
@@ -73,6 +74,6 @@ do_nonbonded(t_forcerec *fr,
              rvec x[], rvec f_shortrange[], t_mdatoms *md, t_blocka *excl,
              gmx_grppairener_t *grppener,
              t_nrnb *nrnb, real *lambda, real dvdlambda[],
-             int nls, int eNL, int flags);
+             int nls, int eNL, mds::StressGrid *locals_grid, int flags);
 
 #endif

@@ -444,7 +444,7 @@ void init_em(FILE *fplog, const char *title,
                       ir, cr, -1, 0, 1.0, mdatoms,
                       ems->s.x, ems->s.x, NULL, fr->bMolPBC, ems->s.box,
                       ems->s.lambda[efptFEP], &dvdl_constr,
-                      NULL, NULL, nrnb, econqCoord);
+                      NULL, NULL, NULL /*locals_null*/, nrnb, econqCoord);
         }
     }
 
@@ -704,7 +704,7 @@ static bool do_em_step(t_commrec *cr, t_inputrec *ir, t_mdatoms *md,
                       ir, cr, count, 0, 1.0, md,
                       s1->x, s2->x, NULL, bMolPBC, s2->box,
                       s2->lambda[efptBONDED], &dvdl_constr,
-                      NULL, NULL, nrnb, econqCoord);
+                      NULL, NULL, NULL /*locals_null*/, nrnb, econqCoord);
         wallcycle_stop(wcycle, ewcCONSTR);
 
         // We should move this check to the different minimizers
@@ -796,7 +796,8 @@ static void evaluate_energy(FILE *fplog, t_commrec *cr,
              count, nrnb, wcycle, top, &top_global->groups,
              ems->s.box, ems->s.x, &ems->s.hist,
              ems->f, force_vir, mdatoms, enerd, fcd,
-             ems->s.lambda, graph, fr, vsite, mu_tot, t, NULL, NULL, TRUE,
+             ems->s.lambda, graph, fr, vsite, mu_tot, t,
+             NULL, NULL, TRUE, NULL, //locals_null
              GMX_FORCE_STATECHANGED | GMX_FORCE_ALLFORCES |
              GMX_FORCE_VIRIAL | GMX_FORCE_ENERGY |
              (bNS ? GMX_FORCE_NS : 0));
@@ -839,7 +840,9 @@ static void evaluate_energy(FILE *fplog, t_commrec *cr,
                   inputrec, cr, count, 0, 1.0, mdatoms,
                   ems->s.x, ems->f, ems->f, fr->bMolPBC, ems->s.box,
                   ems->s.lambda[efptBONDED], &dvdl_constr,
-                  NULL, &shake_vir, nrnb, econqForceDispl);
+                  NULL, &shake_vir,
+                  NULL, //locals_null
+                  nrnb, econqForceDispl);
         enerd->term[F_DVDL_CONSTR] += dvdl_constr;
         m_add(force_vir, shake_vir, vir);
         wallcycle_stop(wcycle, ewcCONSTR);
@@ -2996,7 +2999,7 @@ double do_nm(FILE *fplog, t_commrec *cr,
                                                &state_work->s, state_work->f, vir, mdatoms,
                                                nrnb, wcycle, graph, &top_global->groups,
                                                shellfc, fr, bBornRadii, t, mu_tot,
-                                               vsite, NULL);
+                                               vsite, NULL, NULL /*locals_null*/);
                     bNS = false;
                     step++;
                 }

@@ -41,6 +41,7 @@
 
 #include "gromacs/mdlib/vsite.h"
 #include "gromacs/timing/wallcycle.h"
+#include "mdstress/mds_stressgrid.h"
 
 struct gmx_constr;
 struct gmx_enerdata_t;
@@ -82,7 +83,8 @@ void relax_shell_flexcon(FILE *log, t_commrec *cr, gmx_bool bVerbose,
                          gmx_bool bBornRadii,
                          double t, rvec mu_tot,
                          gmx_vsite_t *vsite,
-                         FILE *fp_field);
+                         FILE *fp_field,
+                         mds::StressGrid *locals_grid);
 
 /* Print some final output */
 void done_shellfc(FILE *fplog, gmx_shellfc_t *shellfc, gmx_int64_t numSteps);

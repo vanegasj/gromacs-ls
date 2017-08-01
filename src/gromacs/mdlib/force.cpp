@@ -145,7 +145,8 @@ void do_force_lowlevel(t_forcerec *fr,      t_inputrec *ir,
                        t_blocka   *excl,
                        rvec       mu_tot[],
                        int        flags,
-                       float      *cycles_pme)
+                       float      *cycles_pme,
+                       mds::StressGrid *locals_grid)
 {
     int         i, j;
     int         donb_flags;
@@ -244,8 +245,11 @@ void do_force_lowlevel(t_forcerec *fr,      t_inputrec *ir,
 
         wallcycle_sub_start(wcycle, ewcsNONBONDED);
         do_nonbonded(fr, x, f, md, excl,
-                     &enerd->grpp, nrnb,
-                     lambda, dvdl_nb, -1, -1, donb_flags);
+                     &enerd->grpp,
+                     nrnb,
+                     lambda,
+                     dvdl_nb, -1, -1, locals_grid,
+                     donb_flags);
 
         /* If we do foreign lambda and we have soft-core interactions
          * we have to recalculate the (non-linear) energies contributions.
@@ -262,8 +266,10 @@ void do_force_lowlevel(t_forcerec *fr,      t_inputrec *ir,
                 }
                 reset_foreign_enerdata(enerd);
                 do_nonbonded(fr, x, f, md, excl,
-                             &(enerd->foreign_grpp), nrnb,
-                             lam_i, dvdl_dum, -1, -1,
+                             &(enerd->foreign_grpp),
+                             nrnb,
+                             lam_i,
+                             dvdl_dum, -1, -1, locals_grid,
                              (donb_flags & ~GMX_NONBONDED_DO_FORCE) | GMX_NONBONDED_DO_FOREIGNLAMBDA);
                 sum_epot(&(enerd->foreign_grpp), enerd->foreign_term);
                 enerd->enerpart_lambda[i] += enerd->foreign_term[F_EPOT];
@@ -600,7 +606,8 @@ void do_force_lowlevel(t_forcerec *fr,      t_inputrec *ir,
             real dvdl_rf_excl      = 0;
             enerd->term[F_RF_EXCL] =
                 RF_excl_correction(fr, graph, md, excl, x, f,
-                                   fr->fshift, &pbc, lambda[efptCOUL], &dvdl_rf_excl);
+                                   fr->fshift, &pbc, lambda[efptCOUL], &dvdl_rf_excl,
+                                   locals_grid);
 
             enerd->dvdl_lin[efptCOUL] += dvdl_rf_excl;
         }

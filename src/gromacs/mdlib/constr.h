@@ -44,6 +44,7 @@
 #include "gromacs/topology/ifunc.h"
 #include "gromacs/topology/topology.h"
 #include "gromacs/utility/real.h"
+#include "mdstress/mds_stressgrid.h"
 
 struct t_inputrec;
 
@@ -133,6 +134,7 @@ void csettle(gmx_settledata_t    settled,          /* The SETTLE structure */
              real               *v,                /* Also constrain v if v!=NULL */
              bool                bCalcVirial,      /* Calculate the virial contribution */
              tensor              vir_r_m_dr,       /* sum r x m delta_r */
+             mds::StressGrid    *locals_grid,      /* local stress object */
              bool               *bErrorHasOccurred /* True if a settle error occurred */
              );
 /* Constrain coordinates using SETTLE.
@@ -170,6 +172,7 @@ gmx_bool constrain(FILE *log, gmx_bool bLog, gmx_bool bEner,
                    gmx_bool bMolPBC, matrix box,
                    real lambda, real *dvdlambda,
                    rvec *v, tensor *vir,
+                   mds::StressGrid *locals_grid,
                    t_nrnb *nrnb, int econq);
 /*
  * When econq=econqCoord constrains coordinates xprime using th

@@ -41,6 +41,7 @@
 #include "gromacs/timing/wallcycle.h"
 #include "gromacs/utility/basedefinitions.h"
 #include "gromacs/utility/real.h"
+#include "mdstress/mds_stressgrid.h"
 
 struct ekinstate_t;
 struct gmx_constr;
@@ -129,7 +130,8 @@ void update_constraints(FILE              *fplog,
                         gmx_update_t      *upd,
                         gmx_constr        *constr,
                         gmx_bool           bFirstHalf,
-                        gmx_bool           bCalcVir);
+                        gmx_bool           bCalcVir,
+                        mds::StressGrid   *locals_grid);
 
 /* Return TRUE if OK, FALSE in case of Shake Error */
 

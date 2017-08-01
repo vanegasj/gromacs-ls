@@ -671,6 +671,7 @@ double do_tpi(FILE *fplog, t_commrec *cr,
                      f, force_vir, mdatoms, enerd, fcd,
                      state_global->lambda,
                      NULL, fr, NULL, mu_tot, t, NULL, NULL, FALSE,
+                     NULL, // locals_null
                      GMX_FORCE_NONBONDED | GMX_FORCE_ENERGY |
                      (bNS ? GMX_FORCE_DYNAMICBOX | GMX_FORCE_NS : 0) |
                      (bStateChanged ? GMX_FORCE_STATECHANGED : 0));

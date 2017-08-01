@@ -42,6 +42,7 @@
 #include "gromacs/mdtypes/fcdata.h"
 #include "gromacs/mdtypes/forcerec.h"
 #include "gromacs/timing/wallcycle.h"
+#include "mdstress/mds_stressgrid.h"
 
 struct gmx_edsam;
 struct gmx_gpu_info_t;
@@ -71,7 +72,8 @@ void f_calc_vir(int i0, int i1, rvec x[], rvec f[], tensor vir,
 real RF_excl_correction(const t_forcerec *fr, t_graph *g,
                         const t_mdatoms *mdatoms, const t_blocka *excl,
                         rvec x[], rvec f[], rvec *fshift, const t_pbc *pbc,
-                        real lambda, real *dvdlambda);
+                        real lambda, real *dvdlambda,
+                        mds::StressGrid * locals_stress);
 /* Calculate the reaction-field energy correction for this node:
  * epsfac q_i q_j (k_rf r_ij^2 - c_rf)
  * and force correction for all excluded pairs, including self pairs.
@@ -167,7 +169,7 @@ void do_force(FILE *log, t_commrec *cr,
               t_forcerec *fr,
               gmx_vsite_t *vsite, rvec mu_tot,
               double t, FILE *field, struct gmx_edsam *ed,
-              gmx_bool bBornRadii,
+              gmx_bool bBornRadii, mds::StressGrid *locals_grid,
               int flags);
 
 /* Communicate coordinates (if parallel).
@@ -212,7 +214,8 @@ void do_force_lowlevel(t_forcerec   *fr,
                        t_blocka     *excl,
                        rvec         mu_tot[2],
                        int          flags,
-                       float        *cycles_pme);
+                       float        *cycles_pme,
+                       mds::StressGrid *locals_grid);
 /* Call all the force routines */
 
 void free_gpu_resources(const t_forcerec            *fr,

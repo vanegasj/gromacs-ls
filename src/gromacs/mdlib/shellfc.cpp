@@ -900,7 +900,8 @@ static void init_adir(FILE *log, gmx_shellfc_t *shfc,
                       rvec *x_old, rvec *x_init, rvec *x,
                       rvec *f, rvec *acc_dir,
                       gmx_bool bMolPBC, matrix box,
-                      real *lambda, real *dvdlambda, t_nrnb *nrnb)
+                      real *lambda, real *dvdlambda, t_nrnb *nrnb,
+                      mds::StressGrid *locals_grid)
 {
     rvec           *xnold, *xnew;
     double          dt, w_dt;
@@ -950,11 +951,11 @@ static void init_adir(FILE *log, gmx_shellfc_t *shfc,
     constrain(log, FALSE, FALSE, constr, idef, ir, cr, step, 0, 1.0, md,
               x, xnold-start, NULL, bMolPBC, box,
               lambda[efptBONDED], &(dvdlambda[efptBONDED]),
-              NULL, NULL, nrnb, econqCoord);
+              NULL, NULL, locals_grid, nrnb, econqCoord);
     constrain(log, FALSE, FALSE, constr, idef, ir, cr, step, 0, 1.0, md,
               x, xnew-start, NULL, bMolPBC, box,
               lambda[efptBONDED], &(dvdlambda[efptBONDED]),
-              NULL, NULL, nrnb, econqCoord);
+              NULL, NULL, locals_grid, nrnb, econqCoord);
 
     for (n = start; n < end; n++)
     {
@@ -971,7 +972,7 @@ static void init_adir(FILE *log, gmx_shellfc_t *shfc,
     constrain(log, FALSE, FALSE, constr, idef, ir, cr, step, 0, 1.0, md,
               x_old, xnew-start, acc_dir, bMolPBC, box,
               lambda[efptBONDED], &(dvdlambda[efptBONDED]),
-              NULL, NULL, nrnb, econqDeriv_FlexCon);
+              NULL, NULL, locals_grid, nrnb, econqDeriv_FlexCon);
 }
 
 void relax_shell_flexcon(FILE *fplog, t_commrec *cr, gmx_bool bVerbose,
@@ -991,7 +992,8 @@ void relax_shell_flexcon(FILE *fplog, t_commrec *cr, gmx_bool bVerbose,
                          gmx_bool bBornRadii,
                          double t, rvec mu_tot,
                          gmx_vsite_t *vsite,
-                         FILE *fp_field)
+                         FILE *fp_field,
+                         mds::StressGrid *locals_grid)
 {
     int        nshell;
     t_shell   *shell;
@@ -1120,6 +1122,7 @@ void relax_shell_flexcon(FILE *fplog, t_commrec *cr, gmx_bool bVerbose,
              force[Min], force_vir, md, enerd, fcd,
              state->lambda, graph,
              fr, vsite, mu_tot, t, fp_field, NULL, bBornRadii,
+             locals_grid,
              (bDoNS ? GMX_FORCE_NS : 0) | force_flags);
 
     sf_dir = 0;
@@ -1129,7 +1132,8 @@ void relax_shell_flexcon(FILE *fplog, t_commrec *cr, gmx_bool bVerbose,
                   constr, idef, inputrec, cr, dd_ac1, mdstep, md, start, end,
                   shfc->x_old-start, state->x, state->x, force[Min],
                   shfc->acc_dir-start,
-                  fr->bMolPBC, state->box, state->lambda, &dum, nrnb);
+                  fr->bMolPBC, state->box, state->lambda, &dum, nrnb,
+                  locals_grid);
 
         for (i = start; i < end; i++)
         {
@@ -1196,7 +1200,8 @@ void relax_shell_flexcon(FILE *fplog, t_commrec *cr, gmx_bool bVerbose,
             init_adir(fplog, shfc,
                       constr, idef, inputrec, cr, dd_ac1, mdstep, md, start, end,
                       x_old-start, state->x, pos[Min], force[Min], acc_dir-start,
-                      fr->bMolPBC, state->box, state->lambda, &dum, nrnb);
+                      fr->bMolPBC, state->box, state->lambda, &dum, nrnb,
+                      locals_grid);
 
             directional_sd(pos[Min], pos[Try], acc_dir-start, start, end,
                            fr->fc_stepsize);
@@ -1222,6 +1227,7 @@ void relax_shell_flexcon(FILE *fplog, t_commrec *cr, gmx_bool bVerbose,
                  force[Try], force_vir,
                  md, enerd, fcd, state->lambda, graph,
                  fr, vsite, mu_tot, t, fp_field, NULL, bBornRadii,
+                 locals_grid,
                  force_flags);
 
         if (gmx_debug_at)
@@ -1235,7 +1241,8 @@ void relax_shell_flexcon(FILE *fplog, t_commrec *cr, gmx_bool bVerbose,
             init_adir(fplog, shfc,
                       constr, idef, inputrec, cr, dd_ac1, mdstep, md, start, end,
                       x_old-start, state->x, pos[Try], force[Try], acc_dir-start,
-                      fr->bMolPBC, state->box, state->lambda, &dum, nrnb);
+                      fr->bMolPBC, state->box, state->lambda, &dum, nrnb,
+                      locals_grid);
 
             for (i = start; i < end; i++)
             {

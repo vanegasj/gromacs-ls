@@ -1293,7 +1293,8 @@ void update_constraints(FILE             *fplog,
                         gmx_update_t     *upd,
                         gmx_constr_t      constr,
                         gmx_bool          bFirstHalf,
-                        gmx_bool          bCalcVir)
+                        gmx_bool          bCalcVir,
+                        mds::StressGrid * locals_grid)
 {
     gmx_bool             bLastStep, bLog = FALSE, bEner = FALSE, bDoConstr = FALSE;
     double               dt;
@@ -1347,7 +1348,7 @@ void update_constraints(FILE             *fplog,
                       state->x, state->v, state->v,
                       bMolPBC, state->box,
                       state->lambda[efptBONDED], dvdlambda,
-                      NULL, bCalcVir ? &vir_con : NULL, nrnb, econqVeloc);
+                      NULL, bCalcVir ? &vir_con : NULL, locals_grid, nrnb, econqVeloc);
         }
         else
         {
@@ -1356,7 +1357,7 @@ void update_constraints(FILE             *fplog,
                       state->x, upd->xp, NULL,
                       bMolPBC, state->box,
                       state->lambda[efptBONDED], dvdlambda,
-                      state->v, bCalcVir ? &vir_con : NULL, nrnb, econqCoord);
+                      state->v, bCalcVir ? &vir_con : NULL, locals_grid, nrnb, econqCoord);
         }
         wallcycle_stop(wcycle, ewcCONSTR);
 
@@ -1419,7 +1420,7 @@ void update_constraints(FILE             *fplog,
                       state->x, upd->xp, NULL,
                       bMolPBC, state->box,
                       state->lambda[efptBONDED], dvdlambda,
-                      state->v, NULL, nrnb, econqCoord);
+                      state->v, NULL, locals_grid, nrnb, econqCoord);
 
             wallcycle_stop(wcycle, ewcCONSTR);
         }

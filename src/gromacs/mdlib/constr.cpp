@@ -279,6 +279,7 @@ gmx_bool constrain(FILE *fplog, gmx_bool bLog, gmx_bool bEner,
                    gmx_bool bMolPBC, matrix box,
                    real lambda, real *dvdlambda,
                    rvec *v, tensor *vir,
+                   mds::StressGrid * locals_grid,
                    t_nrnb *nrnb, int econq)
 {
     gmx_bool    bOK, bDump;
@@ -460,6 +461,7 @@ gmx_bool constrain(FILE *fplog, gmx_bool bLog, gmx_bool bEner,
                                 invdt, v ? v[0] : NULL,
                                 vir != NULL,
                                 th == 0 ? vir_r_m_dr : constr->vir_r_m_dr_th[th],
+                                locals_grid,
                                 th == 0 ? &bSettleErrorHasOccurred : &constr->bSettleErrorHasOccurred[th]);
                     }
                     GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR;
