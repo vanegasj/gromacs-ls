@@ -1245,7 +1245,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                                    state, fr->bMolPBC, graph, f,
                                    &top->idef, shake_vir,
                                    cr, nrnb, wcycle, upd, constr,
-                                   TRUE, bCalcVir, NULL /*locals_null*/);
+                                   TRUE, bCalcVir, &locals_grid);
                 wallcycle_start(wcycle, ewcUPDATE);
             }
             else if (graph)
@@ -1485,7 +1485,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                                    state, fr->bMolPBC, graph, f,
                                    &top->idef, tmp_vir,
                                    cr, nrnb, wcycle, upd, constr,
-                                   TRUE, bCalcVir, NULL /*locals_null*/);
+                                   TRUE, bCalcVir, &locals_grid);
             }
         }
         /* Box is changed in update() when we do pressure coupling,
@@ -1548,7 +1548,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                                fr->bMolPBC, graph, f,
                                &top->idef, shake_vir,
                                cr, nrnb, wcycle, upd, constr,
-                               FALSE, bCalcVir, NULL /*locals_null*/);
+                               FALSE, bCalcVir, &locals_grid);
 
             if (ir->eI == eiVVAK)
             {
@@ -1578,7 +1578,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                                    state, fr->bMolPBC, graph, f,
                                    &top->idef, tmp_vir,
                                    cr, nrnb, wcycle, upd, NULL,
-                                   FALSE, bCalcVir, NULL /*locals_null*/);
+                                   FALSE, bCalcVir, &locals_grid);
             }
             if (EI_VV(ir->eI))
             {
