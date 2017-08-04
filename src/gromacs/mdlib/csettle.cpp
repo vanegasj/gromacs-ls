@@ -728,72 +728,104 @@ static void settleTemplate(const gmx_settledata_t settled,
                 /* 71 flops */
 
                 /* begin stress tensor */
-
                 if (locals_grid != NULL)
                 {
                     if ((locals_grid->GetContribType() == mds_all)
                             || (locals_grid->GetContribType() == mds_set))
                     {
-                        // need this for the scatter/gather operations
-                        int offset[1] = {0,};
+                        // on the off chance that we upgrade to avx512 hardware someday...
+                        int offset [] = {0,1,2,3,4,5,6,7};
 
-                        real lpR[DIM][DIM];
-
-                        // this is the Ri/j/k = b[ow1/hw2/hw3+i] portion
-                        gatherLoadUTranspose<3>(
-                                x, ow1,
-                                &lpR[0][0],
-                                &lpR[0][1],
-                                &lpR[0][2]);
-                        gatherLoadUTranspose<3>(
-                                x, hw2,
-                                &lpR[1][0],
-                                &lpR[1][1],
-                                &lpR[1][2]);
-                        gatherLoadUTranspose<3>(
-                                x, hw3,
-                                &lpR[2][0],
-                                &lpR[2][1],
-                                &lpR[2][2]);
+                        real x_ow1_a[3*packSize];
+                        transposeScatterStoreU<3>(
+                                x_ow1_a, offset, 
+                                x_ow1[XX], 
+                                x_ow1[YY], 
+                                x_ow1[ZZ]);
+                        
+                        real x_hw2_a[3*packSize];
+                        transposeScatterStoreU<3>(
+                                x_hw2_a, offset, 
+                                x_hw2[XX], 
+                                x_hw2[YY], 
+                                x_hw2[ZZ]);
+                        
+                        real x_hw3_a[3*packSize];
+                        transposeScatterStoreU<3>(
+                                x_hw3_a, offset, 
+                                x_hw3[XX], 
+                                x_hw3[YY], 
+                                x_hw3[ZZ]);
                         
                         T ccc;
-                        real lpF[DIM][DIM];
-
-                        // this is the Fi = mda portion
                         ccc = invdt*invdt*mOf;
-                        transposeScatterStoreU<0>(
-                                lpF[0], offset, 
-                                ccc*da[0], 
-                                ccc*da[1], 
-                                ccc*da[2]);
-
-                        // this is the Fj/k = mda/b portion
+                        
+                        real ccc_da_a[3*packSize];
+                        transposeScatterStoreU<3>(
+                                ccc_da_a, offset, 
+                                ccc*da[XX], 
+                                ccc*da[YY], 
+                                ccc*da[ZZ]);
+                        
                         ccc = invdt*invdt*mHf;
-                        transposeScatterStoreU<0>(
-                                lpF[1], offset,
-                                ccc*db[0],
-                                ccc*db[1],
-                                ccc*db[2]);
-                        transposeScatterStoreU<0>(
-                                lpF[2], offset,
-                                ccc*dc[0],
-                                ccc*dc[1],
-                                ccc*dc[2]);
+                        
+                        real ccc_db_a[3*packSize];
+                        transposeScatterStoreU<3>(
+                                ccc_db_a, offset, 
+                                ccc*db[XX], 
+                                ccc*db[YY], 
+                                ccc*db[ZZ]);
+                        
+                        real ccc_dc_a[3*packSize];
+                        transposeScatterStoreU<3>(
+                                ccc_dc_a, offset, 
+                                ccc*dc[XX], 
+                                ccc*dc[YY], 
+                                ccc*dc[ZZ]);
 
+                        for (int i2 = 0; i2 < packSize; ++i2)
+                        {
+                            int lpatIDs[3];
+                            lpatIDs[0] = settled->ow1[i + i2];
+                            lpatIDs[1] = settled->hw2[i + i2];
+                            lpatIDs[2] = settled->hw3[i + i2];
 
-                        int lpatIDs[3];
+                            real lpR[3][3], lpF[3][3];
+                            transposeScatterStoreU<0>(
+                                    lpR[0], offset, 
+                                    x_ow1_a[3*i2+0], 
+                                    x_ow1_a[3*i2+1], 
+                                    x_ow1_a[3*i2+2]);
+                            transposeScatterStoreU<0>(
+                                    lpR[1], offset, 
+                                    x_hw2_a[3*i2+0], 
+                                    x_hw2_a[3*i2+1], 
+                                    x_hw2_a[3*i2+2]);
+                            transposeScatterStoreU<0>(
+                                    lpR[2], offset, 
+                                    x_hw3_a[3*i2+0], 
+                                    x_hw3_a[3*i2+1], 
+                                    x_hw3_a[3*i2+2]);
+                            
+                            transposeScatterStoreU<0>(
+                                    lpF[0], offset, 
+                                    ccc_da_a[3*i2+0], 
+                                    ccc_da_a[3*i2+1], 
+                                    ccc_da_a[3*i2+2]);
+                            transposeScatterStoreU<0>(
+                                    lpF[1], offset, 
+                                    ccc_db_a[3*i2+0], 
+                                    ccc_db_a[3*i2+1], 
+                                    ccc_db_a[3*i2+2]);
+                            transposeScatterStoreU<0>(
+                                    lpF[2], offset, 
+                                    ccc_dc_a[3*i2+0], 
+                                    ccc_dc_a[3*i2+1], 
+                                    ccc_dc_a[3*i2+2]);
 
-                        //iatoms[i*nral1+1] is ow1 id (see csettle.cpp:263,331 and csettle.c:217)
-                        lpatIDs[0] = settled->ow1[i];
-
-                        //iatoms[i*nral1+2] is hw2 id
-                        lpatIDs[1] = settled->hw2[i];
-
-                        //iatoms[i*nral1+3] is hw3 id
-                        lpatIDs[2] = settled->hw3[i];
-
-                        // finally the call
-                        locals_grid->DistributeInteraction(-3, lpR, lpF, lpatIDs);
+                            // finally the call
+                            locals_grid->DistributeInteraction(-3, lpR, lpF, lpatIDs);
+                        }
                     }
                 }
 
