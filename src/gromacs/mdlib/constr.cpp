@@ -389,7 +389,8 @@ gmx_bool constrain(FILE *fplog, gmx_bool bLog, gmx_bool bEner,
                               box, pbc_null, lambda, dvdlambda,
                               invdt, v, vir != NULL, vir_r_m_dr,
                               econq, nrnb,
-                              constr->maxwarn, &constr->warncount_lincs);
+                              constr->maxwarn, &constr->warncount_lincs,
+                              locals_grid);
         if (!bOK && constr->maxwarn < INT_MAX)
         {
             if (fplog != NULL)

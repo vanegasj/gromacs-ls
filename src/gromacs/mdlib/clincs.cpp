@@ -507,7 +507,7 @@ static void do_lincsp(rvec *x, rvec *f, rvec *fp, t_pbc *pbc,
     int     *bla, *blnr, *blbnb;
     rvec    *r;
     real    *blc, *blmf, *blcc, *rhs1, *rhs2, *sol;
-
+    
     b0 = lincsd->task[th].b0;
     b1 = lincsd->task[th].b1;
 
@@ -890,13 +890,26 @@ static void do_lincs(rvec *x, rvec *xp, matrix box, t_pbc *pbc,
                      gmx_bool bCalcDHDL,
                      real wangle, gmx_bool *bWarn,
                      real invdt, rvec * gmx_restrict v,
-                     gmx_bool bCalcVir, tensor vir_r_m_dr)
+                     gmx_bool bCalcVir, tensor vir_r_m_dr,
+                     mds::StressGrid *locals_grid)
 {
     int      b0, b1, b, i, j, n, iter;
     int     *bla, *blnr, *blbnb;
     rvec    *r;
     real    *blc, *blmf, *bllen, *blcc, *rhs1, *rhs2, *sol, *blc_sol, *mlambda;
     int     *nlocat;
+    
+    /* begin stress tensor */
+    rvec dx;
+    real *lambda;
+    real fx,fy,fz,ccc;
+    rvec x1,x2;
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
+    
+    lambda  = lincsd->mlambda;
+    /* end stress tensor */
+
 
     b0 = lincsd->task[th].b0;
     b1 = lincsd->task[th].b1;
@@ -1142,6 +1155,43 @@ static void do_lincs(rvec *x, rvec *xp, matrix box, t_pbc *pbc,
                     vir_r_m_dr[i][j] -= tmp1*r[b][j];
                 }
             }
+
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                i = bla[2*b];
+                j = bla[2*b+1];
+                
+                if(pbc)
+                {
+                    pbc_dx_aiuc(pbc,x[i],x[j],dx);
+                    copy_rvec(x[j], x2);
+                    rvec_add(x[j], dx, x1);
+                }
+                else
+                {
+                    copy_rvec(x[i], x1);
+                    copy_rvec(x[j], x2);
+                }
+
+                ccc = lambda[b]*invdt*invdt;
+                fx = r[b][XX]*ccc;
+                fy = r[b][YY]*ccc;
+                fz = r[b][ZZ]*ccc;
+                
+                if ((locals_grid->GetContribType() == mds_all)
+                        || (locals_grid->GetContribType() == mds_lin))
+                {
+                    lpR[0][0] = x1[0]; lpR[0][1] = x1[1]; lpR[0][2] = x1[2]; 
+                    lpR[1][0] = x2[0]; lpR[1][1] = x2[1]; lpR[1][2] = x2[2]; 
+                    lpatIDs[0] = i; lpatIDs[1] = j;
+                    lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
+                    lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
+
         } /* 22 ncons flops */
     }
 
@@ -2333,7 +2383,8 @@ gmx_bool constrain_lincs(FILE *fplog, gmx_bool bLog, gmx_bool bEner,
                          gmx_bool bCalcVir, tensor vir_r_m_dr,
                          int econq,
                          t_nrnb *nrnb,
-                         int maxwarn, int *warncount)
+                         int maxwarn, int *warncount,
+                         mds::StressGrid *locals_grid)
 {
     gmx_bool  bCalcDHDL;
     char      buf[STRLEN], buf2[22], buf3[STRLEN];
@@ -2433,7 +2484,8 @@ gmx_bool constrain_lincs(FILE *fplog, gmx_bool bLog, gmx_bool bEner,
                          bCalcDHDL,
                          ir->LincsWarnAngle, &bWarn,
                          invdt, v, bCalcVir,
-                         th == 0 ? vir_r_m_dr : lincsd->task[th].vir_r_m_dr);
+                         th == 0 ? vir_r_m_dr : lincsd->task[th].vir_r_m_dr,
+                         locals_grid);
             }
             GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR;
         }

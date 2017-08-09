@@ -292,7 +292,8 @@ constrain_lincs(FILE *log, gmx_bool bLog, gmx_bool bEner,
                 gmx_bool bCalcVir, tensor vir_r_m_dr,
                 int econ,
                 t_nrnb *nrnb,
-                int maxwarn, int *warncount);
+                int maxwarn, int *warncount,
+                mds::StressGrid *locals_stress);
 /* Returns if the constraining succeeded */
 
 
