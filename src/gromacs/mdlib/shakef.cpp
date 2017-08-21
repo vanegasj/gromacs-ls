@@ -208,7 +208,8 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
                real tol, rvec x[], rvec prime[], real omega,
                gmx_bool bFEP, real lambda, real scaled_lagrange_multiplier[],
                real invdt, rvec *v,
-               gmx_bool bCalcVir, tensor vir_r_m_dr, int econq)
+               gmx_bool bCalcVir, tensor vir_r_m_dr, int econq,
+               mds::StressGrid * locals_grid)
 {
     rvec    *rij;
     real    *half_of_reduced_mass, *distance_squared_tolerance, *constraint_distance_squared;
@@ -219,6 +220,13 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
     real     mm    = 0., tmp;
     int      error = 0;
     real     constraint_distance;
+
+
+    /* begin stress tensor */
+    real fx,fy,fz,ccc;
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
+    /* end stress tensor */
 
     if (ncon > shaked->nalloc)
     {
@@ -320,6 +328,7 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
         /* constraint virial */
         if (bCalcVir)
         {
+            printf("entered bCalcVir\n");
             mm = scaled_lagrange_multiplier[ll];
             for (d = 0; d < DIM; d++)
             {
@@ -330,6 +339,27 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
                 }
             }
             /* 21 flops */
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                ccc = scaled_lagrange_multiplier[ll]*invdt*invdt;
+                fx = rij[ll][0]*ccc;
+                fy = rij[ll][1]*ccc;
+                fz = rij[ll][2]*ccc;
+
+                if ((locals_grid->GetContribType() == mds_all)
+                        || (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = x[ia[1]][0]; lpR[0][1] = x[ia[1]][1]; lpR[0][2] = x[ia[1]][2]; 
+                    lpR[1][0] = x[ia[2]][0]; lpR[1][1] = x[ia[2]][1]; lpR[1][2] = x[ia[2]][2]; 
+                    lpatIDs[0] = ia[1]; lpatIDs[1] = ia[2];
+                    lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
+                    lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
         }
 
         /* cshake and crattle produce Lagrange multipliers scaled by
@@ -395,7 +425,7 @@ gmx_bool bshakef(FILE *log, gmx_shakedata_t shaked,
                  t_idef *idef, t_inputrec *ir, rvec x_s[], rvec prime[],
                  t_nrnb *nrnb, real *scaled_lagrange_multiplier, real lambda, real *dvdlambda,
                  real invdt, rvec *v, gmx_bool bCalcVir, tensor vir_r_m_dr,
-                 gmx_bool bDumpOnError, int econq)
+                 gmx_bool bDumpOnError, int econq, mds::StressGrid * locals_grid)
 {
     t_iatom *iatoms;
     real     dt_2, dvdl;
@@ -421,7 +451,7 @@ gmx_bool bshakef(FILE *log, gmx_shakedata_t shaked,
         n0    = vec_shakef(log, shaked, invmass, blen, idef->iparams,
                            iatoms, ir->shake_tol, x_s, prime, shaked->omega,
                            ir->efep != efepNO, lambda, scaled_lagrange_multiplier, invdt, v, bCalcVir, vir_r_m_dr,
-                           econq);
+                           econq,locals_grid);
 
 #ifdef DEBUGSHAKE
         check_cons(log, blen, x_s, prime, v, idef->iparams, iatoms, invmass, econq);

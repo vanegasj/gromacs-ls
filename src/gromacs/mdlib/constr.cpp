@@ -412,7 +412,7 @@ gmx_bool constrain(FILE *fplog, gmx_bool bLog, gmx_bool bEner,
                               idef, ir, x, xprime, nrnb,
                               constr->lagr, lambda, dvdlambda,
                               invdt, v, vir != NULL, vir_r_m_dr,
-                              constr->maxwarn < INT_MAX, econq);
+                              constr->maxwarn < INT_MAX, econq,locals_grid);
                 break;
             case (econqVeloc):
                 bOK = bshakef(fplog, constr->shaked,
@@ -420,7 +420,7 @@ gmx_bool constrain(FILE *fplog, gmx_bool bLog, gmx_bool bEner,
                               idef, ir, x, min_proj, nrnb,
                               constr->lagr, lambda, dvdlambda,
                               invdt, NULL, vir != NULL, vir_r_m_dr,
-                              constr->maxwarn < INT_MAX, econq);
+                              constr->maxwarn < INT_MAX, econq,locals_grid);
                 break;
             default:
                 gmx_fatal(FARGS, "Internal error, SHAKE called for constraining something else than coordinates");

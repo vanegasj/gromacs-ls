@@ -106,7 +106,8 @@ gmx_bool bshakef(FILE           *log,          /* Log file			*/
                  gmx_bool        bCalcVir,     /* Calculate r x m delta_r      */
                  tensor          vir_r_m_dr,   /* sum r x m delta_r            */
                  gmx_bool        bDumpOnError, /* Dump debugging stuff on error*/
-                 int             econq);       /* which type of constraint is occurring */
+                 int             econq,        /* which type of constraint is occurring */
+                 mds::StressGrid *locals_stress); /* mdstress-library class */
 /* Shake all the atoms blockwise. It is assumed that all the constraints
  * in the idef->shakes field are sorted, to ascending block nr. The
  * sblock array points into the idef->shakes.iatoms field, with block 0
