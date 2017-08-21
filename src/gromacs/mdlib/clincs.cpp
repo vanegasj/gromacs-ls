@@ -1174,7 +1174,7 @@ static void do_lincs(rvec *x, rvec *xp, matrix box, t_pbc *pbc,
                     copy_rvec(x[j], x2);
                 }
 
-                ccc = lambda[b]*invdt*invdt;
+                ccc = -lambda[b]*invdt*invdt;
                 fx = r[b][XX]*ccc;
                 fy = r[b][YY]*ccc;
                 fz = r[b][ZZ]*ccc;
