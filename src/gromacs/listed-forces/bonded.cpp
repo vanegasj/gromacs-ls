@@ -1640,7 +1640,8 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
                 rvec r_ij, rvec r_kj, rvec r_kl,
                 rvec m, rvec n, rvec4 f[], rvec fshift[],
                 const t_pbc *pbc, const t_graph *g,
-                const rvec x[], int t1, int t2, int t3, mds::StressGrid *locals_grid)
+                const rvec x[], int t1, int t2, int t3,
+                mds::StressGrid *locals_grid, int locals_contrib)
 {
     /* 143 FLOPS */
     rvec f_i, f_j, f_k, f_l;
@@ -1698,32 +1699,35 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
         /* begin stress tensor */
         if (locals_grid != NULL)
         {
-            rvec Ri, Rj, Rk, Rl, dx;
-            rvec Fj, Fk;
-            rvec lpR[4], lpF[4];
-            int  lpatIDs[4];
-          
-            copy_rvec(x[i], Ri);
-            pbc_rvec_sub(pbc, x[j], x[i], dx);
-            rvec_add(Ri, dx, Rj);
-            pbc_rvec_sub(pbc, x[k], x[i], dx);
-            rvec_add(Ri, dx, Rk);
-            pbc_rvec_sub(pbc, x[l], x[i], dx);
-            rvec_add(Ri, dx, Rl);
-            /* fj and fk need to be inverted */
-            svmul(-1.0, f_j, Fj);
-            svmul(-1.0, f_k, Fk);
-          
-            lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
-            lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
-            lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
-            lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
-            lpatIDs[0] = i; lpatIDs[1] = j; lpatIDs[2] = k; lpatIDs[3] = l;
-            lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
-            lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
-            lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
-            lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-            locals_grid->DistributeInteraction(4, lpR, lpF, lpatIDs);
+            if (locals_grid->GetContribType() == mds_all || locals_grid->GetContribType() == locals_contrib)
+            {
+                rvec Ri, Rj, Rk, Rl, dx;
+                rvec Fj, Fk;
+                rvec lpR[4], lpF[4];
+                int  lpatIDs[4];
+              
+                copy_rvec(x[i], Ri);
+                pbc_rvec_sub(pbc, x[j], x[i], dx);
+                rvec_add(Ri, dx, Rj);
+                pbc_rvec_sub(pbc, x[k], x[i], dx);
+                rvec_add(Ri, dx, Rk);
+                pbc_rvec_sub(pbc, x[l], x[i], dx);
+                rvec_add(Ri, dx, Rl);
+                /* fj and fk need to be inverted */
+                svmul(-1.0, f_j, Fj);
+                svmul(-1.0, f_k, Fk);
+              
+                lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
+                lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
+                lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
+                lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
+                lpatIDs[0] = i; lpatIDs[1] = j; lpatIDs[2] = k; lpatIDs[3] = l;
+                lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
+                lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
+                lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
+                lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
+                locals_grid->DistributeInteraction(4, lpR, lpF, lpatIDs);
+            }
         }
         /* end stress tensor */
 
@@ -1904,8 +1908,8 @@ real pdihs(int nbonds,
 
         vtot += vpd;
         do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
-                   f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid);/* 112		*/
+                       f, fshift, pbc, g, x, t1, t2, t3,
+                       locals_grid, mds_dip);/* 112		*/
 
 #ifdef DEBUG
         fprintf(debug, "pdih: (%d,%d,%d,%d) phi=%g\n",
@@ -2288,7 +2292,7 @@ real idihs(int nbonds,
 
         do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
                    f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid);/* 112		*/
+                   locals_grid, mds_dii);/* 112		*/
         /* 218 TOTAL	*/
 #ifdef DEBUG
         if (debug)
@@ -2513,7 +2517,7 @@ real dihres(int nbonds,
             }
             do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
                        f, fshift, pbc, g, x, t1, t2, t3,
-                       locals_grid);      /* 112		*/
+                       locals_grid, mds_all);      /* 112		*/
         }
     }
     return vtot;
@@ -2949,7 +2953,7 @@ real rbdihs(int nbonds,
 
         do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
                    f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid); /* 112		*/
+                   locals_grid, mds_drb); /* 112		*/
         vtot += v;
     }
     *dvdlambda += dvdl_term;
@@ -3955,7 +3959,7 @@ real tab_dihs(int nbonds,
         vtot += vpd;
         do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
                    f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid); /* 112	*/
+                   locals_grid, mds_all); /* 112	*/
 
 #ifdef DEBUG
         fprintf(debug, "pdih: (%d,%d,%d,%d) phi=%g\n",
