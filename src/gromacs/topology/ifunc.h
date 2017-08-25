@@ -38,6 +38,7 @@
 #define GMX_TOPOLOGY_IFUNC_H
 
 #include "gromacs/topology/idef.h"
+#include "mdstress/mds_stressgrid.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +60,7 @@ typedef real t_ifunc (int nbonds, const t_iatom iatoms[],
                       const struct t_pbc *pbc, const struct t_graph *g,
                       real lambda, real *dvdlambda,
                       const struct t_mdatoms *md, struct t_fcdata *fcd,
-                      int *ddgatindex);
+                      int *ddgatindex, mds::StressGrid *locals_grid);
 
 /*
  * The function type t_ifunc() calculates one interaction, using iatoms[]

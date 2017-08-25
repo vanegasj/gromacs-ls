@@ -113,6 +113,77 @@ static int pbc_rvec_sub(const t_pbc *pbc, const rvec xi, const rvec xj, rvec dx)
     }
 }
 
+/*! \brief Compute local stress for bonds.
+ *
+ * Consolidates the seemingly invariant locals_grid code for this file
+ */
+void locals_bonds_distribute_stress(
+        const int ai,
+        const int aj,
+        const real fbond,
+        const rvec x[],
+        const rvec dx,
+        mds::StressGrid *locals_grid)
+{
+    rvec R[2], F[2];
+    int atIDs[2];
+
+    if (locals_grid != NULL)
+    {
+        if ((locals_grid->GetContribType() == mds_all) || (locals_grid->GetContribType() == mds_bnd))
+        {
+            R[0][0] = x[ai][0]; R[0][1] = x[ai][1]; R[0][2] = x[ai][2]; 
+            R[1][0] = x[ai][0]-dx[0]; R[1][1] = x[ai][1]-dx[1]; R[1][2] = x[ai][2]-dx[2]; 
+            atIDs[0] = ai; atIDs[1] = aj;
+            F[0][0] = fbond*dx[0];  F[0][1] = fbond*dx[1]; F[0][2] = fbond*dx[2];
+            F[1][0] = -fbond*dx[0]; F[1][1] = -fbond*dx[1]; F[1][2] = -fbond*dx[2];
+            locals_grid->DistributeInteraction(2, R, F, atIDs);
+        }
+    }
+}
+
+/*! \brief Compute local stress for angles.
+ *
+ * Consolidates the seemingly invariant locals_grid code for this file
+ */
+void locals_angles_distribute_stress(
+        const int ai,
+        const int aj,
+        const int ak,
+        const rvec f_i,
+        const rvec f_j,
+        const rvec f_k,
+        const rvec x[],
+        const t_pbc * pbc,
+        mds::StressGrid *locals_grid)
+{
+    /* begin stress tensor */
+    rvec Ri, Rj, Rk, dx;
+    rvec lpR[3], lpF[3];
+    int  lpatIDs[3];
+
+    if (locals_grid != NULL)
+    {
+        copy_rvec(x[ai], Ri);
+        pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+        rvec_add(x[ai], dx, Rj);
+        pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+        rvec_add(x[ai], dx, Rk);
+
+        if ((locals_grid->GetContribType() == mds_all) || (locals_grid->GetContribType() == mds_ang))
+        {
+            lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
+            lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
+            lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
+            lpatIDs[0] = ai; lpatIDs[1] = aj; lpatIDs[2] = ak;
+            lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
+            lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
+            lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
+            locals_grid->DistributeInteraction(3, lpR, lpF, lpatIDs);
+        }
+    }
+}
+
 /*! \brief Morse potential bond
  *
  * By Frank Everdij. Three parameters needed:
@@ -130,7 +201,7 @@ real morse_bonds(int nbonds,
                  const t_pbc *pbc, const t_graph *g,
                  real lambda, real *dvdlambda,
                  const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                 int gmx_unused *global_atom_index)
+                 int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     const real one = 1.0;
     const real two = 2.0;
@@ -139,7 +210,7 @@ real morse_bonds(int nbonds,
     rvec       dx;
     int        i, m, ki, type, ai, aj;
     ivec       dt;
-
+      
     vtot = 0.0;
     for (i = 0; (i < nbonds); )
     {
@@ -194,6 +265,10 @@ real morse_bonds(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
+
+        /* begin stress tensor */
+        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+        /* end stress tensor */
     }                                         /*  83 TOTAL    */
     return vtot;
 }
@@ -205,7 +280,7 @@ real cubic_bonds(int nbonds,
                  const t_pbc *pbc, const t_graph *g,
                  real gmx_unused lambda, real gmx_unused *dvdlambda,
                  const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                 int gmx_unused *global_atom_index)
+                 int gmx_unused *global_atom_index, mds::StressGrid * locals_grid)
 {
     const real three = 3.0;
     const real two   = 2.0;
@@ -257,6 +332,10 @@ real cubic_bonds(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
+
+        /* begin stress tensor */
+        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+        /* end stress tensor */
     }                                         /*  54 TOTAL    */
     return vtot;
 }
@@ -267,7 +346,7 @@ real FENE_bonds(int nbonds,
                 const t_pbc *pbc, const t_graph *g,
                 real gmx_unused lambda, real gmx_unused *dvdlambda,
                 const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                int *global_atom_index)
+                int *global_atom_index, mds::StressGrid * locals_grid)
 {
     const real half = 0.5;
     const real one  = 1.0;
@@ -326,6 +405,10 @@ real FENE_bonds(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
+
+        /* begin stress tensor */
+        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+        /* end stress tensor */
     }                                         /*  58 TOTAL    */
     return vtot;
 }
@@ -363,7 +446,7 @@ real bonds(int nbonds,
            const t_pbc *pbc, const t_graph *g,
            real lambda, real *dvdlambda,
            const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-           int gmx_unused *global_atom_index)
+           int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, m, ki, ai, aj, type;
     real dr, dr2, fbond, vbond, fij, vtot;
@@ -415,6 +498,10 @@ real bonds(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
+
+        /* begin stress tensor */
+        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+        /* end stress tensor */
     }               /* 59 TOTAL	*/
     return vtot;
 }
@@ -425,7 +512,7 @@ real restraint_bonds(int nbonds,
                      const t_pbc *pbc, const t_graph *g,
                      real lambda, real *dvdlambda,
                      const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                     int gmx_unused *global_atom_index)
+                     int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, m, ki, ai, aj, type;
     real dr, dr2, fbond, vbond, fij, vtot;
@@ -516,6 +603,9 @@ real restraint_bonds(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
+        /* begin stress tensor */
+        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+        /* end stress tensor */
     }                   /* 59 TOTAL	*/
 
     return vtot;
@@ -527,7 +617,7 @@ real polarize(int nbonds,
               const t_pbc *pbc, const t_graph *g,
               real lambda, real *dvdlambda,
               const t_mdatoms *md, t_fcdata gmx_unused *fcd,
-              int gmx_unused *global_atom_index)
+              int gmx_unused *global_atom_index, mds::StressGrid * locals_grid)
 {
     int  i, m, ki, ai, aj, type;
     real dr, dr2, fbond, vbond, fij, vtot, ksh;
@@ -573,6 +663,10 @@ real polarize(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
+        
+        /* begin stress tensor */
+        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+        /* end stress tensor */
     }               /* 59 TOTAL	*/
     return vtot;
 }
@@ -583,7 +677,7 @@ real anharm_polarize(int nbonds,
                      const t_pbc *pbc, const t_graph *g,
                      real lambda, real *dvdlambda,
                      const t_mdatoms *md, t_fcdata gmx_unused *fcd,
-                     int gmx_unused *global_atom_index)
+                     int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, m, ki, ai, aj, type;
     real dr, dr2, fbond, vbond, fij, vtot, ksh, khyp, drcut, ddr, ddr3;
@@ -638,6 +732,10 @@ real anharm_polarize(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
+
+        /* begin stress tensor */
+        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+        /* end stress tensor */
     }               /* 72 TOTAL	*/
     return vtot;
 }
@@ -648,7 +746,7 @@ real water_pol(int nbonds,
                const t_pbc gmx_unused *pbc, const t_graph gmx_unused *g,
                real gmx_unused lambda, real gmx_unused *dvdlambda,
                const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-               int gmx_unused *global_atom_index)
+               int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     /* This routine implements anisotropic polarizibility for water, through
      * a shell connected to a dummy with spring constant that differ in the
@@ -831,7 +929,7 @@ real thole_pol(int nbonds,
                const t_pbc *pbc, const t_graph gmx_unused *g,
                real gmx_unused lambda, real gmx_unused *dvdlambda,
                const t_mdatoms *md, t_fcdata gmx_unused *fcd,
-               int gmx_unused *global_atom_index)
+               int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     /* Interaction between two pairs of particles with opposite charge */
     int        i, type, a1, da1, a2, da2;
@@ -884,7 +982,7 @@ real angles(int nbonds,
             const t_pbc *pbc, const t_graph *g,
             real lambda, real *dvdlambda,
             const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-            int gmx_unused *global_atom_index)
+            int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, ai, aj, ak, t1, t2, type;
     rvec r_ij, r_kj;
@@ -947,6 +1045,9 @@ real angles(int nbonds,
                 f[aj][m] += f_j[m];
                 f[ak][m] += f_k[m];
             }
+            /* begin stress tensor */
+            locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+            /* end stress tensor */
             if (g != NULL)
             {
                 copy_ivec(SHIFT_IVEC(g, aj), jt);
@@ -977,7 +1078,7 @@ angles_noener_simd(int nbonds,
                    const t_pbc *pbc, const t_graph gmx_unused *g,
                    real gmx_unused lambda,
                    const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                   int gmx_unused *global_atom_index)
+                   int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     const int            nfa1 = 4;
     int                  i, iu, s;
@@ -1116,7 +1217,7 @@ real linear_angles(int nbonds,
                    const t_pbc *pbc, const t_graph *g,
                    real lambda, real *dvdlambda,
                    const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                   int gmx_unused *global_atom_index)
+                   int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, m, ai, aj, ak, t1, t2, type;
     rvec f_i, f_j, f_k;
@@ -1186,7 +1287,7 @@ real urey_bradley(int nbonds,
                   const t_pbc *pbc, const t_graph *g,
                   real lambda, real *dvdlambda,
                   const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                  int gmx_unused *global_atom_index)
+                  int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, m, ai, aj, ak, t1, t2, type, ki;
     rvec r_ij, r_kj, r_ik;
@@ -1256,6 +1357,11 @@ real urey_bradley(int nbonds,
                 f[aj][m] += f_j[m];
                 f[ak][m] += f_k[m];
             }
+
+            /* begin stress tensor */
+            locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+            /* end stress tensor */
+
             if (g)
             {
                 copy_ivec(SHIFT_IVEC(g, aj), jt);
@@ -1301,7 +1407,7 @@ real quartic_angles(int nbonds,
                     const t_pbc *pbc, const t_graph *g,
                     real gmx_unused lambda, real gmx_unused *dvdlambda,
                     const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                    int gmx_unused *global_atom_index)
+                    int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, j, ai, aj, ak, t1, t2, type;
     rvec r_ij, r_kj;
@@ -1369,6 +1475,9 @@ real quartic_angles(int nbonds,
                 f[aj][m] += f_j[m];
                 f[ak][m] += f_k[m];
             }
+            /* begin stress tensor */
+            locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+            /* end stress tensor */
             if (g)
             {
                 copy_ivec(SHIFT_IVEC(g, aj), jt);
@@ -1531,7 +1640,7 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
                 rvec r_ij, rvec r_kj, rvec r_kl,
                 rvec m, rvec n, rvec4 f[], rvec fshift[],
                 const t_pbc *pbc, const t_graph *g,
-                const rvec x[], int t1, int t2, int t3)
+                const rvec x[], int t1, int t2, int t3, mds::StressGrid *locals_grid)
 {
     /* 143 FLOPS */
     rvec f_i, f_j, f_k, f_l;
@@ -1585,6 +1694,38 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
         {
             t3 = CENTRAL;
         }
+        
+        /* begin stress tensor */
+        if (locals_grid != NULL)
+        {
+            rvec Ri, Rj, Rk, Rl, dx;
+            rvec Fj, Fk;
+            rvec lpR[4], lpF[4];
+            int  lpatIDs[4];
+          
+            copy_rvec(x[i], Ri);
+            pbc_rvec_sub(pbc, x[j], x[i], dx);
+            rvec_add(Ri, dx, Rj);
+            pbc_rvec_sub(pbc, x[k], x[i], dx);
+            rvec_add(Ri, dx, Rk);
+            pbc_rvec_sub(pbc, x[l], x[i], dx);
+            rvec_add(Ri, dx, Rl);
+            /* fj and fk need to be inverted */
+            svmul(-1.0, f_j, Fj);
+            svmul(-1.0, f_k, Fk);
+          
+            lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
+            lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
+            lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
+            lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
+            lpatIDs[0] = i; lpatIDs[1] = j; lpatIDs[2] = k; lpatIDs[3] = l;
+            lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
+            lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
+            lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
+            lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
+            locals_grid->DistributeInteraction(4, lpR, lpF, lpatIDs);
+        }
+        /* end stress tensor */
 
         rvec_inc(fshift[t1], f_i);
         rvec_dec(fshift[CENTRAL], f_j);
@@ -1735,7 +1876,7 @@ real pdihs(int nbonds,
            const t_pbc *pbc, const t_graph *g,
            real lambda, real *dvdlambda,
            const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-           int gmx_unused *global_atom_index)
+           int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, type, ai, aj, ak, al;
     int  t1, t2, t3;
@@ -1763,7 +1904,8 @@ real pdihs(int nbonds,
 
         vtot += vpd;
         do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
-                   f, fshift, pbc, g, x, t1, t2, t3); /* 112		*/
+                   f, fshift, pbc, g, x, t1, t2, t3,
+                   locals_grid);/* 112		*/
 
 #ifdef DEBUG
         fprintf(debug, "pdih: (%d,%d,%d,%d) phi=%g\n",
@@ -1796,7 +1938,7 @@ pdihs_noener(int nbonds,
              const t_pbc gmx_unused *pbc, const t_graph gmx_unused *g,
              real lambda,
              const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-             int gmx_unused *global_atom_index)
+             int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, type, ai, aj, ak, al;
     int  t1, t2, t3;
@@ -1852,7 +1994,7 @@ pdihs_noener_simd(int nbonds,
                   const t_pbc *pbc, const t_graph gmx_unused *g,
                   real gmx_unused lambda,
                   const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                  int gmx_unused *global_atom_index)
+                  int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     const int             nfa1 = 5;
     int                   i, iu, s;
@@ -1967,7 +2109,7 @@ rbdihs_noener_simd(int nbonds,
                    const t_pbc *pbc, const t_graph gmx_unused *g,
                    real gmx_unused lambda,
                    const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                   int gmx_unused *global_atom_index)
+                   int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     const int             nfa1 = 5;
     int                   i, iu, s, j;
@@ -2095,7 +2237,7 @@ real idihs(int nbonds,
            const t_pbc *pbc, const t_graph *g,
            real lambda, real *dvdlambda,
            const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-           int gmx_unused *global_atom_index)
+           int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, type, ai, aj, ak, al;
     int  t1, t2, t3;
@@ -2145,7 +2287,8 @@ real idihs(int nbonds,
         dvdl_term += 0.5*(kB - kA)*dp2 - kk*dphi0*dp;
 
         do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
-                   f, fshift, pbc, g, x, t1, t2, t3); /* 112		*/
+                   f, fshift, pbc, g, x, t1, t2, t3,
+                   locals_grid);/* 112		*/
         /* 218 TOTAL	*/
 #ifdef DEBUG
         if (debug)
@@ -2263,7 +2406,7 @@ real angres(int nbonds,
             const t_pbc *pbc, const t_graph *g,
             real lambda, real *dvdlambda,
             const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-            int gmx_unused *global_atom_index)
+            int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     return low_angres(nbonds, forceatoms, forceparams, x, f, fshift, pbc, g,
                       lambda, dvdlambda, FALSE);
@@ -2275,7 +2418,7 @@ real angresz(int nbonds,
              const t_pbc *pbc, const t_graph *g,
              real lambda, real *dvdlambda,
              const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-             int gmx_unused *global_atom_index)
+             int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     return low_angres(nbonds, forceatoms, forceparams, x, f, fshift, pbc, g,
                       lambda, dvdlambda, TRUE);
@@ -2287,7 +2430,7 @@ real dihres(int nbonds,
             const t_pbc *pbc, const t_graph *g,
             real lambda, real *dvdlambda,
             const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-            int gmx_unused  *global_atom_index)
+            int gmx_unused  *global_atom_index, mds::StressGrid *locals_grid)
 {
     real vtot = 0;
     int  ai, aj, ak, al, i, k, type, t1, t2, t3;
@@ -2369,7 +2512,8 @@ real dihres(int nbonds,
                 *dvdlambda += kfac*ddp*((dphiB - dphiA)-(phi0B - phi0A));
             }
             do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
-                       f, fshift, pbc, g, x, t1, t2, t3);      /* 112		*/
+                       f, fshift, pbc, g, x, t1, t2, t3,
+                       locals_grid);      /* 112		*/
         }
     }
     return vtot;
@@ -2382,7 +2526,7 @@ real unimplemented(int gmx_unused nbonds,
                    const t_pbc gmx_unused *pbc, const t_graph  gmx_unused *g,
                    real gmx_unused lambda, real gmx_unused *dvdlambda,
                    const t_mdatoms  gmx_unused *md, t_fcdata gmx_unused *fcd,
-                   int gmx_unused *global_atom_index)
+                   int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     gmx_impl("*** you are using a not implemented function");
 
@@ -2395,7 +2539,7 @@ real restrangles(int nbonds,
                  const t_pbc *pbc, const t_graph *g,
                  real gmx_unused lambda, real gmx_unused *dvdlambda,
                  const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                 int gmx_unused *global_atom_index)
+                 int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, d, ai, aj, ak, type, m;
     int  t1, t2;
@@ -2498,7 +2642,7 @@ real restrdihs(int nbonds,
                const t_pbc *pbc, const t_graph *g,
                real gmx_unused lambda, real gmx_unused *dvlambda,
                const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-               int gmx_unused *global_atom_index)
+               int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, d, type, ai, aj, ak, al;
     rvec f_i, f_j, f_k, f_l;
@@ -2606,7 +2750,7 @@ real cbtdihs(int nbonds,
              const t_pbc *pbc, const t_graph *g,
              real gmx_unused lambda, real gmx_unused *dvdlambda,
              const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-             int gmx_unused *global_atom_index)
+             int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  type, ai, aj, ak, al, i, d;
     int  t1, t2, t3;
@@ -2714,7 +2858,7 @@ real rbdihs(int nbonds,
             const t_pbc *pbc, const t_graph *g,
             real lambda, real *dvdlambda,
             const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-            int gmx_unused *global_atom_index)
+            int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     const real c0 = 0.0, c1 = 1.0, c2 = 2.0, c3 = 3.0, c4 = 4.0, c5 = 5.0;
     int        type, ai, aj, ak, al, i, j;
@@ -2804,7 +2948,8 @@ real rbdihs(int nbonds,
         ddphi = -ddphi*sin_phi;         /*  11		*/
 
         do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
-                   f, fshift, pbc, g, x, t1, t2, t3); /* 112		*/
+                   f, fshift, pbc, g, x, t1, t2, t3,
+                   locals_grid); /* 112		*/
         vtot += v;
     }
     *dvdlambda += dvdl_term;
@@ -2863,7 +3008,7 @@ cmap_dihs(int nbonds,
           const struct t_pbc *pbc, const struct t_graph *g,
           real gmx_unused lambda, real gmx_unused *dvdlambda,
           const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-          int  gmx_unused *global_atom_index)
+          int  gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int         i, j, k, n, idx;
     int         ai, aj, ak, al, am;
@@ -3291,7 +3436,7 @@ real g96bonds(int nbonds,
               const t_pbc *pbc, const t_graph *g,
               real lambda, real *dvdlambda,
               const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-              int gmx_unused *global_atom_index)
+              int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, m, ki, ai, aj, type;
     real dr2, fbond, vbond, fij, vtot;
@@ -3361,7 +3506,7 @@ real g96angles(int nbonds,
                const t_pbc *pbc, const t_graph *g,
                real lambda, real *dvdlambda,
                const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-               int gmx_unused *global_atom_index)
+               int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, ai, aj, ak, type, m, t1, t2;
     rvec r_ij, r_kj;
@@ -3433,7 +3578,7 @@ real cross_bond_bond(int nbonds,
                      const t_pbc *pbc, const t_graph *g,
                      real gmx_unused lambda, real gmx_unused *dvdlambda,
                      const t_mdatoms gmx_unused *md, t_fcdata gmx_unused  *fcd,
-                     int gmx_unused *global_atom_index)
+                     int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     /* Potential from Lawrence and Skimmer, Chem. Phys. Lett. 372 (2003)
      * pp. 842-847
@@ -3507,7 +3652,7 @@ real cross_bond_angle(int nbonds,
                       const t_pbc *pbc, const t_graph *g,
                       real gmx_unused lambda, real gmx_unused *dvdlambda,
                       const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                      int gmx_unused *global_atom_index)
+                      int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     /* Potential from Lawrence and Skimmer, Chem. Phys. Lett. 372 (2003)
      * pp. 842-847
@@ -3631,7 +3776,7 @@ real tab_bonds(int nbonds,
                const t_pbc *pbc, const t_graph *g,
                real lambda, real *dvdlambda,
                const t_mdatoms gmx_unused *md, t_fcdata *fcd,
-               int gmx_unused  *global_atom_index)
+               int gmx_unused  *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, m, ki, ai, aj, type, table;
     real dr, dr2, fbond, vbond, fij, vtot;
@@ -3695,7 +3840,7 @@ real tab_angles(int nbonds,
                 const t_pbc *pbc, const t_graph *g,
                 real lambda, real *dvdlambda,
                 const t_mdatoms gmx_unused  *md, t_fcdata *fcd,
-                int gmx_unused *global_atom_index)
+                int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, ai, aj, ak, t1, t2, type, table;
     rvec r_ij, r_kj;
@@ -3779,7 +3924,7 @@ real tab_dihs(int nbonds,
               const t_pbc *pbc, const t_graph *g,
               real lambda, real *dvdlambda,
               const t_mdatoms gmx_unused *md, t_fcdata *fcd,
-              int gmx_unused *global_atom_index)
+              int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
     int  i, type, ai, aj, ak, al, table;
     int  t1, t2, t3;
@@ -3809,7 +3954,8 @@ real tab_dihs(int nbonds,
 
         vtot += vpd;
         do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
-                   f, fshift, pbc, g, x, t1, t2, t3); /* 112	*/
+                   f, fshift, pbc, g, x, t1, t2, t3,
+                   locals_grid); /* 112	*/
 
 #ifdef DEBUG
         fprintf(debug, "pdih: (%d,%d,%d,%d) phi=%g\n",

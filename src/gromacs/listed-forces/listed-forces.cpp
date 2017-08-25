@@ -270,7 +270,7 @@ calc_one_bond(int thread,
               real *lambda, real *dvdl,
               const t_mdatoms *md, t_fcdata *fcd,
               gmx_bool bCalcEnerVir,
-              int *global_atom_index)
+              int *global_atom_index, mds::StressGrid *locals_grid)
 {
 #if GMX_SIMD_HAVE_REAL
     bool bUseSIMD = fr->use_simd_kernels;
@@ -309,7 +309,7 @@ calc_one_bond(int thread,
                           idef->iparams, &idef->cmap_grid,
                           x, f, fshift,
                           pbc, g, lambda[efptFTYPE], &(dvdl[efptFTYPE]),
-                          md, fcd, global_atom_index);
+                          md, fcd, global_atom_index, locals_grid);
         }
 #if GMX_SIMD_HAVE_REAL
         else if (ftype == F_ANGLES && bUseSIMD &&
@@ -320,7 +320,7 @@ calc_one_bond(int thread,
                                idef->iparams,
                                x, f,
                                pbc, g, lambda[efptFTYPE], md, fcd,
-                               global_atom_index);
+                               global_atom_index,locals_grid);
             v = 0;
         }
 #endif
@@ -335,7 +335,7 @@ calc_one_bond(int thread,
                                   idef->iparams,
                                   x, f,
                                   pbc, g, lambda[efptFTYPE], md, fcd,
-                                  global_atom_index);
+                                  global_atom_index,locals_grid);
             }
             else
 #endif
@@ -344,7 +344,7 @@ calc_one_bond(int thread,
                              idef->iparams,
                              x, f,
                              pbc, g, lambda[efptFTYPE], md, fcd,
-                             global_atom_index);
+                             global_atom_index,locals_grid);
             }
             v = 0;
         }
@@ -357,7 +357,7 @@ calc_one_bond(int thread,
                                idef->iparams,
                                (const rvec*)x, f,
                                pbc, g, lambda[efptFTYPE], md, fcd,
-                               global_atom_index);
+                               global_atom_index,locals_grid);
             v = 0;
         }
 #endif
@@ -367,7 +367,7 @@ calc_one_bond(int thread,
                                                   idef->iparams,
                                                   x, f, fshift,
                                                   pbc, g, lambda[efptFTYPE], &(dvdl[efptFTYPE]),
-                                                  md, fcd, global_atom_index);
+                                                  md, fcd, global_atom_index,locals_grid);
         }
     }
     else
@@ -412,7 +412,7 @@ void calc_listed(const t_commrec             *cr,
                  real *lambda,
                  const t_mdatoms *md,
                  t_fcdata *fcd, int *global_atom_index,
-                 int force_flags)
+                 int force_flags, mds::StressGrid *locals_grid)
 {
     struct bonded_threading_t *bt;
     gmx_bool                   bCalcEnerVir;
@@ -534,7 +534,7 @@ void calc_listed(const t_commrec             *cr,
                                       ft, fshift, fr, pbc_null, g, grpp,
                                       nrnb, lambda, dvdlt,
                                       md, fcd, bCalcEnerVir,
-                                      global_atom_index);
+                                      global_atom_index,locals_grid);
                     epot[ftype] += v;
                 }
             }
@@ -576,7 +576,7 @@ void calc_listed_lambda(const t_idef *idef,
                         real *lambda,
                         const t_mdatoms *md,
                         t_fcdata *fcd,
-                        int *global_atom_index)
+                        int *global_atom_index, mds::StressGrid *locals_grid)
 {
     int           ftype, nr_nonperturbed, nr;
     real          v;
@@ -624,7 +624,7 @@ void calc_listed_lambda(const t_idef *idef,
                                   x, f, fshift, fr, pbc_null, g,
                                   grpp, nrnb, lambda, dvdl_dum,
                                   md, fcd, TRUE,
-                                  global_atom_index);
+                                  global_atom_index,locals_grid);
                 epot[ftype] += v;
             }
         }
@@ -654,7 +654,8 @@ do_force_listed(struct gmx_wallcycle        *wcycle,
                 const t_mdatoms             *md,
                 t_fcdata                    *fcd,
                 int                         *global_atom_index,
-                int                          flags)
+                int                          flags,
+                mds::StressGrid             *locals_grid)
 {
     t_pbc pbc_full; /* Full PBC is needed for position restraints */
 
@@ -671,7 +672,7 @@ do_force_listed(struct gmx_wallcycle        *wcycle,
     }
     calc_listed(cr, wcycle, idef, x, hist, f, fr, pbc, &pbc_full,
                 graph, enerd, nrnb, lambda, md, fcd,
-                global_atom_index, flags);
+                global_atom_index, flags, locals_grid);
 
     /* Check if we have to determine energy differences
      * at foreign lambda's.
@@ -697,7 +698,7 @@ do_force_listed(struct gmx_wallcycle        *wcycle,
                     lam_i[j] = (i == 0 ? lambda[j] : fepvals->all_lambda[j][i-1]);
                 }
                 calc_listed_lambda(idef, x, fr, pbc, graph, &(enerd->foreign_grpp), enerd->foreign_term, nrnb, lam_i, md,
-                                   fcd, global_atom_index);
+                                   fcd, global_atom_index, locals_grid);
                 sum_epot(&(enerd->foreign_grpp), enerd->foreign_term);
                 enerd->enerpart_lambda[i] += enerd->foreign_term[F_EPOT];
             }

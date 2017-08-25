@@ -85,7 +85,7 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
                 rvec r_ij, rvec r_kj, rvec r_kl,
                 rvec m, rvec n, rvec4 f[], rvec fshift[],
                 const struct t_pbc *pbc, const struct t_graph *g,
-                const rvec *x, int t1, int t2, int t3);
+                const rvec *x, int t1, int t2, int t3, mds::StressGrid *locals_grid);
 
 /*! \brief Make a dihedral fall in the range (-pi,pi) */
 void make_dp_periodic(real *dp);
@@ -99,7 +99,8 @@ real
               const struct t_pbc *pbc, const struct t_graph *g,
               real gmx_unused lambda, real gmx_unused *dvdlambda,
               const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-              int  gmx_unused *global_atom_index);
+              int  gmx_unused *global_atom_index,
+              mds::StressGrid *locals_grid);
 
 //! \cond
 /*************************************************************************
@@ -124,7 +125,8 @@ void
                  const struct t_graph gmx_unused *g,
                  real lambda,
                  const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                 int gmx_unused *global_atom_index);
+                 int gmx_unused *global_atom_index,
+                 mds::StressGrid *locals_grid);
 
 /* TODO these declarations should be internal to the module */
 
@@ -139,7 +141,8 @@ void
                        const struct t_graph gmx_unused *g,
                        real gmx_unused lambda,
                        const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                       int gmx_unused *global_atom_index);
+                       int gmx_unused *global_atom_index,
+                       mds::StressGrid *locals_grid);
 
 /* As pdihs_noener(), but using SIMD to calculate many dihedrals at once. */
 void
@@ -150,7 +153,8 @@ void
                       const struct t_graph gmx_unused *g,
                       real gmx_unused lambda,
                       const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                      int gmx_unused *global_atom_index);
+                      int gmx_unused *global_atom_index,
+                      mds::StressGrid *locals_grid);
 
 /* As rbdihs(), when not needing energy or shift force, using SIMD to calculate many dihedrals at once. */
 void
@@ -161,7 +165,8 @@ void
                        const struct t_graph gmx_unused *g,
                        real gmx_unused lambda,
                        const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
-                       int gmx_unused *global_atom_index);
+                       int gmx_unused *global_atom_index,
+                       mds::StressGrid *locals_grid);
 
 //! \endcond
 

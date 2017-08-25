@@ -222,7 +222,8 @@ static void check_viol(FILE *log,
         snew(fshift, SHIFTS);
         interaction_function[F_DISRES].ifunc(n, &forceatoms[i], forceparams,
                                              (const rvec*)x, f, fshift,
-                                             pbc, g, lam, &dvdl, NULL, fcd, NULL);
+                                             pbc, g, lam, &dvdl, NULL, fcd, NULL,
+                                             NULL /*locals_null*/);
         sfree(fshift);
         viol = fcd->disres.sumviol;
 
