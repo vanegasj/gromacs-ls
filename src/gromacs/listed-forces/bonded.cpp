@@ -760,6 +760,8 @@ real water_pol(int nbonds,
 #endif
     real vtot, fij, r_HH, r_OD, r_nW, tx, ty, tz, qS;
 
+    gmx_fatal(FARGS,"Cannot do local stress with water polarization.");
+
     vtot = 0.0;
     if (nbonds > 0)
     {
@@ -935,6 +937,8 @@ real thole_pol(int nbonds,
     int        i, type, a1, da1, a2, da2;
     real       q1, q2, qq, a, al1, al2, afac;
     real       V             = 0;
+  
+    gmx_fatal(FARGS,"Cannot do local stress with thole polarization.");
 
     for (i = 0; (i < nbonds); )
     {
@@ -1107,6 +1111,8 @@ angles_noener_simd(int nbonds,
     SimdReal             f_ix_S, f_iy_S, f_iz_S;
     SimdReal             f_kx_S, f_ky_S, f_kz_S;
     GMX_ALIGNED(real, GMX_SIMD_REAL_WIDTH)    pbc_simd[9*GMX_SIMD_REAL_WIDTH];
+  
+    gmx_fatal(FARGS,"Cannot do local stress with angles_noener_simd function (yet!).");
 
     set_pbc_simd(pbc, pbc_simd);
 
@@ -1265,6 +1271,10 @@ real linear_angles(int nbonds,
 
         vtot += va;
 
+        /* begin stress tensor */
+        locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+        /* end stress tensor */
+
         if (g)
         {
             copy_ivec(SHIFT_IVEC(g, aj), jt);
@@ -1397,6 +1407,10 @@ real urey_bradley(int nbonds,
             fshift[ki][m]      += fik;
             fshift[CENTRAL][m] -= fik;
         }
+        
+        /* begin stress tensor */
+        locals_bonds_distribute_stress(ai, aj, fbond, x, r_ik, locals_grid);
+        /* end stress tensor */
     }
     return vtot;
 }
@@ -1475,9 +1489,11 @@ real quartic_angles(int nbonds,
                 f[aj][m] += f_j[m];
                 f[ak][m] += f_k[m];
             }
+
             /* begin stress tensor */
             locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
             /* end stress tensor */
+
             if (g)
             {
                 copy_ivec(SHIFT_IVEC(g, aj), jt);
@@ -1551,6 +1567,8 @@ dih_angle_simd(const rvec *x,
     SimdReal toler_S;
     SimdReal nrkj2_min_S;
     SimdReal real_eps_S;
+    
+    gmx_fatal(FARGS,"Cannot do local stress with dig_angle_simd function (yet!).");
 
     /* Used to avoid division by zero.
      * We take into acount that we multiply the result by real_eps_S.
@@ -1749,6 +1767,8 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
     rvec uvec, vvec, svec;
     real iprm, iprn, nrkj, nrkj2, nrkj_1, nrkj_2;
     real a, b, p, q, toler;
+    
+    gmx_fatal(FARGS,"Cannot do local stress with do_dih_fun_noshiftf function (yet!).");
 
     iprm  = iprod(m, m);       /*  5    */
     iprn  = iprod(n, n);       /*  5	*/
@@ -1948,6 +1968,8 @@ pdihs_noener(int nbonds,
     int  t1, t2, t3;
     rvec r_ij, r_kj, r_kl, m, n;
     real phi, sign, ddphi_tot, ddphi;
+    
+    gmx_fatal(FARGS,"Cannot do local stress with pdihs_noener function (yet!).");
 
     for (i = 0; (i < nbonds); )
     {
@@ -2020,6 +2042,8 @@ pdihs_noener_simd(int nbonds,
     SimdReal              mddphi_S;
     SimdReal              sf_i_S, msf_l_S;
     GMX_ALIGNED(real, GMX_SIMD_REAL_WIDTH)    pbc_simd[9*GMX_SIMD_REAL_WIDTH];
+    
+    gmx_fatal(FARGS,"Cannot do local stress with pdihs_noener_simd function (yet!).");
 
     /* Extract aligned pointer for parameters and variables */
     cp    = buf + 0*GMX_SIMD_REAL_WIDTH;
@@ -2137,6 +2161,8 @@ rbdihs_noener_simd(int nbonds,
 
     SimdReal              pi_S(M_PI);
     SimdReal              one_S(1.0);
+    
+    gmx_fatal(FARGS, "Cannot do local stress with rbdihs_noener_simd function (yet!).");
 
     set_pbc_simd(pbc, pbc_simd);
 
@@ -2412,6 +2438,7 @@ real angres(int nbonds,
             const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
             int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
+    gmx_fatal(FARGS,"Cannot do local stress with angle restraints.");
     return low_angres(nbonds, forceatoms, forceparams, x, f, fshift, pbc, g,
                       lambda, dvdlambda, FALSE);
 }
@@ -2424,6 +2451,7 @@ real angresz(int nbonds,
              const t_mdatoms gmx_unused *md, t_fcdata gmx_unused *fcd,
              int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
+    gmx_fatal(FARGS,"Cannot do local stress with angle restraints.");
     return low_angres(nbonds, forceatoms, forceparams, x, f, fshift, pbc, g,
                       lambda, dvdlambda, TRUE);
 }
@@ -2552,6 +2580,8 @@ real restrangles(int nbonds,
     rvec f_i, f_j, f_k;
     real prefactor, ratio_ante, ratio_post;
     rvec delta_ante, delta_post, vec_temp;
+  
+    gmx_fatal(FARGS,"Cannot do local stress with angle restraints.");
 
     vtot = 0.0;
     for (i = 0; (i < nbonds); )
@@ -2660,7 +2690,8 @@ real restrdihs(int nbonds,
     real factor_phi_ak_ante, factor_phi_ak_crnt, factor_phi_ak_post;
     real factor_phi_al_ante, factor_phi_al_crnt, factor_phi_al_post;
     real prefactor_phi;
-
+  
+    gmx_fatal(FARGS,"Cannot do local stress with restrdihs function (yet!).");
 
     vtot = 0.0;
     for (i = 0; (i < nbonds); )
@@ -2768,8 +2799,7 @@ real cbtdihs(int nbonds,
     rvec f_theta_ante_ai, f_theta_ante_aj, f_theta_ante_ak;
     rvec f_theta_post_aj, f_theta_post_ak, f_theta_post_al;
 
-
-
+    gmx_fatal(FARGS,"Cannot do local stress with cbtdihs function yet.");
 
     vtot = 0.0;
     for (i = 0; (i < nbonds); )
@@ -3397,6 +3427,57 @@ cmap_dihs(int nbonds,
         rvec_inc(fshift[CENTRAL], f2_j);
         rvec_inc(fshift[t22], f2_k);
         rvec_inc(fshift[t32], f2_l);
+        
+        /* begin stress tensor */
+        if (locals_grid != NULL)
+        {
+            if ((locals_grid->GetContribType()== mds_all) || (locals_grid->GetContribType() == mds_cmp))
+            {
+                rvec Ri, Rj, Rk, Rl, Rm, dx;
+                rvec Fi, Fj, Fk, Fl, Fm;
+                rvec lpR[5], lpF[5];
+                int  lpatIDs[5];
+            
+                copy_rvec(x[ai], Ri);
+                pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+                rvec_add(x[ai], dx, Rj);
+                pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+                rvec_add(x[ai], dx, Rk);
+                pbc_rvec_sub(pbc, x[al], x[ai], dx);
+                rvec_add(x[ai], dx, Rl);
+                pbc_rvec_sub(pbc, x[am], x[ai], dx);
+                rvec_add(x[ai], dx, Rm);
+
+                //Fi
+                copy_rvec(f1_i,Fi);
+                //Fj
+                copy_rvec(f1_j,Fj);
+                rvec_add(Fj,f2_i,Fj);
+                //Fk
+                copy_rvec(f1_k,Fk);
+                rvec_add(Fk,f2_j,Fk);
+                //Fl
+                copy_rvec(f1_l,Fl);
+                rvec_add(Fl,f2_k,Fl);
+                //Fm
+                copy_rvec(f2_l,Fm);
+
+                lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2];
+                lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2];
+                lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2];
+                lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
+                lpR[4][0] = Rm[0]; lpR[4][1] = Rm[1]; lpR[4][2] = Rm[2];
+                lpatIDs[0] = ai; lpatIDs[1] = aj; lpatIDs[2] = ak; lpatIDs[3] = al; lpatIDs[4] = am;
+                lpF[0][0] = Fi[0]; lpF[0][1] = Fi[1]; lpF[0][2] = Fi[2];
+                lpF[1][0] = Fj[0]; lpF[1][1] = Fj[1]; lpF[1][2] = Fj[2];
+                lpF[2][0] = Fk[0]; lpF[2][1] = Fk[1]; lpF[2][2] = Fk[2];
+                lpF[3][0] = Fl[0]; lpF[3][1] = Fl[1]; lpF[3][2] = Fl[2];
+                lpF[4][0] = Fm[0]; lpF[4][1] = Fm[1]; lpF[4][2] = Fm[2];
+
+                locals_grid->DistributeInteraction(5, lpR, lpF, lpatIDs);
+            }
+        }
+        /* end stress tensor */
     }
     return vtot;
 }
@@ -3485,6 +3566,10 @@ real g96bonds(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
+        
+        /* begin stress tensor */
+        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+        /* end stress tensor */
     }               /* 44 TOTAL	*/
     return vtot;
 }
@@ -3559,6 +3644,10 @@ real g96angles(int nbonds,
             f[ak][m] += f_k[m];
         }
 
+        /* begin stress tensor */
+        locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+        /* end stress tensor */
+
         if (g)
         {
             copy_ivec(SHIFT_IVEC(g, aj), jt);
@@ -3631,6 +3720,10 @@ real cross_bond_bond(int nbonds,
             f[aj][m] += f_j[m];
             f[ak][m] += f_k[m];
         }
+        
+        /* begin stress tensor */
+        locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+        /* end stress tensor */
 
         /* Virial stuff */
         if (g)
@@ -3715,6 +3808,10 @@ real cross_bond_angle(int nbonds,
             f[aj][m] += f_j[m];
             f[ak][m] += f_k[m];
         }
+        
+        /* begin stress tensor */
+        locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+        /* end stress tensor */
 
         /* Virial stuff */
         if (g)
@@ -3834,6 +3931,10 @@ real tab_bonds(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
+        
+        /* begin stress tensor */
+        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+        /* end stress tensor */
     }               /* 62 TOTAL	*/
     return vtot;
 }
@@ -3905,6 +4006,11 @@ real tab_angles(int nbonds,
                 f[aj][m] += f_j[m];
                 f[ak][m] += f_k[m];
             }
+            
+            /* begin stress tensor */
+            locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+            /* end stress tensor */
+
             if (g)
             {
                 copy_ivec(SHIFT_IVEC(g, aj), jt);
