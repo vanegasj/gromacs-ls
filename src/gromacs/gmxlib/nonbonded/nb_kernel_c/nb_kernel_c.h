@@ -37,20 +37,12 @@
 
 #include "gromacs/gmxlib/nonbonded/nb_kernel.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* List of kernels for this architecture with metadata about them */
-extern "C" nb_kernel_info_t
+extern nb_kernel_info_t
 kernellist_c[];
 
 /* Length of kernellist_c */
-extern "C" int
+extern int
 kernellist_c_size;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -280,7 +280,7 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
     natoms              = mdatoms->nr;
     ni0                 = 0;
     ni1                 = mdatoms->homenr;
-    aadata              = fr->AllvsAll_work;
+    aadata              = (gmx_allvsall_data_t*)(fr->AllvsAll_work);
     excl                = kernel_data->exclusions;
 
     Vc                  = kernel_data->energygrp_elec;
