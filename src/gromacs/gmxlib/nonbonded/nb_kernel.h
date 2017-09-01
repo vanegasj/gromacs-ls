@@ -35,7 +35,7 @@
 #ifndef _nb_kernel_h_
 #define _nb_kernel_h_
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "gromacs/gmxlib/nrnb.h"
 #include "gromacs/math/vectypes.h"

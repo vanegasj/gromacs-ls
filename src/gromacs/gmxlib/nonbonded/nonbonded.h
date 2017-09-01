@@ -37,7 +37,7 @@
 #ifndef GMX_GMXLIB_NONBONDED_NONBONDED_H
 #define GMX_GMXLIB_NONBONDED_NONBONDED_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "gromacs/gmxlib/nrnb.h"
 #include "gromacs/math/vectypes.h"
