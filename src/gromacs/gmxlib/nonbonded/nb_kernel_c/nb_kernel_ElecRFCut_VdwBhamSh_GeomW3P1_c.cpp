@@ -217,7 +217,10 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3P1_VF_c
 
             r00              = rsq00*rinv00;
 
-            qq00             = iq0*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq00             = 0.0;
+            else
+                qq00             = iq0*jq0;
             if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
             {
                 c6_00            = 0.0;
@@ -288,7 +291,10 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3P1_VF_c
             if (rsq10<rcutoff2)
             {
 
-            qq10             = iq1*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq10             = 0.0;
+            else
+                qq10             = iq1*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             velec            = qq10*(rinv10+krf*rsq10-crf);
@@ -338,7 +344,10 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3P1_VF_c
             if (rsq20<rcutoff2)
             {
 
-            qq20             = iq2*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq20             = 0.0;
+            else
+                qq20             = iq2*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             velec            = qq20*(rinv20+krf*rsq20-crf);
@@ -595,7 +604,10 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3P1_F_c
 
             r00              = rsq00*rinv00;
 
-            qq00             = iq0*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq00             = 0.0;
+            else
+                qq00             = iq0*jq0;
             if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
             {
                 c6_00            = 0.0;
@@ -660,7 +672,10 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3P1_F_c
             if (rsq10<rcutoff2)
             {
 
-            qq10             = iq1*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq10             = 0.0;
+            else
+                qq10             = iq1*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             felec            = qq10*(rinv10*rinvsq10-krf2);
@@ -706,7 +721,10 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3P1_F_c
             if (rsq20<rcutoff2)
             {
 
-            qq20             = iq2*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq20             = 0.0;
+            else
+                qq20             = iq2*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             felec            = qq20*(rinv20*rinvsq20-krf2);

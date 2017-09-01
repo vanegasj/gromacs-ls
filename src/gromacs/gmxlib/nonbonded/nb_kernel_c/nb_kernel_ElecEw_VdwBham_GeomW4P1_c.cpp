@@ -289,7 +289,10 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_VF_c
 
             r10              = rsq10*rinv10;
 
-            qq10             = iq1*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq10             = 0.0;
+            else
+                qq10             = iq1*jq0;
 
             /* EWALD ELECTROSTATICS */
 
@@ -343,7 +346,10 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_VF_c
 
             r20              = rsq20*rinv20;
 
-            qq20             = iq2*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq20             = 0.0;
+            else
+                qq20             = iq2*jq0;
 
             /* EWALD ELECTROSTATICS */
 
@@ -397,7 +403,10 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_VF_c
 
             r30              = rsq30*rinv30;
 
-            qq30             = iq3*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq30             = 0.0;
+            else
+                qq30             = iq3*jq0;
 
             /* EWALD ELECTROSTATICS */
 
@@ -733,7 +742,10 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_F_c
 
             r10              = rsq10*rinv10;
 
-            qq10             = iq1*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq10             = 0.0;
+            else
+                qq10             = iq1*jq0;
 
             /* EWALD ELECTROSTATICS */
 
@@ -782,7 +794,10 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_F_c
 
             r20              = rsq20*rinv20;
 
-            qq20             = iq2*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq20             = 0.0;
+            else
+                qq20             = iq2*jq0;
 
             /* EWALD ELECTROSTATICS */
 
@@ -831,7 +846,10 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_F_c
 
             r30              = rsq30*rinv30;
 
-            qq30             = iq3*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq30             = 0.0;
+            else
+                qq30             = iq3*jq0;
 
             /* EWALD ELECTROSTATICS */
 

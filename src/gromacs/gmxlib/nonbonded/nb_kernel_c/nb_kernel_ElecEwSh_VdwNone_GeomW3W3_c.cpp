@@ -126,15 +126,42 @@ nb_kernel_ElecEwSh_VdwNone_GeomW3W3_VF_c
     jq0              = charge[inr+0];
     jq1              = charge[inr+1];
     jq2              = charge[inr+2];
-    qq00             = iq0*jq0;
-    qq01             = iq0*jq1;
-    qq02             = iq0*jq2;
-    qq10             = iq1*jq0;
-    qq11             = iq1*jq1;
-    qq12             = iq1*jq2;
-    qq20             = iq2*jq0;
-    qq21             = iq2*jq1;
-    qq22             = iq2*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq00             = 0.0;
+    else
+        qq00             = iq0*jq0;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq01             = 0.0;
+    else
+        qq01             = iq0*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq02             = 0.0;
+    else
+        qq02             = iq0*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq10             = 0.0;
+    else
+        qq10             = iq1*jq0;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq11             = 0.0;
+    else
+        qq11             = iq1*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq12             = 0.0;
+    else
+        qq12             = iq1*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq20             = 0.0;
+    else
+        qq20             = iq2*jq0;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq21             = 0.0;
+    else
+        qq21             = iq2*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq22             = 0.0;
+    else
+        qq22             = iq2*jq2;
 
     /* When we use explicit cutoffs the value must be identical for elec and VdW, so use elec as an arbitrary choice */
     rcutoff          = fr->rcoulomb;
@@ -901,15 +928,42 @@ nb_kernel_ElecEwSh_VdwNone_GeomW3W3_F_c
     jq0              = charge[inr+0];
     jq1              = charge[inr+1];
     jq2              = charge[inr+2];
-    qq00             = iq0*jq0;
-    qq01             = iq0*jq1;
-    qq02             = iq0*jq2;
-    qq10             = iq1*jq0;
-    qq11             = iq1*jq1;
-    qq12             = iq1*jq2;
-    qq20             = iq2*jq0;
-    qq21             = iq2*jq1;
-    qq22             = iq2*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq00             = 0.0;
+    else
+        qq00             = iq0*jq0;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq01             = 0.0;
+    else
+        qq01             = iq0*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq02             = 0.0;
+    else
+        qq02             = iq0*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq10             = 0.0;
+    else
+        qq10             = iq1*jq0;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq11             = 0.0;
+    else
+        qq11             = iq1*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq12             = 0.0;
+    else
+        qq12             = iq1*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq20             = 0.0;
+    else
+        qq20             = iq2*jq0;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq21             = 0.0;
+    else
+        qq21             = iq2*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq22             = 0.0;
+    else
+        qq22             = iq2*jq2;
 
     /* When we use explicit cutoffs the value must be identical for elec and VdW, so use elec as an arbitrary choice */
     rcutoff          = fr->rcoulomb;

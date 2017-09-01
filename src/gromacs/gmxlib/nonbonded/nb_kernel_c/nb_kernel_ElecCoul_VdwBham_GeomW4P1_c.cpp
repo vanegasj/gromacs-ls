@@ -279,7 +279,10 @@ nb_kernel_ElecCoul_VdwBham_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq10             = iq1*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq10             = 0.0;
+            else
+                qq10             = iq1*jq0;
 
             /* COULOMB ELECTROSTATICS */
             velec            = qq10*rinv10;
@@ -324,7 +327,10 @@ nb_kernel_ElecCoul_VdwBham_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq20             = iq2*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq20             = 0.0;
+            else
+                qq20             = iq2*jq0;
 
             /* COULOMB ELECTROSTATICS */
             velec            = qq20*rinv20;
@@ -369,7 +375,10 @@ nb_kernel_ElecCoul_VdwBham_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq30             = iq3*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq30             = 0.0;
+            else
+                qq30             = iq3*jq0;
 
             /* COULOMB ELECTROSTATICS */
             velec            = qq30*rinv30;
@@ -688,7 +697,10 @@ nb_kernel_ElecCoul_VdwBham_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq10             = iq1*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq10             = 0.0;
+            else
+                qq10             = iq1*jq0;
 
             /* COULOMB ELECTROSTATICS */
             velec            = qq10*rinv10;
@@ -730,7 +742,10 @@ nb_kernel_ElecCoul_VdwBham_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq20             = iq2*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq20             = 0.0;
+            else
+                qq20             = iq2*jq0;
 
             /* COULOMB ELECTROSTATICS */
             velec            = qq20*rinv20;
@@ -772,7 +787,10 @@ nb_kernel_ElecCoul_VdwBham_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq30             = iq3*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq30             = 0.0;
+            else
+                qq30             = iq3*jq0;
 
             /* COULOMB ELECTROSTATICS */
             velec            = qq30*rinv30;

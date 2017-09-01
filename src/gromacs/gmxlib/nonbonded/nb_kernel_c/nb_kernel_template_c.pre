@@ -264,7 +264,10 @@ void
     /*     #endfor */
     /*     #for I,J in PAIRS_IJ */
     /*         #if 'electrostatics' in INTERACTION_FLAGS[I][J] */
-    qq{I}{J}             = iq{I}*jq{J};
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq{I}{J}             = 0.0;
+    else
+        qq{I}{J}             = iq{I}*jq{J};
     /*         #endif */
     /*         #if 'vdw' in INTERACTION_FLAGS[I][J] */
     /*             #if 'Buckingham' in KERNEL_VDW */
@@ -497,7 +500,10 @@ void
             /*     ## For water geometries we already loaded parameters at the start of the kernel */
             /*     #if not 'Water' in GEOMETRY_J */
             /*         #if 'electrostatics' in INTERACTION_FLAGS[I][J] */
-            qq{I}{J}             = iq{I}*jq{J};
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq{I}{J}             = 0.0;
+            else
+                qq{I}{J}             = iq{I}*jq{J};
             /*             #define INNERFLOPS INNERFLOPS+1 */
             /*         #endif */
             /*         #if 'vdw' in INTERACTION_FLAGS[I][J] */

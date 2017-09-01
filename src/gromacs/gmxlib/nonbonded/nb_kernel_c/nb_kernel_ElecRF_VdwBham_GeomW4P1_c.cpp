@@ -282,7 +282,10 @@ nb_kernel_ElecRF_VdwBham_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq10             = iq1*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq10             = 0.0;
+            else
+                qq10             = iq1*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             velec            = qq10*(rinv10+krf*rsq10-crf);
@@ -327,7 +330,10 @@ nb_kernel_ElecRF_VdwBham_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq20             = iq2*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq20             = 0.0;
+            else
+                qq20             = iq2*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             velec            = qq20*(rinv20+krf*rsq20-crf);
@@ -372,7 +378,10 @@ nb_kernel_ElecRF_VdwBham_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq30             = iq3*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq30             = 0.0;
+            else
+                qq30             = iq3*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             velec            = qq30*(rinv30+krf*rsq30-crf);
@@ -694,7 +703,10 @@ nb_kernel_ElecRF_VdwBham_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq10             = iq1*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq10             = 0.0;
+            else
+                qq10             = iq1*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             felec            = qq10*(rinv10*rinvsq10-krf2);
@@ -735,7 +747,10 @@ nb_kernel_ElecRF_VdwBham_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq20             = iq2*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq20             = 0.0;
+            else
+                qq20             = iq2*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             felec            = qq20*(rinv20*rinvsq20-krf2);
@@ -776,7 +791,10 @@ nb_kernel_ElecRF_VdwBham_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            qq30             = iq3*jq0;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq30             = 0.0;
+            else
+                qq30             = iq3*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             felec            = qq30*(rinv30*rinvsq30-krf2);

@@ -150,15 +150,42 @@ nb_kernel_ElecCSTab_VdwBham_GeomW4W4_VF_c
         cexp1_00         = vdwparam[vdwioffset0+vdwjidx0+1];
         cexp2_00         = vdwparam[vdwioffset0+vdwjidx0+2];
     }
-    qq11             = iq1*jq1;
-    qq12             = iq1*jq2;
-    qq13             = iq1*jq3;
-    qq21             = iq2*jq1;
-    qq22             = iq2*jq2;
-    qq23             = iq2*jq3;
-    qq31             = iq3*jq1;
-    qq32             = iq3*jq2;
-    qq33             = iq3*jq3;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq11             = 0.0;
+    else
+        qq11             = iq1*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq12             = 0.0;
+    else
+        qq12             = iq1*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq13             = 0.0;
+    else
+        qq13             = iq1*jq3;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq21             = 0.0;
+    else
+        qq21             = iq2*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq22             = 0.0;
+    else
+        qq22             = iq2*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq23             = 0.0;
+    else
+        qq23             = iq2*jq3;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq31             = 0.0;
+    else
+        qq31             = iq3*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq32             = 0.0;
+    else
+        qq32             = iq3*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq33             = 0.0;
+    else
+        qq33             = iq3*jq3;
 
     outeriter        = 0;
     inneriter        = 0;
@@ -1017,15 +1044,42 @@ nb_kernel_ElecCSTab_VdwBham_GeomW4W4_F_c
         cexp1_00         = vdwparam[vdwioffset0+vdwjidx0+1];
         cexp2_00         = vdwparam[vdwioffset0+vdwjidx0+2];
     }
-    qq11             = iq1*jq1;
-    qq12             = iq1*jq2;
-    qq13             = iq1*jq3;
-    qq21             = iq2*jq1;
-    qq22             = iq2*jq2;
-    qq23             = iq2*jq3;
-    qq31             = iq3*jq1;
-    qq32             = iq3*jq2;
-    qq33             = iq3*jq3;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq11             = 0.0;
+    else
+        qq11             = iq1*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq12             = 0.0;
+    else
+        qq12             = iq1*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq13             = 0.0;
+    else
+        qq13             = iq1*jq3;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq21             = 0.0;
+    else
+        qq21             = iq2*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq22             = 0.0;
+    else
+        qq22             = iq2*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq23             = 0.0;
+    else
+        qq23             = iq2*jq3;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq31             = 0.0;
+    else
+        qq31             = iq3*jq1;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq32             = 0.0;
+    else
+        qq32             = iq3*jq2;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        qq33             = 0.0;
+    else
+        qq33             = iq3*jq3;
 
     outeriter        = 0;
     inneriter        = 0;
