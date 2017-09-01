@@ -197,6 +197,7 @@ gmx_add_cache_dependency(GMX_COOL_QUOTES BOOL "NOT GMX_FAHCORE" OFF)
 
 option(GMX_USE_OPENCL "Enable OpenCL acceleration" OFF)
 option(GMX_USE_CUDA "Enable CUDA acceleration" OFF)
+option(GMX_USE_SIMD "Enable SIMD detection and usage" OFF)
 
 # Decide on GPU settings based on user-settings and GPU/CUDA detection.
 # GCC 4.6 requires CUDA 5.0 and VS2015 requires CUDA 8.0
@@ -232,13 +233,14 @@ else()
     endif()
 endif()
 
-include(gmxDetectSimd)
-gmx_detect_simd(GMX_SUGGESTED_SIMD)
+# Search for a usable SIMD instruction set
+# include(gmxDetectSimd)
+# gmx_detect_simd(GMX_SUGGESTED_SIMD)
 
 gmx_option_multichoice(
     GMX_SIMD
     "SIMD instruction set for CPU kernels and compiler optimization"
-    "${GMX_SUGGESTED_SIMD}"
+    "None"
     None SSE2 SSE4.1 AVX_128_FMA AVX_256 AVX2_256 AVX_512 AVX_512_KNL MIC ARM_NEON ARM_NEON_ASIMD IBM_QPX IBM_VMX IBM_VSX Sparc64_HPC_ACE Reference)
 
 if(GMX_TARGET_MIC)
