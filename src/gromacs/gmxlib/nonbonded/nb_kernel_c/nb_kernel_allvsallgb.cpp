@@ -282,6 +282,8 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
     real           *     Vc;
     real           *     vpol;
     mds::StressGrid     *locals_grid;
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
 
     x                   = xx[0];
     f                   = ff[0];
@@ -368,10 +370,18 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
                 /* Load parameters for j atom */
                 isaj              = invsqrta[k];
                 isaprod           = isai*isaj;
-                qq                = iq*charge[k];
+                if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                    qq                = 0.0;
+                else
+                    qq                = iq*charge[k];
+
                 vcoul             = qq*rinv;
                 fscal             = vcoul*rinv;
-                qq                = isaprod*(-qq)*gbfactor;
+                if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                    qq                = 0.0;
+                else
+                    qq                = isaprod*(-qq)*gbfactor;
+
                 gbscale           = isaprod*gbtabscale;
                 if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
                 {
@@ -421,6 +431,23 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
                 tx                = fscal*dx;
                 ty                = fscal*dy;
                 tz                = fscal*dz;
+                
+                /* begin stress tensor */
+                if (locals_grid != NULL)
+                {
+                    if ((locals_grid->GetContribType() == mds_all) ||
+                        (locals_grid->GetContribType() == mds_vdw) ||
+                        (locals_grid->GetContribType() == mds_cou))
+                    {
+                        lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
+                        lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
+                        lpatIDs[0] = i; lpatIDs[1] = k;
+                        lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                        lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                        locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                    }
+                }
+                /* end stress tensor */
 
                 /* Increment i atom force */
                 fix               = fix + tx;
@@ -457,10 +484,18 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
             /* Load parameters for j atom */
             isaj              = invsqrta[k];
             isaprod           = isai*isaj;
-            qq                = iq*charge[k];
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq                = 0.0;
+            else
+                qq                = iq*charge[k];
+
             vcoul             = qq*rinv;
             fscal             = vcoul*rinv;
-            qq                = isaprod*(-qq)*gbfactor;
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+                qq                = 0.0;
+            else
+                qq                = isaprod*(-qq)*gbfactor;
+
             gbscale           = isaprod*gbtabscale;
             if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
             {
@@ -510,6 +545,23 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
             tx                = fscal*dx;
             ty                = fscal*dy;
             tz                = fscal*dz;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
+                    lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
+                    lpatIDs[0] = i; lpatIDs[1] = k;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Increment i atom force */
             fix               = fix + tx;
