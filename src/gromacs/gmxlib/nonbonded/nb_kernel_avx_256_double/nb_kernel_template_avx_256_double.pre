@@ -40,7 +40,7 @@
 
 #include "config.h"
 
-#include <math.h>
+#include <cmath>
 
 #include "../nb_kernel.h"
 #include "gromacs/gmxlib/nrnb.h"
@@ -117,6 +117,7 @@ void
     real             *fjptrA,*fjptrB,*fjptrC,*fjptrD;
     real             scratch[4*DIM];
     __m256d          tx,ty,tz,fscal,rcutoff,rcutoff2,jidxall;
+    mds::StressGrid  *locals_grid;
     /* #for I in PARTICLES_I */
     real *           vdwioffsetptr{I};
     /* #if 'LJEwald' in KERNEL_VDW */
@@ -190,6 +191,7 @@ void
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     /* #if KERNEL_ELEC != 'None' */
     facel            = _mm256_set1_pd(fr->epsfac);
     charge           = mdatoms->chargeA;
@@ -274,12 +276,29 @@ void
     /*         #endif */
     /*         #if 'vdw' in INTERACTION_FLAGS[I][J] */
     /*             #if 'LJEwald' in KERNEL_VDW */
-    c6_{I}{J}            = _mm256_set1_pd(vdwioffsetptr{I}[vdwjidx{J}A]);
-    c12_{I}{J}           = _mm256_set1_pd(vdwioffsetptr{I}[vdwjidx{J}A+1]);
-    c6grid_{I}{J}        = _mm256_set1_pd(vdwgridioffsetptr{I}[vdwjidx{J}A]);
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    {
+        c6_{I}{J}            = _mm256_set1_pd(0.0);
+        c12_{I}{J}           = _mm256_set1_pd(0.0);
+        c6grid_{I}{J}        = _mm256_set1_pd(0.0);
+    }
+    else
+    {
+        c6_{I}{J}            = _mm256_set1_pd(vdwioffsetptr{I}[vdwjidx{J}A]);
+        c12_{I}{J}           = _mm256_set1_pd(vdwioffsetptr{I}[vdwjidx{J}A+1]);
+        c6grid_{I}{J}        = _mm256_set1_pd(vdwgridioffsetptr{I}[vdwjidx{J}A]);
+    }
     /*             #else */
-    c6_{I}{J}            = _mm256_set1_pd(vdwioffsetptr{I}[vdwjidx{J}A]);
-    c12_{I}{J}           = _mm256_set1_pd(vdwioffsetptr{I}[vdwjidx{J}A+1]);
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    {
+        c6_{I}{J}            = _mm256_set1_pd(0.0);
+        c12_{I}{J}           = _mm256_set1_pd(0.0);
+    }
+    else
+    {
+        c6_{I}{J}            = _mm256_set1_pd(vdwioffsetptr{I}[vdwjidx{J}A]);
+        c12_{I}{J}           = _mm256_set1_pd(vdwioffsetptr{I}[vdwjidx{J}A+1]);
+    }
     /*             #endif */
     /*         #endif */
     /*     #endfor */
@@ -581,10 +600,17 @@ void
                                             &c6_{I}{J},&c12_{I}{J});
 
             /*           #if 'LJEwald' in KERNEL_VDW */
-            c6grid_{I}{J}       = gmx_mm256_load_4real_swizzle_pd(vdwgridioffsetptr{I}+vdwjidx{J}A,
-                                                                  vdwgridioffsetptr{I}+vdwjidx{J}B,
-                                                                  vdwgridioffsetptr{I}+vdwjidx{J}C,
-                                                                  vdwgridioffsetptr{I}+vdwjidx{J}D);
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6grid_{I}{J}       = _mm256_set1_pd(0.0);
+            }
+            else
+            {
+                c6grid_{I}{J}       = gmx_mm256_load_4real_swizzle_pd(vdwgridioffsetptr{I}+vdwjidx{J}A,
+                                                                      vdwgridioffsetptr{I}+vdwjidx{J}B,
+                                                                      vdwgridioffsetptr{I}+vdwjidx{J}C,
+                                                                      vdwgridioffsetptr{I}+vdwjidx{J}D);
+            }
             /*           #endif */
             /*         #endif */
             /*     #endif */

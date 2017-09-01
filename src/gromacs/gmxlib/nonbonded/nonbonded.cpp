@@ -333,6 +333,7 @@ void do_nonbonded(t_forcerec *fr,
     kernel_data.exclusions              = excl;
     kernel_data.lambda                  = lambda;
     kernel_data.dvdl                    = dvdl;
+    kernel_data.locals_grid             = locals_grid;
 
     if (fr->bAllvsAll)
     {

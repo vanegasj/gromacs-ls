@@ -39,7 +39,7 @@
 
 #include "config.h"
 
-#include <math.h>
+#include <cmath>
 
 #include "../nb_kernel.h"
 #include "gromacs/gmxlib/nrnb.h"
@@ -80,6 +80,7 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomW3W3_VF_avx_256_double
     real             *fjptrA,*fjptrB,*fjptrC,*fjptrD;
     real             scratch[4*DIM];
     __m256d          tx,ty,tz,fscal,rcutoff,rcutoff2,jidxall;
+    mds::StressGrid  *locals_grid;
     real *           vdwioffsetptr0;
     __m256d          ix0,iy0,iz0,fix0,fiy0,fiz0,iq0,isai0;
     real *           vdwioffsetptr1;
@@ -129,6 +130,7 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomW3W3_VF_avx_256_double
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     facel            = _mm256_set1_pd(fr->epsfac);
     charge           = mdatoms->chargeA;
     nvdwtype         = fr->ntype;
@@ -150,8 +152,16 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomW3W3_VF_avx_256_double
     jq2              = _mm256_set1_pd(charge[inr+2]);
     vdwjidx0A        = 2*vdwtype[inr+0];
     qq00             = _mm256_mul_pd(iq0,jq0);
-    c6_00            = _mm256_set1_pd(vdwioffsetptr0[vdwjidx0A]);
-    c12_00           = _mm256_set1_pd(vdwioffsetptr0[vdwjidx0A+1]);
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    {
+        c6_00            = _mm256_set1_pd(0.0);
+        c12_00           = _mm256_set1_pd(0.0);
+    }
+    else
+    {
+        c6_00            = _mm256_set1_pd(vdwioffsetptr0[vdwjidx0A]);
+        c12_00           = _mm256_set1_pd(vdwioffsetptr0[vdwjidx0A+1]);
+    }
     qq01             = _mm256_mul_pd(iq0,jq1);
     qq02             = _mm256_mul_pd(iq0,jq2);
     qq10             = _mm256_mul_pd(iq1,jq0);
@@ -1349,6 +1359,7 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomW3W3_F_avx_256_double
     real             *fjptrA,*fjptrB,*fjptrC,*fjptrD;
     real             scratch[4*DIM];
     __m256d          tx,ty,tz,fscal,rcutoff,rcutoff2,jidxall;
+    mds::StressGrid  *locals_grid;
     real *           vdwioffsetptr0;
     __m256d          ix0,iy0,iz0,fix0,fiy0,fiz0,iq0,isai0;
     real *           vdwioffsetptr1;
@@ -1398,6 +1409,7 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomW3W3_F_avx_256_double
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     facel            = _mm256_set1_pd(fr->epsfac);
     charge           = mdatoms->chargeA;
     nvdwtype         = fr->ntype;
@@ -1419,8 +1431,16 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomW3W3_F_avx_256_double
     jq2              = _mm256_set1_pd(charge[inr+2]);
     vdwjidx0A        = 2*vdwtype[inr+0];
     qq00             = _mm256_mul_pd(iq0,jq0);
-    c6_00            = _mm256_set1_pd(vdwioffsetptr0[vdwjidx0A]);
-    c12_00           = _mm256_set1_pd(vdwioffsetptr0[vdwjidx0A+1]);
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    {
+        c6_00            = _mm256_set1_pd(0.0);
+        c12_00           = _mm256_set1_pd(0.0);
+    }
+    else
+    {
+        c6_00            = _mm256_set1_pd(vdwioffsetptr0[vdwjidx0A]);
+        c12_00           = _mm256_set1_pd(vdwioffsetptr0[vdwjidx0A+1]);
+    }
     qq01             = _mm256_mul_pd(iq0,jq1);
     qq02             = _mm256_mul_pd(iq0,jq2);
     qq10             = _mm256_mul_pd(iq1,jq0);

@@ -39,7 +39,7 @@
 
 #include "config.h"
 
-#include <math.h>
+#include <cmath>
 
 #include "../nb_kernel.h"
 #include "gromacs/gmxlib/nrnb.h"
@@ -58,7 +58,7 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
                      rvec                        * gmx_restrict          ff,
                      t_forcerec                  * gmx_restrict          fr,
                      t_mdatoms                   * gmx_restrict     mdatoms,
-                     nb_kernel_data_t gmx_unused * gmx_restrict kernel_data,
+                     nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
     int              i_shift_offset,i_coord_offset,j_coord_offset;
@@ -67,6 +67,9 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
     real             shX,shY,shZ,tx,ty,tz,fscal,rcutoff,rcutoff2;
     int              *iinr,*jindex,*jjnr,*shiftidx,*gid;
     real             *shiftvec,*fshift,*x,*f;
+    mds::StressGrid  *locals_grid;
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
     int              vdwioffset0;
     real             ix0,iy0,iz0,fix0,fiy0,fiz0,iq0,isai0;
     int              vdwioffset1;
@@ -102,6 +105,7 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     facel            = fr->epsfac;
     charge           = mdatoms->chargeA;
     krf              = fr->ic->k_rf;
@@ -273,6 +277,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
             tx               = fscal*dx00;
             ty               = fscal*dy00;
             tz               = fscal*dz00;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
+                    lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
+                    lpatIDs[0] = inr+0; lpatIDs[1] = jnr+0;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix0            += tx;
@@ -304,6 +325,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
             tx               = fscal*dx01;
             ty               = fscal*dy01;
             tz               = fscal*dz01;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
+                    lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
+                    lpatIDs[0] = inr+0; lpatIDs[1] = jnr+1;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix0            += tx;
@@ -335,6 +373,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
             tx               = fscal*dx02;
             ty               = fscal*dy02;
             tz               = fscal*dz02;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
+                    lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
+                    lpatIDs[0] = inr+0; lpatIDs[1] = jnr+2;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix0            += tx;
@@ -366,6 +421,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
             tx               = fscal*dx10;
             ty               = fscal*dy10;
             tz               = fscal*dz10;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
+                    lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
+                    lpatIDs[0] = inr+1; lpatIDs[1] = jnr+0;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix1            += tx;
@@ -397,6 +469,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
             tx               = fscal*dx11;
             ty               = fscal*dy11;
             tz               = fscal*dz11;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
+                    lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
+                    lpatIDs[0] = inr+1; lpatIDs[1] = jnr+1;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix1            += tx;
@@ -428,6 +517,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
             tx               = fscal*dx12;
             ty               = fscal*dy12;
             tz               = fscal*dz12;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
+                    lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
+                    lpatIDs[0] = inr+1; lpatIDs[1] = jnr+2;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix1            += tx;
@@ -459,6 +565,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
             tx               = fscal*dx20;
             ty               = fscal*dy20;
             tz               = fscal*dz20;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
+                    lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
+                    lpatIDs[0] = inr+2; lpatIDs[1] = jnr+0;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix2            += tx;
@@ -490,6 +613,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
             tx               = fscal*dx21;
             ty               = fscal*dy21;
             tz               = fscal*dz21;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
+                    lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
+                    lpatIDs[0] = inr+2; lpatIDs[1] = jnr+1;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix2            += tx;
@@ -521,6 +661,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_VF_c
             tx               = fscal*dx22;
             ty               = fscal*dy22;
             tz               = fscal*dz22;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
+                    lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
+                    lpatIDs[0] = inr+2; lpatIDs[1] = jnr+2;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix2            += tx;
@@ -590,7 +747,7 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
                      rvec                        * gmx_restrict          ff,
                      t_forcerec                  * gmx_restrict          fr,
                      t_mdatoms                   * gmx_restrict     mdatoms,
-                     nb_kernel_data_t gmx_unused * gmx_restrict kernel_data,
+                     nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
     int              i_shift_offset,i_coord_offset,j_coord_offset;
@@ -599,6 +756,9 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
     real             shX,shY,shZ,tx,ty,tz,fscal,rcutoff,rcutoff2;
     int              *iinr,*jindex,*jjnr,*shiftidx,*gid;
     real             *shiftvec,*fshift,*x,*f;
+    mds::StressGrid  *locals_grid;
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
     int              vdwioffset0;
     real             ix0,iy0,iz0,fix0,fiy0,fiz0,iq0,isai0;
     int              vdwioffset1;
@@ -634,6 +794,7 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     facel            = fr->epsfac;
     charge           = mdatoms->chargeA;
     krf              = fr->ic->k_rf;
@@ -798,6 +959,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
             tx               = fscal*dx00;
             ty               = fscal*dy00;
             tz               = fscal*dz00;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
+                    lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
+                    lpatIDs[0] = inr+0; lpatIDs[1] = jnr+0;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix0            += tx;
@@ -825,6 +1003,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
             tx               = fscal*dx01;
             ty               = fscal*dy01;
             tz               = fscal*dz01;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
+                    lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
+                    lpatIDs[0] = inr+0; lpatIDs[1] = jnr+1;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix0            += tx;
@@ -852,6 +1047,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
             tx               = fscal*dx02;
             ty               = fscal*dy02;
             tz               = fscal*dz02;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
+                    lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
+                    lpatIDs[0] = inr+0; lpatIDs[1] = jnr+2;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix0            += tx;
@@ -879,6 +1091,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
             tx               = fscal*dx10;
             ty               = fscal*dy10;
             tz               = fscal*dz10;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
+                    lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
+                    lpatIDs[0] = inr+1; lpatIDs[1] = jnr+0;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix1            += tx;
@@ -906,6 +1135,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
             tx               = fscal*dx11;
             ty               = fscal*dy11;
             tz               = fscal*dz11;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
+                    lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
+                    lpatIDs[0] = inr+1; lpatIDs[1] = jnr+1;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix1            += tx;
@@ -933,6 +1179,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
             tx               = fscal*dx12;
             ty               = fscal*dy12;
             tz               = fscal*dz12;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
+                    lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
+                    lpatIDs[0] = inr+1; lpatIDs[1] = jnr+2;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix1            += tx;
@@ -960,6 +1223,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
             tx               = fscal*dx20;
             ty               = fscal*dy20;
             tz               = fscal*dz20;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
+                    lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
+                    lpatIDs[0] = inr+2; lpatIDs[1] = jnr+0;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix2            += tx;
@@ -987,6 +1267,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
             tx               = fscal*dx21;
             ty               = fscal*dy21;
             tz               = fscal*dz21;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
+                    lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
+                    lpatIDs[0] = inr+2; lpatIDs[1] = jnr+1;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix2            += tx;
@@ -1014,6 +1311,23 @@ nb_kernel_ElecRFCut_VdwNone_GeomW3W3_F_c
             tx               = fscal*dx22;
             ty               = fscal*dy22;
             tz               = fscal*dz22;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
+                    lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
+                    lpatIDs[0] = inr+2; lpatIDs[1] = jnr+2;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix2            += tx;

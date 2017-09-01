@@ -39,7 +39,7 @@
 
 #include "config.h"
 
-#include <math.h>
+#include <cmath>
 
 #include "../nb_kernel.h"
 #include "gromacs/gmxlib/nrnb.h"
@@ -80,6 +80,7 @@ nb_kernel_ElecGB_VdwNone_GeomP1P1_VF_avx_256_double
     real             *fjptrA,*fjptrB,*fjptrC,*fjptrD;
     real             scratch[4*DIM];
     __m256d          tx,ty,tz,fscal,rcutoff,rcutoff2,jidxall;
+    mds::StressGrid  *locals_grid;
     real *           vdwioffsetptr0;
     __m256d          ix0,iy0,iz0,fix0,fiy0,fiz0,iq0,isai0;
     int              vdwjidx0A,vdwjidx0B,vdwjidx0C,vdwjidx0D;
@@ -111,6 +112,7 @@ nb_kernel_ElecGB_VdwNone_GeomP1P1_VF_avx_256_double
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     facel            = _mm256_set1_pd(fr->epsfac);
     charge           = mdatoms->chargeA;
 
@@ -452,6 +454,7 @@ nb_kernel_ElecGB_VdwNone_GeomP1P1_F_avx_256_double
     real             *fjptrA,*fjptrB,*fjptrC,*fjptrD;
     real             scratch[4*DIM];
     __m256d          tx,ty,tz,fscal,rcutoff,rcutoff2,jidxall;
+    mds::StressGrid  *locals_grid;
     real *           vdwioffsetptr0;
     __m256d          ix0,iy0,iz0,fix0,fiy0,fiz0,iq0,isai0;
     int              vdwjidx0A,vdwjidx0B,vdwjidx0C,vdwjidx0D;
@@ -483,6 +486,7 @@ nb_kernel_ElecGB_VdwNone_GeomP1P1_F_avx_256_double
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     facel            = _mm256_set1_pd(fr->epsfac);
     charge           = mdatoms->chargeA;
 

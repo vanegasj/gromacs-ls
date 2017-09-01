@@ -44,6 +44,7 @@
 #include "gromacs/mdtypes/nblist.h"
 #include "gromacs/topology/block.h"
 #include "gromacs/utility/real.h"
+#include "mdstress/mds_stressgrid.h"
 
 #if 0
 } /* fixes auto-indentation problems */
@@ -68,6 +69,9 @@ typedef struct
     real *             energygrp_elec;
     real *             energygrp_vdw;
     real *             energygrp_polarization;
+
+    /* mdstresslib object */
+    mds::StressGrid *  locals_grid;
 }
 nb_kernel_data_t;
 

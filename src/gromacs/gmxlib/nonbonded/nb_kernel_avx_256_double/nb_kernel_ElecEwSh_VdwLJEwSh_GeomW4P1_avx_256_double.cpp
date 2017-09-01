@@ -39,7 +39,7 @@
 
 #include "config.h"
 
-#include <math.h>
+#include <cmath>
 
 #include "../nb_kernel.h"
 #include "gromacs/gmxlib/nrnb.h"
@@ -80,6 +80,7 @@ nb_kernel_ElecEwSh_VdwLJEwSh_GeomW4P1_VF_avx_256_double
     real             *fjptrA,*fjptrB,*fjptrC,*fjptrD;
     real             scratch[4*DIM];
     __m256d          tx,ty,tz,fscal,rcutoff,rcutoff2,jidxall;
+    mds::StressGrid  *locals_grid;
     real *           vdwioffsetptr0;
     real *           vdwgridioffsetptr0;
     __m256d          ix0,iy0,iz0,fix0,fiy0,fiz0,iq0,isai0;
@@ -134,6 +135,7 @@ nb_kernel_ElecEwSh_VdwLJEwSh_GeomW4P1_VF_avx_256_double
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     facel            = _mm256_set1_pd(fr->epsfac);
     charge           = mdatoms->chargeA;
     nvdwtype         = fr->ntype;
@@ -296,10 +298,17 @@ nb_kernel_ElecEwSh_VdwLJEwSh_GeomW4P1_VF_avx_256_double
                                             vdwioffsetptr0+vdwjidx0D,
                                             &c6_00,&c12_00);
 
-            c6grid_00       = gmx_mm256_load_4real_swizzle_pd(vdwgridioffsetptr0+vdwjidx0A,
-                                                                  vdwgridioffsetptr0+vdwjidx0B,
-                                                                  vdwgridioffsetptr0+vdwjidx0C,
-                                                                  vdwgridioffsetptr0+vdwjidx0D);
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6grid_00       = _mm256_set1_pd(0.0);
+            }
+            else
+            {
+                c6grid_00       = gmx_mm256_load_4real_swizzle_pd(vdwgridioffsetptr0+vdwjidx0A,
+                                                                      vdwgridioffsetptr0+vdwjidx0B,
+                                                                      vdwgridioffsetptr0+vdwjidx0C,
+                                                                      vdwgridioffsetptr0+vdwjidx0D);
+            }
 
             /* Analytical LJ-PME */
             rinvsix          = _mm256_mul_pd(_mm256_mul_pd(rinvsq00,rinvsq00),rinvsq00);
@@ -608,10 +617,17 @@ nb_kernel_ElecEwSh_VdwLJEwSh_GeomW4P1_VF_avx_256_double
                                             vdwioffsetptr0+vdwjidx0D,
                                             &c6_00,&c12_00);
 
-            c6grid_00       = gmx_mm256_load_4real_swizzle_pd(vdwgridioffsetptr0+vdwjidx0A,
-                                                                  vdwgridioffsetptr0+vdwjidx0B,
-                                                                  vdwgridioffsetptr0+vdwjidx0C,
-                                                                  vdwgridioffsetptr0+vdwjidx0D);
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6grid_00       = _mm256_set1_pd(0.0);
+            }
+            else
+            {
+                c6grid_00       = gmx_mm256_load_4real_swizzle_pd(vdwgridioffsetptr0+vdwjidx0A,
+                                                                      vdwgridioffsetptr0+vdwjidx0B,
+                                                                      vdwgridioffsetptr0+vdwjidx0C,
+                                                                      vdwgridioffsetptr0+vdwjidx0D);
+            }
 
             /* Analytical LJ-PME */
             rinvsix          = _mm256_mul_pd(_mm256_mul_pd(rinvsq00,rinvsq00),rinvsq00);
@@ -901,6 +917,7 @@ nb_kernel_ElecEwSh_VdwLJEwSh_GeomW4P1_F_avx_256_double
     real             *fjptrA,*fjptrB,*fjptrC,*fjptrD;
     real             scratch[4*DIM];
     __m256d          tx,ty,tz,fscal,rcutoff,rcutoff2,jidxall;
+    mds::StressGrid  *locals_grid;
     real *           vdwioffsetptr0;
     real *           vdwgridioffsetptr0;
     __m256d          ix0,iy0,iz0,fix0,fiy0,fiz0,iq0,isai0;
@@ -955,6 +972,7 @@ nb_kernel_ElecEwSh_VdwLJEwSh_GeomW4P1_F_avx_256_double
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     facel            = _mm256_set1_pd(fr->epsfac);
     charge           = mdatoms->chargeA;
     nvdwtype         = fr->ntype;
@@ -1113,10 +1131,17 @@ nb_kernel_ElecEwSh_VdwLJEwSh_GeomW4P1_F_avx_256_double
                                             vdwioffsetptr0+vdwjidx0D,
                                             &c6_00,&c12_00);
 
-            c6grid_00       = gmx_mm256_load_4real_swizzle_pd(vdwgridioffsetptr0+vdwjidx0A,
-                                                                  vdwgridioffsetptr0+vdwjidx0B,
-                                                                  vdwgridioffsetptr0+vdwjidx0C,
-                                                                  vdwgridioffsetptr0+vdwjidx0D);
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6grid_00       = _mm256_set1_pd(0.0);
+            }
+            else
+            {
+                c6grid_00       = gmx_mm256_load_4real_swizzle_pd(vdwgridioffsetptr0+vdwjidx0A,
+                                                                      vdwgridioffsetptr0+vdwjidx0B,
+                                                                      vdwgridioffsetptr0+vdwjidx0C,
+                                                                      vdwgridioffsetptr0+vdwjidx0D);
+            }
 
             /* Analytical LJ-PME */
             rinvsix          = _mm256_mul_pd(_mm256_mul_pd(rinvsq00,rinvsq00),rinvsq00);
@@ -1393,10 +1418,17 @@ nb_kernel_ElecEwSh_VdwLJEwSh_GeomW4P1_F_avx_256_double
                                             vdwioffsetptr0+vdwjidx0D,
                                             &c6_00,&c12_00);
 
-            c6grid_00       = gmx_mm256_load_4real_swizzle_pd(vdwgridioffsetptr0+vdwjidx0A,
-                                                                  vdwgridioffsetptr0+vdwjidx0B,
-                                                                  vdwgridioffsetptr0+vdwjidx0C,
-                                                                  vdwgridioffsetptr0+vdwjidx0D);
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6grid_00       = _mm256_set1_pd(0.0);
+            }
+            else
+            {
+                c6grid_00       = gmx_mm256_load_4real_swizzle_pd(vdwgridioffsetptr0+vdwjidx0A,
+                                                                      vdwgridioffsetptr0+vdwjidx0B,
+                                                                      vdwgridioffsetptr0+vdwjidx0C,
+                                                                      vdwgridioffsetptr0+vdwjidx0D);
+            }
 
             /* Analytical LJ-PME */
             rinvsix          = _mm256_mul_pd(_mm256_mul_pd(rinvsq00,rinvsq00),rinvsq00);

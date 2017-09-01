@@ -39,7 +39,7 @@
 
 #include "config.h"
 
-#include <math.h>
+#include <cmath>
 
 #include "../nb_kernel.h"
 #include "gromacs/gmxlib/nrnb.h"
@@ -58,7 +58,7 @@ nb_kernel_ElecRF_VdwLJ_GeomP1P1_VF_c
                      rvec                        * gmx_restrict          ff,
                      t_forcerec                  * gmx_restrict          fr,
                      t_mdatoms                   * gmx_restrict     mdatoms,
-                     nb_kernel_data_t gmx_unused * gmx_restrict kernel_data,
+                     nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
     int              i_shift_offset,i_coord_offset,j_coord_offset;
@@ -67,6 +67,9 @@ nb_kernel_ElecRF_VdwLJ_GeomP1P1_VF_c
     real             shX,shY,shZ,tx,ty,tz,fscal,rcutoff,rcutoff2;
     int              *iinr,*jindex,*jjnr,*shiftidx,*gid;
     real             *shiftvec,*fshift,*x,*f;
+    mds::StressGrid  *locals_grid;
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
     int              vdwioffset0;
     real             ix0,iy0,iz0,fix0,fiy0,fiz0,iq0,isai0;
     int              vdwjidx0;
@@ -90,6 +93,7 @@ nb_kernel_ElecRF_VdwLJ_GeomP1P1_VF_c
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     facel            = fr->epsfac;
     charge           = mdatoms->chargeA;
     krf              = fr->ic->k_rf;
@@ -169,8 +173,16 @@ nb_kernel_ElecRF_VdwLJ_GeomP1P1_VF_c
              **************************/
 
             qq00             = iq0*jq0;
-            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-            c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6_00            = 0.0;
+                c12_00           = 0.0;
+            }
+            else
+            {
+                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+                c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
+            }
 
             /* REACTION-FIELD ELECTROSTATICS */
             velec            = qq00*(rinv00+krf*rsq00-crf);
@@ -194,6 +206,23 @@ nb_kernel_ElecRF_VdwLJ_GeomP1P1_VF_c
             tx               = fscal*dx00;
             ty               = fscal*dy00;
             tz               = fscal*dz00;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
+                    lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
+                    lpatIDs[0] = inr+0; lpatIDs[1] = jnr+0;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix0            += tx;
@@ -250,7 +279,7 @@ nb_kernel_ElecRF_VdwLJ_GeomP1P1_F_c
                      rvec                        * gmx_restrict          ff,
                      t_forcerec                  * gmx_restrict          fr,
                      t_mdatoms                   * gmx_restrict     mdatoms,
-                     nb_kernel_data_t gmx_unused * gmx_restrict kernel_data,
+                     nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
     int              i_shift_offset,i_coord_offset,j_coord_offset;
@@ -259,6 +288,9 @@ nb_kernel_ElecRF_VdwLJ_GeomP1P1_F_c
     real             shX,shY,shZ,tx,ty,tz,fscal,rcutoff,rcutoff2;
     int              *iinr,*jindex,*jjnr,*shiftidx,*gid;
     real             *shiftvec,*fshift,*x,*f;
+    mds::StressGrid  *locals_grid;
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
     int              vdwioffset0;
     real             ix0,iy0,iz0,fix0,fiy0,fiz0,iq0,isai0;
     int              vdwjidx0;
@@ -282,6 +314,7 @@ nb_kernel_ElecRF_VdwLJ_GeomP1P1_F_c
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     facel            = fr->epsfac;
     charge           = mdatoms->chargeA;
     krf              = fr->ic->k_rf;
@@ -357,8 +390,16 @@ nb_kernel_ElecRF_VdwLJ_GeomP1P1_F_c
              **************************/
 
             qq00             = iq0*jq0;
-            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-            c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6_00            = 0.0;
+                c12_00           = 0.0;
+            }
+            else
+            {
+                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+                c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
+            }
 
             /* REACTION-FIELD ELECTROSTATICS */
             felec            = qq00*(rinv00*rinvsq00-krf2);
@@ -374,6 +415,23 @@ nb_kernel_ElecRF_VdwLJ_GeomP1P1_F_c
             tx               = fscal*dx00;
             ty               = fscal*dy00;
             tz               = fscal*dz00;
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
+                    lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
+                    lpatIDs[0] = inr+0; lpatIDs[1] = jnr+0;
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix0            += tx;

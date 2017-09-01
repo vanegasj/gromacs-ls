@@ -117,7 +117,7 @@ void
                      rvec                        * gmx_restrict          ff,
                      t_forcerec                  * gmx_restrict          fr,
                      t_mdatoms                   * gmx_restrict     mdatoms,
-                     nb_kernel_data_t gmx_unused * gmx_restrict kernel_data,
+                     nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
     /* ## Not all variables are used for all kernels, but any optimizing compiler fixes that, */
@@ -128,6 +128,9 @@ void
     real             shX,shY,shZ,tx,ty,tz,fscal,rcutoff,rcutoff2;
     int              *iinr,*jindex,*jjnr,*shiftidx,*gid;
     real             *shiftvec,*fshift,*x,*f;
+    mds::StressGrid  *locals_grid;
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
     /* #for I in PARTICLES_I */
     int              vdwioffset{I};
     real             ix{I},iy{I},iz{I},fix{I},fiy{I},fiz{I},iq{I},isai{I};
@@ -186,6 +189,7 @@ void
     gid              = nlist->gid;
     shiftvec         = fr->shift_vec[0];
     fshift           = fr->fshift[0];
+    locals_grid      = kernel_data->locals_grid;
     /* #if KERNEL_ELEC != 'None' */
     facel            = fr->epsfac;
     charge           = mdatoms->chargeA;
@@ -264,16 +268,42 @@ void
     /*         #endif */
     /*         #if 'vdw' in INTERACTION_FLAGS[I][J] */
     /*             #if 'Buckingham' in KERNEL_VDW */
-    c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-    cexp1_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
-    cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    {
+        c6_{I}{J}            = 0.0;
+        cexp1_{I}{J}         = 0.0;
+        cexp2_{I}{J}         = 0.0;
+    }
+    else
+    {
+        c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+        cexp1_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+        cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
+    }
     /*             #elif 'LJEwald' in KERNEL_VDW */
-    c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-    c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
-    c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    {
+        c6_{I}{J}            = 0.0;
+        c12_{I}{J}           = 0.0;
+        c6grid_{I}{J}        = 0.0;
+    }
+    else
+    {
+        c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+        c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+        c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
+    }
     /*             #else */
-    c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-    c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    {
+        c6_{I}{J}            = 0.0;
+        c12_{I}{J}           = 0.0;
+    }
+    else
+    {
+        c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+        c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+    }
     /*             #endif */
     /*         #endif */
     /*     #endfor */
@@ -472,16 +502,42 @@ void
             /*         #endif */
             /*         #if 'vdw' in INTERACTION_FLAGS[I][J] */
             /*             #if KERNEL_VDW=='Buckingham' */
-            c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-            cexp1_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
-            cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
-	    /*             #elif 'LJEwald' in KERNEL_VDW */
-            c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-            c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
-            c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6_{I}{J}            = 0.0;
+                cexp1_{I}{J}         = 0.0;
+                cexp2_{I}{J}         = 0.0;
+            }
+            else
+            {
+                c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+                cexp1_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+                cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
+            }
+            /*             #elif 'LJEwald' in KERNEL_VDW */
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6_{I}{J}            = 0.0;
+                c12_{I}{J}           = 0.0;
+                c6grid_{I}{J}        = 0.0;
+            }
+            else
+            {
+                c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+                c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+                c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
+            }
             /*             #else */
-            c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-            c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6_{I}{J}            = 0.0;
+                c12_{I}{J}           = 0.0;
+            }
+            else
+            {
+                c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+                c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+            }
             /*             #endif */
             /*         #endif */
             /*     #endif */
@@ -820,6 +876,23 @@ void
             tx               = fscal*dx{I}{J};
             ty               = fscal*dy{I}{J};
             tz               = fscal*dz{I}{J};
+            
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    lpR[0][0] = ix{I}; lpR[0][1] = iy{I}; lpR[0][2] = iz{I}; 
+                    lpR[1][0] = jx{J}; lpR[1][1] = jy{J}; lpR[1][2] = jz{J}; 
+                    lpatIDs[0] = inr+{I}; lpatIDs[1] = jnr+{J};
+                    lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
+                    lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Update vectorial force */
             fix{I}            += tx;

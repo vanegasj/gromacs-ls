@@ -281,6 +281,7 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
     real           *     Vvdw;
     real           *     Vc;
     real           *     vpol;
+    mds::StressGrid     *locals_grid;
 
     x                   = xx[0];
     f                   = ff[0];
@@ -303,6 +304,7 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
 
     Vc                  = kernel_data->energygrp_elec;
     Vvdw                = kernel_data->energygrp_vdw;
+    locals_grid         = kernel_data->locals_grid;
 
     if (aadata == NULL)
     {
@@ -371,8 +373,16 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
                 fscal             = vcoul*rinv;
                 qq                = isaprod*(-qq)*gbfactor;
                 gbscale           = isaprod*gbtabscale;
-                c6                = pvdw[2*k];
-                c12               = pvdw[2*k+1];
+                if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+                {
+                    c6                = 0.0;
+                    c12               = 0.0;
+                }
+                else
+                {
+                    c6                = pvdw[2*k];
+                    c12               = pvdw[2*k+1];
+                }
                 rinvsq            = rinv*rinv;
 
                 /* Tabulated Generalized-Born interaction */
@@ -452,8 +462,16 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
             fscal             = vcoul*rinv;
             qq                = isaprod*(-qq)*gbfactor;
             gbscale           = isaprod*gbtabscale;
-            c6                = pvdw[2*k];
-            c12               = pvdw[2*k+1];
+            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            {
+                c6                = 0.0;
+                c12               = 0.0;
+            }
+            else
+            {
+                c6                = pvdw[2*k];
+                c12               = pvdw[2*k+1];
+            }
             rinvsq            = rinv*rinv;
 
             /* Tabulated Generalized-Born interaction */
