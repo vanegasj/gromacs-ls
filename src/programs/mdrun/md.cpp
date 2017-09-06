@@ -1193,7 +1193,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                                 nrnb, wcycle, graph, groups,
                                 shellfc, fr, bBornRadii, t, mu_tot,
                                 vsite, mdoutf_get_fp_field(outf),
-                                NULL /*locals_null*/);
+                                &locals_grid);
         }
         else
         {
@@ -1207,7 +1207,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                      f, force_vir, mdatoms, enerd, fcd,
                      state->lambda, graph,
                      fr, vsite, mu_tot, t, mdoutf_get_fp_field(outf), ed, bBornRadii,
-                     NULL, //locals_null
+                     &locals_grid,
                      (bNS ? GMX_FORCE_NS : 0) | force_flags);
         }
 
