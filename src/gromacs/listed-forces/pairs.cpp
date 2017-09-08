@@ -345,7 +345,7 @@ do_pairs_general(int ftype, int nbonds,
                  real *lambda, real *dvdl,
                  const t_mdatoms *md,
                  const t_forcerec *fr, gmx_grppairener_t *grppener,
-                 int *global_atom_index)
+                 int *global_atom_index, mds::StressGrid *locals_grid)
 {
     real             qq, c6, c12;
     rvec             dx;
@@ -361,6 +361,9 @@ do_pairs_general(int ftype, int nbonds,
     gmx_bool         bFreeEnergy;
     real             LFC[2], LFV[2], DLF[2], lfac_coul[2], lfac_vdw[2], dlfac_coul[2], dlfac_vdw[2];
     real             qqB, c6B, c12B, sigma2_def, sigma2_min;
+    
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
 
     switch (ftype)
     {
@@ -461,6 +464,17 @@ do_pairs_general(int ftype, int nbonds,
         c6  *= 6.0;
         c12 *= 12.0;
 
+        /* Zero coulomb or vdw interactions depending on what local stress we are studying */
+        if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        {
+            qq = 0.0;
+        }
+        if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+        {
+            c6 = 0.0;
+            c12 = 0.0;
+        }
+
         /* Do we need to apply full periodic boundary conditions? */
         if (fr->bMolPBC == TRUE)
         {
@@ -508,6 +522,22 @@ do_pairs_general(int ftype, int nbonds,
         energygrp_elec[gid]  += velec;
         energygrp_vdw[gid]   += vvdw;
         svmul(fscal, dx, dx);
+        
+        /* begin stress tensor */
+        if (locals_grid != NULL)
+        {
+            if ((locals_grid->GetContribType() == mds_all) ||
+                (locals_grid->GetContribType() == mds_vdw) ||
+                (locals_grid->GetContribType() == mds_cou))
+            {
+                lpR[0][0] = x[ai][0]; lpR[0][1] = x[ai][1]; lpR[0][2] = x[ai][2]; 
+                lpR[1][0] = x[aj][0]; lpR[1][1] = x[aj][1]; lpR[1][2] = x[aj][2]; 
+                lpatIDs[0] = ai; lpatIDs[1] = aj;
+                lpF[0][0] = dx[0];  lpF[0][1] = dx[1];  lpF[0][2] = dx[2];
+                lpF[1][0] = -dx[0]; lpF[1][1] = -dx[1]; lpF[1][2] = -dx[2];
+                locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+            }
+        }
 
         /* Add the forces */
         rvec_inc(f[ai], dx);
@@ -641,7 +671,7 @@ do_pairs(int ftype, int nbonds,
          const t_mdatoms *md,
          const t_forcerec *fr,
          gmx_bool bCalcEnergyAndVirial, gmx_grppairener_t *grppener,
-         int *global_atom_index)
+         int *global_atom_index, mds::StressGrid *locals_grid)
 {
     if (ftype == F_LJ14 &&
         fr->vdwtype != evdwUSER && !EEL_USER(fr->eeltype) &&
@@ -689,6 +719,6 @@ do_pairs(int ftype, int nbonds,
         do_pairs_general(ftype, nbonds, iatoms, iparams,
                          x, f, fshift, pbc, g,
                          lambda, dvdl,
-                         md, fr, grppener, global_atom_index);
+                         md, fr, grppener, global_atom_index, locals_grid);
     }
 }

@@ -65,6 +65,6 @@ do_pairs(int ftype, int nbonds, const t_iatom iatoms[], const t_iparams iparams[
          const struct t_pbc *pbc, const struct t_graph *g,
          real *lambda, real *dvdl, const t_mdatoms *md, const t_forcerec *fr,
          gmx_bool bCalcEnergyAndVirial, gmx_grppairener_t *grppener,
-         int *global_atom_index);
+         int *global_atom_index, mds::StressGrid *locals_grid);
 
 #endif
