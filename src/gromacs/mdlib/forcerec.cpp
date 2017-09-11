@@ -2347,7 +2347,7 @@ void init_forcerec(FILE              *fp,
     }
 
     /* By default we turn SIMD kernels on, but it might be turned off further down... */
-    fr->use_simd_kernels = TRUE;
+    fr->use_simd_kernels = FALSE;
 
     fr->bDomDec = DOMAINDECOMP(cr);
 

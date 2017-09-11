@@ -57,6 +57,7 @@ gmx_nb_generic_kernel(t_nblist *                nlist,
                       nb_kernel_data_t *        kernel_data,
                       t_nrnb *                  nrnb)
 {
+    printf("\ncalling gmx_nb_generic_kernel\n");
     int           ntype, table_nelements, ielec, ivdw;
     real          facel;
     int           n, ii, is3, ii3, k, nj0, nj1, jnr, j3, ggid, nnn, n0;
