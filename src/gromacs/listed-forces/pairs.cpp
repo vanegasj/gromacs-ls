@@ -348,7 +348,7 @@ do_pairs_general(int ftype, int nbonds,
                  int *global_atom_index, mds::StressGrid *locals_grid)
 {
     real             qq, c6, c12;
-    rvec             dx;
+    rvec             dx,dx2;
     ivec             dt;
     int              i, itype, ai, aj, gid;
     int              fshift_index;
@@ -487,6 +487,8 @@ do_pairs_general(int ftype, int nbonds,
         }
         r2           = norm2(dx);
 
+        copy_rvec(dx,dx2);
+
         if (r2 >= fr->pairsTable->r*fr->pairsTable->r)
         {
             /* This check isn't race free. But it doesn't matter because if a race occurs the only
@@ -530,7 +532,7 @@ do_pairs_general(int ftype, int nbonds,
                 (locals_grid->GetContribType() == mds_vdw) ||
                 (locals_grid->GetContribType() == mds_cou))
             {
-                lpR[0][0] = x[ai][0]; lpR[0][1] = x[ai][1]; lpR[0][2] = x[ai][2]; 
+                lpR[0][0] = x[aj][0] + dx2[0]; lpR[0][1] = x[aj][1] + dx2[1]; lpR[0][2] = x[aj][2] + dx2[2]; 
                 lpR[1][0] = x[aj][0]; lpR[1][1] = x[aj][1]; lpR[1][2] = x[aj][2]; 
                 lpatIDs[0] = ai; lpatIDs[1] = aj;
                 lpF[0][0] = dx[0];  lpF[0][1] = dx[1];  lpF[0][2] = dx[2];

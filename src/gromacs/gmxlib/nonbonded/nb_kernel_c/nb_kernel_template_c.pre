@@ -120,6 +120,7 @@ void
                      nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
+    printf("\n{KERNEL_NAME}\n");
     /* ## Not all variables are used for all kernels, but any optimizing compiler fixes that, */
     /* ## so there is no point in going to extremes to exclude variables that are not needed. */
     int              i_shift_offset,i_coord_offset,j_coord_offset;
@@ -264,18 +265,24 @@ void
     /*     #endfor */
     /*     #for I,J in PAIRS_IJ */
     /*         #if 'electrostatics' in INTERACTION_FLAGS[I][J] */
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq{I}{J}             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq{I}{J}             = 0.0;
+    }
     else
         qq{I}{J}             = iq{I}*jq{J};
     /*         #endif */
     /*         #if 'vdw' in INTERACTION_FLAGS[I][J] */
     /*             #if 'Buckingham' in KERNEL_VDW */
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    if (locals_grid != NULL)
     {
-        c6_{I}{J}            = 0.0;
-        cexp1_{I}{J}         = 0.0;
-        cexp2_{I}{J}         = 0.0;
+        if (locals_grid->GetContribType() == mds_cou)
+        {
+            c6_{I}{J}            = 0.0;
+            cexp1_{I}{J}         = 0.0;
+            cexp2_{I}{J}         = 0.0;
+        }
     }
     else
     {
@@ -284,11 +291,14 @@ void
         cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
     }
     /*             #elif 'LJEwald' in KERNEL_VDW */
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    if (locals_grid != NULL)
     {
-        c6_{I}{J}            = 0.0;
-        c12_{I}{J}           = 0.0;
-        c6grid_{I}{J}        = 0.0;
+        if (locals_grid->GetContribType() == mds_cou)
+        {
+            c6_{I}{J}            = 0.0;
+            c12_{I}{J}           = 0.0;
+            c6grid_{I}{J}        = 0.0;
+        }
     }
     else
     {
@@ -297,10 +307,13 @@ void
         c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
     }
     /*             #else */
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    if (locals_grid != NULL)
     {
-        c6_{I}{J}            = 0.0;
-        c12_{I}{J}           = 0.0;
+        if (locals_grid->GetContribType() == mds_cou)
+        {
+            c6_{I}{J}            = 0.0;
+            c12_{I}{J}           = 0.0;
+        }
     }
     else
     {
@@ -500,19 +513,25 @@ void
             /*     ## For water geometries we already loaded parameters at the start of the kernel */
             /*     #if not 'Water' in GEOMETRY_J */
             /*         #if 'electrostatics' in INTERACTION_FLAGS[I][J] */
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                qq{I}{J}             = 0.0;
+            if (locals_grid != NULL)
+            {
+                if (locals_grid->GetContribType() == mds_vdw)
+                    qq{I}{J}             = 0.0;
+            }
             else
                 qq{I}{J}             = iq{I}*jq{J};
             /*             #define INNERFLOPS INNERFLOPS+1 */
             /*         #endif */
             /*         #if 'vdw' in INTERACTION_FLAGS[I][J] */
             /*             #if KERNEL_VDW=='Buckingham' */
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL)
             {
-                c6_{I}{J}            = 0.0;
-                cexp1_{I}{J}         = 0.0;
-                cexp2_{I}{J}         = 0.0;
+                if (locals_grid->GetContribType() == mds_cou)
+                {
+                    c6_{I}{J}            = 0.0;
+                    cexp1_{I}{J}         = 0.0;
+                    cexp2_{I}{J}         = 0.0;
+                }
             }
             else
             {
@@ -521,11 +540,14 @@ void
                 cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
             }
             /*             #elif 'LJEwald' in KERNEL_VDW */
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL)
             {
-                c6_{I}{J}            = 0.0;
-                c12_{I}{J}           = 0.0;
-                c6grid_{I}{J}        = 0.0;
+                if (locals_grid->GetContribType() == mds_cou)
+                {
+                    c6_{I}{J}            = 0.0;
+                    c12_{I}{J}           = 0.0;
+                    c6grid_{I}{J}        = 0.0;
+                }
             }
             else
             {
@@ -534,10 +556,13 @@ void
                 c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
             }
             /*             #else */
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL)
             {
-                c6_{I}{J}            = 0.0;
-                c12_{I}{J}           = 0.0;
+                if (locals_grid->GetContribType() == mds_cou)
+                {
+                    c6_{I}{J}            = 0.0;
+                    c12_{I}{J}           = 0.0;
+                }
             }
             else
             {

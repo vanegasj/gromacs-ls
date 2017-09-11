@@ -61,6 +61,7 @@ nb_kernel_ElecNone_VdwCSTab_GeomP1P1_VF_c
                      nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
+    printf("\nnb_kernel_ElecNone_VdwCSTab_GeomP1P1_VF_c\n");
     int              i_shift_offset,i_coord_offset,j_coord_offset;
     int              j_index_start,j_index_end;
     int              nri,inr,ggid,iidx,jidx,jnr,outeriter,inneriter;
@@ -168,10 +169,13 @@ nb_kernel_ElecNone_VdwCSTab_GeomP1P1_VF_c
 
             r00              = rsq00*rinv00;
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL)
             {
-                c6_00            = 0.0;
-                c12_00           = 0.0;
+                if (locals_grid->GetContribType() == mds_cou)
+                {
+                    c6_00            = 0.0;
+                    c12_00           = 0.0;
+                }
             }
             else
             {
@@ -294,6 +298,7 @@ nb_kernel_ElecNone_VdwCSTab_GeomP1P1_F_c
                      nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
+    printf("\nnb_kernel_ElecNone_VdwCSTab_GeomP1P1_F_c\n");
     int              i_shift_offset,i_coord_offset,j_coord_offset;
     int              j_index_start,j_index_end;
     int              nri,inr,ggid,iidx,jidx,jnr,outeriter,inneriter;
@@ -398,10 +403,13 @@ nb_kernel_ElecNone_VdwCSTab_GeomP1P1_F_c
 
             r00              = rsq00*rinv00;
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL)
             {
-                c6_00            = 0.0;
-                c12_00           = 0.0;
+                if (locals_grid->GetContribType() == mds_cou)
+                {
+                    c6_00            = 0.0;
+                    c12_00           = 0.0;
+                }
             }
             else
             {

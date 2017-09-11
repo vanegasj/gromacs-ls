@@ -61,6 +61,7 @@ nb_kernel_ElecCoul_VdwLJ_GeomW4P1_VF_c
                      nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
+    printf("\nnb_kernel_ElecCoul_VdwLJ_GeomW4P1_VF_c\n");
     int              i_shift_offset,i_coord_offset,j_coord_offset;
     int              j_index_start,j_index_end;
     int              nri,inr,ggid,iidx,jidx,jnr,outeriter,inneriter;
@@ -216,10 +217,13 @@ nb_kernel_ElecCoul_VdwLJ_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL)
             {
-                c6_00            = 0.0;
-                c12_00           = 0.0;
+                if (locals_grid->GetContribType() == mds_cou)
+                {
+                    c6_00            = 0.0;
+                    c12_00           = 0.0;
+                }
             }
             else
             {
@@ -274,8 +278,11 @@ nb_kernel_ElecCoul_VdwLJ_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                qq10             = 0.0;
+            if (locals_grid != NULL)
+            {
+                if (locals_grid->GetContribType() == mds_vdw)
+                    qq10             = 0.0;
+            }
             else
                 qq10             = iq1*jq0;
 
@@ -322,8 +329,11 @@ nb_kernel_ElecCoul_VdwLJ_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                qq20             = 0.0;
+            if (locals_grid != NULL)
+            {
+                if (locals_grid->GetContribType() == mds_vdw)
+                    qq20             = 0.0;
+            }
             else
                 qq20             = iq2*jq0;
 
@@ -370,8 +380,11 @@ nb_kernel_ElecCoul_VdwLJ_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                qq30             = 0.0;
+            if (locals_grid != NULL)
+            {
+                if (locals_grid->GetContribType() == mds_vdw)
+                    qq30             = 0.0;
+            }
             else
                 qq30             = iq3*jq0;
 
@@ -482,6 +495,7 @@ nb_kernel_ElecCoul_VdwLJ_GeomW4P1_F_c
                      nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
+    printf("\nnb_kernel_ElecCoul_VdwLJ_GeomW4P1_F_c\n");
     int              i_shift_offset,i_coord_offset,j_coord_offset;
     int              j_index_start,j_index_end;
     int              nri,inr,ggid,iidx,jidx,jnr,outeriter,inneriter;
@@ -633,10 +647,13 @@ nb_kernel_ElecCoul_VdwLJ_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL)
             {
-                c6_00            = 0.0;
-                c12_00           = 0.0;
+                if (locals_grid->GetContribType() == mds_cou)
+                {
+                    c6_00            = 0.0;
+                    c12_00           = 0.0;
+                }
             }
             else
             {
@@ -685,8 +702,11 @@ nb_kernel_ElecCoul_VdwLJ_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                qq10             = 0.0;
+            if (locals_grid != NULL)
+            {
+                if (locals_grid->GetContribType() == mds_vdw)
+                    qq10             = 0.0;
+            }
             else
                 qq10             = iq1*jq0;
 
@@ -730,8 +750,11 @@ nb_kernel_ElecCoul_VdwLJ_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                qq20             = 0.0;
+            if (locals_grid != NULL)
+            {
+                if (locals_grid->GetContribType() == mds_vdw)
+                    qq20             = 0.0;
+            }
             else
                 qq20             = iq2*jq0;
 
@@ -775,8 +798,11 @@ nb_kernel_ElecCoul_VdwLJ_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                qq30             = 0.0;
+            if (locals_grid != NULL)
+            {
+                if (locals_grid->GetContribType() == mds_vdw)
+                    qq30             = 0.0;
+            }
             else
                 qq30             = iq3*jq0;
 

@@ -245,6 +245,7 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
                    nb_kernel_data_t *        kernel_data,
                    t_nrnb *                  nrnb)
 {
+    printf("\nnb_kernel_allvsall\n");
     gmx_allvsall_data_t *aadata;
     int                  natoms;
     int                  ni0, ni1;
@@ -347,15 +348,21 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
                 rinvsq            = rinv*rinv;
 
                 /* Load parameters for j atom */
-                if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                    qq                = 0.0;
+                if (locals_grid != NULL)
+                {
+                   if (locals_grid->GetContribType() == mds_vdw)
+                       qq                = 0.0;
+                }
                 else
                     qq                = iq*charge[k];
 
-                if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+                if (locals_grid != NULL)
                 {
-                    c6                = 0.0;
-                    c12               = 0.0;
+                    if (locals_grid->GetContribType() == mds_cou)
+                    {
+                        c6                = 0.0;
+                        c12               = 0.0;
+                    }
                 }
                 else
                 {
@@ -430,15 +437,21 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
             rinvsq            = rinv*rinv;
 
             /* Load parameters for j atom */
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                qq                = 0.0;
+            if (locals_grid != NULL)
+            {
+               if (locals_grid->GetContribType() == mds_vdw)
+                   qq                = 0.0;
+            }
             else
                 qq                = iq*charge[k];
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL)
             {
-                c6                = 0.0;
-                c12               = 0.0;
+                if(locals_grid->GetContribType() == mds_cou)
+                {
+                    c6                = 0.0;
+                    c12               = 0.0;
+                }
             }
             else
             {

@@ -61,6 +61,7 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3W3_VF_c
                      nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
+    printf("\nnb_kernel_ElecRFCut_VdwBhamSh_GeomW3W3_VF_c\n");
     int              i_shift_offset,i_coord_offset,j_coord_offset;
     int              j_index_start,j_index_end;
     int              nri,inr,ggid,iidx,jidx,jnr,outeriter,inneriter;
@@ -130,15 +131,21 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3W3_VF_c
     jq1              = charge[inr+1];
     jq2              = charge[inr+2];
     vdwjidx0         = 3*vdwtype[inr+0];
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq00             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq00             = 0.0;
+    }
     else
         qq00             = iq0*jq0;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    if (locals_grid != NULL)
     {
-        c6_00            = 0.0;
-        cexp1_00         = 0.0;
-        cexp2_00         = 0.0;
+        if (locals_grid->GetContribType() == mds_cou)
+        {
+            c6_00            = 0.0;
+            cexp1_00         = 0.0;
+            cexp2_00         = 0.0;
+        }
     }
     else
     {
@@ -146,36 +153,60 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3W3_VF_c
         cexp1_00         = vdwparam[vdwioffset0+vdwjidx0+1];
         cexp2_00         = vdwparam[vdwioffset0+vdwjidx0+2];
     }
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq01             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq01             = 0.0;
+    }
     else
         qq01             = iq0*jq1;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq02             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq02             = 0.0;
+    }
     else
         qq02             = iq0*jq2;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq10             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq10             = 0.0;
+    }
     else
         qq10             = iq1*jq0;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq11             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq11             = 0.0;
+    }
     else
         qq11             = iq1*jq1;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq12             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq12             = 0.0;
+    }
     else
         qq12             = iq1*jq2;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq20             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq20             = 0.0;
+    }
     else
         qq20             = iq2*jq0;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq21             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq21             = 0.0;
+    }
     else
         qq21             = iq2*jq1;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq22             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq22             = 0.0;
+    }
     else
         qq22             = iq2*jq2;
 
@@ -814,6 +845,7 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3W3_F_c
                      nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
+    printf("\nnb_kernel_ElecRFCut_VdwBhamSh_GeomW3W3_F_c\n");
     int              i_shift_offset,i_coord_offset,j_coord_offset;
     int              j_index_start,j_index_end;
     int              nri,inr,ggid,iidx,jidx,jnr,outeriter,inneriter;
@@ -883,15 +915,21 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3W3_F_c
     jq1              = charge[inr+1];
     jq2              = charge[inr+2];
     vdwjidx0         = 3*vdwtype[inr+0];
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq00             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq00             = 0.0;
+    }
     else
         qq00             = iq0*jq0;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    if (locals_grid != NULL)
     {
-        c6_00            = 0.0;
-        cexp1_00         = 0.0;
-        cexp2_00         = 0.0;
+        if (locals_grid->GetContribType() == mds_cou)
+        {
+            c6_00            = 0.0;
+            cexp1_00         = 0.0;
+            cexp2_00         = 0.0;
+        }
     }
     else
     {
@@ -899,36 +937,60 @@ nb_kernel_ElecRFCut_VdwBhamSh_GeomW3W3_F_c
         cexp1_00         = vdwparam[vdwioffset0+vdwjidx0+1];
         cexp2_00         = vdwparam[vdwioffset0+vdwjidx0+2];
     }
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq01             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq01             = 0.0;
+    }
     else
         qq01             = iq0*jq1;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq02             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq02             = 0.0;
+    }
     else
         qq02             = iq0*jq2;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq10             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq10             = 0.0;
+    }
     else
         qq10             = iq1*jq0;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq11             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq11             = 0.0;
+    }
     else
         qq11             = iq1*jq1;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq12             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq12             = 0.0;
+    }
     else
         qq12             = iq1*jq2;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq20             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq20             = 0.0;
+    }
     else
         qq20             = iq2*jq0;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq21             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq21             = 0.0;
+    }
     else
         qq21             = iq2*jq1;
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-        qq22             = 0.0;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+            qq22             = 0.0;
+    }
     else
         qq22             = iq2*jq2;
 

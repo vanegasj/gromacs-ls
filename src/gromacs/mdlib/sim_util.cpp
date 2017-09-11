@@ -2424,6 +2424,8 @@ void calc_dispcorr(t_inputrec *ir, t_forcerec *fr,
                 pres[m][m]   += spres;
             }
             *prescorr += spres;
+
+            /* pressure correction here (locals_null) */
         }
 
         /* Can't currently control when it prints, for now, just print when degugging */
