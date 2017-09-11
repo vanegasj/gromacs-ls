@@ -2346,7 +2346,10 @@ void init_forcerec(FILE              *fp,
         fr->hwinfo = gmx_detect_hardware(fp, cr, FALSE);
     }
 
-    /* By default we turn SIMD kernels on, but it might be turned off further down... */
+    /* By default we turn SIMD kernels on, but it might be turned off further down...
+     * These are turned off for mdstresslib since locals_grid calls happend in
+     * the non-simd kernels.
+     * */
     fr->use_simd_kernels = FALSE;
 
     fr->bDomDec = DOMAINDECOMP(cr);
