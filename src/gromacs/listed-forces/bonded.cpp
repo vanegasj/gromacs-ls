@@ -2545,7 +2545,7 @@ real dihres(int nbonds,
             }
             do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
                        f, fshift, pbc, g, x, t1, t2, t3,
-                       locals_grid, mds_all);      /* 112		*/
+                       locals_grid, mds_dio);      /* 112		*/
         }
     }
     return vtot;
@@ -4065,7 +4065,7 @@ real tab_dihs(int nbonds,
         vtot += vpd;
         do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
                    f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid, mds_all); /* 112	*/
+                   locals_grid, mds_dio); /* 112	*/
 
 #ifdef DEBUG
         fprintf(debug, "pdih: (%d,%d,%d,%d) phi=%g\n",
