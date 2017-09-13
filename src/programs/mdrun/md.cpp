@@ -691,7 +691,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                     NULL, enerd, force_vir, shake_vir, total_vir, pres, mu_tot,
                     constr, &nullSignaller, state->box,
                     &totalNumberOfBondedInteractions, &bSumEkinhOld, cglo_flags
-                    | (shouldCheckNumberOfBondedInteractions ? CGLO_CHECK_NUMBER_OF_BONDED_INTERACTIONS : 0));
+                    | (shouldCheckNumberOfBondedInteractions ? CGLO_CHECK_NUMBER_OF_BONDED_INTERACTIONS : 0), &locals_grid);
     checkNumberOfBondedInteractions(fplog, cr, totalNumberOfBondedInteractions,
                                     top_global, top, state,
                                     &shouldCheckNumberOfBondedInteractions);
@@ -707,7 +707,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                         NULL, enerd, force_vir, shake_vir, total_vir, pres, mu_tot,
                         constr, &nullSignaller, state->box,
                         NULL, &bSumEkinhOld,
-                        cglo_flags &~(CGLO_STOPCM | CGLO_PRESSURE));
+                        cglo_flags &~(CGLO_STOPCM | CGLO_PRESSURE), &locals_grid);
     }
 
     /* Calculate the initial half step temperature, and save the ekinh_old */
@@ -1119,7 +1119,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                             wcycle, enerd, NULL, NULL, NULL, NULL, mu_tot,
                             constr, &nullSignaller, state->box,
                             &totalNumberOfBondedInteractions, &bSumEkinhOld,
-                            CGLO_GSTAT | CGLO_TEMPERATURE | CGLO_CHECK_NUMBER_OF_BONDED_INTERACTIONS);
+                            CGLO_GSTAT | CGLO_TEMPERATURE | CGLO_CHECK_NUMBER_OF_BONDED_INTERACTIONS, &locals_grid);
             checkNumberOfBondedInteractions(fplog, cr, totalNumberOfBondedInteractions,
                                             top_global, top, state,
                                             &shouldCheckNumberOfBondedInteractions);
@@ -1285,8 +1285,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                                 | (bPres ? CGLO_CONSTRAINT : 0)
                                 | (bStopCM ? CGLO_STOPCM : 0)
                                 | (shouldCheckNumberOfBondedInteractions ? CGLO_CHECK_NUMBER_OF_BONDED_INTERACTIONS : 0)
-                                | CGLO_SCALEEKIN
-                                );
+                                | CGLO_SCALEEKIN, &locals_grid);
                 /* explanation of above:
                    a) We compute Ekin at the full time step
                    if 1) we are using the AveVel Ekin, and it's not the
@@ -1333,7 +1332,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                                     wcycle, enerd, NULL, NULL, NULL, NULL, mu_tot,
                                     constr, &nullSignaller, state->box,
                                     NULL, &bSumEkinhOld,
-                                    CGLO_GSTAT | CGLO_TEMPERATURE);
+                                    CGLO_GSTAT | CGLO_TEMPERATURE,&locals_grid);
                     wallcycle_start(wcycle, ewcUPDATE);
                 }
             }
@@ -1558,7 +1557,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                                 wcycle, enerd, force_vir, shake_vir, total_vir, pres, mu_tot,
                                 constr, &nullSignaller, lastbox,
                                 NULL, &bSumEkinhOld,
-                                (bGStat ? CGLO_GSTAT : 0) | CGLO_TEMPERATURE
+                                (bGStat ? CGLO_GSTAT : 0) | CGLO_TEMPERATURE, &locals_grid
                                 );
                 wallcycle_start(wcycle, ewcUPDATE);
                 trotter_update(ir, step, ekind, enerd, state, total_vir, mdatoms, &MassQ, trotter_seq, ettTSEQ4);
@@ -1660,8 +1659,8 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                                 | (!EI_VV(ir->eI) ? CGLO_TEMPERATURE : 0)
                                 | (!EI_VV(ir->eI) || bRerunMD ? CGLO_PRESSURE : 0)
                                 | CGLO_CONSTRAINT
-                                | (shouldCheckNumberOfBondedInteractions ? CGLO_CHECK_NUMBER_OF_BONDED_INTERACTIONS : 0)
-                                );
+                                | (shouldCheckNumberOfBondedInteractions ? CGLO_CHECK_NUMBER_OF_BONDED_INTERACTIONS : 0),
+                                &locals_grid);
                 checkNumberOfBondedInteractions(fplog, cr, totalNumberOfBondedInteractions,
                                                 top_global, top, state,
                                                 &shouldCheckNumberOfBondedInteractions);

@@ -129,7 +129,7 @@ void calc_enervirdiff(FILE *fplog, int eDispCorr, t_forcerec *fr);
 
 void calc_dispcorr(t_inputrec *ir, t_forcerec *fr,
                    matrix box, real lambda, tensor pres, tensor virial,
-                   real *prescorr, real *enercorr, real *dvdlcorr);
+                   real *prescorr, real *enercorr, real *dvdlcorr, mds::StressGrid *locals_grid);
 
 void initialize_lambdas(FILE *fplog, t_inputrec *ir, int *fep_state, real *lambda, double *lam0);
 

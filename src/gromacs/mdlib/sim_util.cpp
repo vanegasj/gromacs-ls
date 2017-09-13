@@ -2347,7 +2347,7 @@ void calc_enervirdiff(FILE *fplog, int eDispCorr, t_forcerec *fr)
 
 void calc_dispcorr(t_inputrec *ir, t_forcerec *fr,
                    matrix box, real lambda, tensor pres, tensor virial,
-                   real *prescorr, real *enercorr, real *dvdlcorr)
+                   real *prescorr, real *enercorr, real *dvdlcorr, mds::StressGrid * locals_grid)
 {
     gmx_bool bCorrAll, bCorrPres;
     real     dvdlambda, invvol, dens, ninter, avcsix, avctwelve, enerdiff, svir = 0, spres = 0;
@@ -2359,7 +2359,7 @@ void calc_dispcorr(t_inputrec *ir, t_forcerec *fr,
 
     clear_mat(virial);
     clear_mat(pres);
-
+ 
     if (ir->eDispCorr != edispcNO)
     {
         bCorrAll  = (ir->eDispCorr == edispcAllEner ||
@@ -2425,7 +2425,13 @@ void calc_dispcorr(t_inputrec *ir, t_forcerec *fr,
             }
             *prescorr += spres;
 
-            /* pressure correction here (locals_null) */
+            /* pressure correction here */
+            if (locals_grid != NULL)
+            {
+                locals_grid->ShiftGrid(-svir);
+                // subtract svir/ngrid from locals_grid
+                // ngrid is found in local_grid class
+            }
         }
 
         /* Can't currently control when it prints, for now, just print when degugging */

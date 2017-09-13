@@ -823,7 +823,7 @@ static void evaluate_energy(FILE *fplog, t_commrec *cr,
 
     /* Calculate long range corrections to pressure and energy */
     calc_dispcorr(inputrec, fr, ems->s.box, ems->s.lambda[efptVDW],
-                  pres, force_vir, &prescorr, &enercorr, &dvdlcorr);
+                  pres, force_vir, &prescorr, &enercorr, &dvdlcorr, NULL /*locals_null*/);
     enerd->term[F_DISPCORR] = enercorr;
     enerd->term[F_EPOT]    += enercorr;
     enerd->term[F_PRES]    += prescorr;

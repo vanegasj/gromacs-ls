@@ -243,7 +243,8 @@ void compute_globals(FILE *fplog, gmx_global_stat *gstat, t_commrec *cr, t_input
                      tensor pres, rvec mu_tot, gmx_constr_t constr,
                      gmx::SimulationSignaller *signalCoordinator,
                      matrix box, int *totalNumberOfBondedInteractions,
-                     gmx_bool *bSumEkinhOld, int flags)
+                     gmx_bool *bSumEkinhOld, int flags,
+                     mds::StressGrid *locals_grid)
 {
     tensor   corr_vir, corr_pres;
     gmx_bool bEner, bPres, bTemp;
@@ -366,7 +367,7 @@ void compute_globals(FILE *fplog, gmx_global_stat *gstat, t_commrec *cr, t_input
     if (bEner || bPres || bConstrain)
     {
         calc_dispcorr(ir, fr, box, state->lambda[efptVDW],
-                      corr_pres, corr_vir, &prescorr, &enercorr, &dvdlcorr);
+                      corr_pres, corr_vir, &prescorr, &enercorr, &dvdlcorr, locals_grid);
     }
 
     if (bEner)

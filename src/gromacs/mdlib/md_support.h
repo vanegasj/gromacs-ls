@@ -39,6 +39,7 @@
 
 #include "gromacs/mdlib/vcm.h"
 #include "gromacs/timing/wallcycle.h"
+#include "mdstress/mds_stressgrid.h"
 
 struct gmx_constr;
 struct gmx_ekindata_t;
@@ -135,7 +136,7 @@ void compute_globals(FILE *fplog, gmx_global_stat *gstat, t_commrec *cr, t_input
                      tensor pres, rvec mu_tot, gmx_constr *constr,
                      gmx::SimulationSignaller *signalCoordinator,
                      matrix box, int *totalNumberOfBondedInteractions,
-                     gmx_bool *bSumEkinhOld, int flags);
+                     gmx_bool *bSumEkinhOld, int flags, mds::StressGrid *locals_grid);
 /* Compute global variables during integration */
 
 #endif

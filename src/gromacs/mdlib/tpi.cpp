@@ -681,7 +681,7 @@ double do_tpi(FILE *fplog, t_commrec *cr,
 
             /* Calculate long range corrections to pressure and energy */
             calc_dispcorr(inputrec, fr, state_global->box,
-                          lambda, pres, vir, &prescorr, &enercorr, &dvdlcorr);
+                          lambda, pres, vir, &prescorr, &enercorr, &dvdlcorr, NULL /*locals_null*/);
             /* figure out how to rearrange the next 4 lines MRS 8/4/2009 */
             enerd->term[F_DISPCORR]  = enercorr;
             enerd->term[F_EPOT]     += enercorr;
