@@ -1044,6 +1044,7 @@ double do_cg(FILE *fplog, t_commrec *cr,
              int localscontrib,
              int localsfdecomp,
              int localsspatialatom,
+             int localsnodispcor,
              unsigned long gmx_unused Flags,
              gmx_walltime_accounting_t walltime_accounting)
 {
@@ -1699,6 +1700,7 @@ double do_lbfgs(FILE *fplog, t_commrec *cr,
                 int localscontrib,
                 int localsfdecomp,
                 int localsspatialatom,
+                int localsnodispcor,
                 unsigned long gmx_unused Flags,
                 gmx_walltime_accounting_t walltime_accounting)
 {
@@ -2535,6 +2537,7 @@ double do_steep(FILE *fplog, t_commrec *cr,
                 int localscontrib,
                 int localsfdecomp,
                 int localsspatialatom,
+                int localsnodispcor,
                 unsigned long gmx_unused Flags,
                 gmx_walltime_accounting_t walltime_accounting)
 {
@@ -2811,6 +2814,7 @@ double do_nm(FILE *fplog, t_commrec *cr,
              int localscontrib,
              int localsfdecomp,
              int localsspatialatom,
+             int localsnodispcor,
              unsigned long gmx_unused Flags,
              gmx_walltime_accounting_t walltime_accounting)
 {

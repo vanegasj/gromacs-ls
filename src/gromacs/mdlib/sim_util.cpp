@@ -2428,9 +2428,7 @@ void calc_dispcorr(t_inputrec *ir, t_forcerec *fr,
             /* pressure correction here */
             if (locals_grid != NULL)
             {
-                locals_grid->ShiftGrid(-svir);
-                // subtract svir/ngrid from locals_grid
-                // ngrid is found in local_grid class
+                locals_grid->DispersionCorrection(svir);
             }
         }
 

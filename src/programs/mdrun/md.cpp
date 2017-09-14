@@ -230,6 +230,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   int localscontrib,
                   int localsfdecomp,
                   int localsspatialatom,
+                  gmx_bool localsnodispcor,
                   unsigned long Flags,
                   gmx_walltime_accounting_t walltime_accounting)
 {
@@ -541,6 +542,8 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
     // initialization
     locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
+    if (localsnodispcor)
+        locals_grid.DisableDispersionCorrection();
     
     for(i=0; (i<DIM); i++)
         box_size[i]=state->box[i][i];

@@ -173,6 +173,7 @@ struct mdrunner_arglist
     int                     localscontrib;
     int                     localsfdecomp;
     int                     localsspatialatom;
+    int                     localsnodispcor;
     unsigned long           Flags;
 };
 
@@ -212,7 +213,7 @@ static void mdrunner_start_fn(void *arg)
                       mc.nmultisim, mc.repl_ex_nst, mc.repl_ex_nex, mc.repl_ex_seed, mc.pforce,
                       mc.cpt_period, mc.max_hours, mc.imdport, mc.localsgridspacing, mc.nstlocals,
                       mc.localsgridx, mc.localsgridy, mc.localsgridz, mc.localscontrib,
-                      mc.localsfdecomp, mc.localsspatialatom, mc.Flags);
+                      mc.localsfdecomp, mc.localsspatialatom, mc.localsnodispcor, mc.Flags);
     }
     GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR;
 }
@@ -707,7 +708,7 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
              int repl_ex_seed, real pforce, real cpt_period, real max_hours,
              int imdport, real localsgridspacing, int nstlocals, 
              int localsgridx, int localsgridy, int localsgridz, int localscontrib,
-             int localsfdecomp, int localsspatialatom, unsigned long Flags)
+             int localsfdecomp, int localsspatialatom, int localsnodispcor, unsigned long Flags)
 {
     gmx_bool                  bForceUseGPU, bTryUseGPU, bRerunMD;
     t_inputrec               *inputrec;
@@ -1369,6 +1370,7 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
                                      localscontrib,
                                      localsfdecomp,
                                      localsspatialatom,
+                                     localsnodispcor,
                                      Flags,
                                      walltime_accounting);
 

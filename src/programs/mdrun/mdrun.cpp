@@ -316,6 +316,7 @@ int gmx_mdrun(int argc, char *argv[])
     const char *localsenum   = "all";
     const char *localsfdenum = "ccfd";
     const char *localssanum  = "spat";
+    gmx_bool localsnodispcor = FALSE;
 
     /* Non transparent initialization of a complex gmx_hw_opt_t struct.
      * But unfortunately we are not allowed to call a function here,
@@ -423,6 +424,8 @@ int gmx_mdrun(int argc, char *argv[])
           "Select the type of force decomposition to be used: ccfd (covariant central force decomposition, default), ncfd (non-covariant central force decomposition), gld (Goetz-Lipowsky decomposition), or mop (method of planes)"},
         { "-lssa", FALSE, etSTR, {&localssanum},
           "Select the type of stress to calculate: spat (spatial stress from IKN theory, default), atom (stress per atom)"},
+        { "-lsnodispcor",  FALSE, etBOOL, {&localsnodispcor},
+          "Disable contribution from dispersion correction." },
         { "-imdport",    FALSE, etINT, {&imdport},
           "HIDDENIMD listening port" },
         { "-imdwait",  FALSE, etBOOL, {&bIMDwait},
@@ -647,7 +650,7 @@ int gmx_mdrun(int argc, char *argv[])
                        nmultisim, repl_ex_nst, repl_ex_nex, repl_ex_seed,
                        pforce, cpt_period, max_hours, imdport, localsgridspacing,
                        nstlocals, localsgridx, localsgridy, localsgridz,
-                       localscontrib, localsfdecomp, localsspatialatom, Flags);
+                       localscontrib, localsfdecomp, localsspatialatom, localsnodispcor, Flags);
 
     /* Log file has to be closed in mdrunner if we are appending to it
        (fplog not set here) */
