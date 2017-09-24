@@ -166,13 +166,12 @@ nb_kernel_ElecCSTab_VdwNone_GeomP1P1_VF_c
 
             r00              = rsq00*rinv00;
 
+            qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq00             = 0.0;
             }
-            else
-                qq00             = iq0*jq0;
 
             /* Calculate table index by multiplying r with table scale and truncate to integer */
             rt               = r00*vftabscale;
@@ -377,13 +376,12 @@ nb_kernel_ElecCSTab_VdwNone_GeomP1P1_F_c
 
             r00              = rsq00*rinv00;
 
+            qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq00             = 0.0;
             }
-            else
-                qq00             = iq0*jq0;
 
             /* Calculate table index by multiplying r with table scale and truncate to integer */
             rt               = r00*vftabscale;

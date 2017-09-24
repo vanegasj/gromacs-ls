@@ -183,13 +183,14 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomP1P1_VF_c
             if (rsq00<rcutoff2)
             {
 
+            qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq00             = 0.0;
             }
-            else
-                qq00             = iq0*jq0;
+            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+            c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -197,11 +198,6 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomP1P1_VF_c
                     c6_00            = 0.0;
                     c12_00           = 0.0;
                 }
-            }
-            else
-            {
-                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-                c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             }
 
             /* REACTION-FIELD ELECTROSTATICS */
@@ -422,13 +418,14 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomP1P1_F_c
             if (rsq00<rcutoff2)
             {
 
+            qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq00             = 0.0;
             }
-            else
-                qq00             = iq0*jq0;
+            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+            c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -436,11 +433,6 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomP1P1_F_c
                     c6_00            = 0.0;
                     c12_00           = 0.0;
                 }
-            }
-            else
-            {
-                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-                c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             }
 
             /* REACTION-FIELD ELECTROSTATICS */

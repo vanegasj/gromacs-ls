@@ -265,16 +265,18 @@ void
     /*     #endfor */
     /*     #for I,J in PAIRS_IJ */
     /*         #if 'electrostatics' in INTERACTION_FLAGS[I][J] */
+    qq{I}{J}             = iq{I}*jq{J};
     if (locals_grid != NULL)
     {
         if (locals_grid->GetContribType() == mds_vdw)
             qq{I}{J}             = 0.0;
     }
-    else
-        qq{I}{J}             = iq{I}*jq{J};
     /*         #endif */
     /*         #if 'vdw' in INTERACTION_FLAGS[I][J] */
     /*             #if 'Buckingham' in KERNEL_VDW */
+    c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+    cexp1_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+    cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
     if (locals_grid != NULL)
     {
         if (locals_grid->GetContribType() == mds_cou)
@@ -284,13 +286,10 @@ void
             cexp2_{I}{J}         = 0.0;
         }
     }
-    else
-    {
-        c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-        cexp1_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
-        cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
-    }
     /*             #elif 'LJEwald' in KERNEL_VDW */
+    c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+    c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+    c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
     if (locals_grid != NULL)
     {
         if (locals_grid->GetContribType() == mds_cou)
@@ -300,13 +299,9 @@ void
             c6grid_{I}{J}        = 0.0;
         }
     }
-    else
-    {
-        c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-        c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
-        c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
-    }
     /*             #else */
+    c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+    c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
     if (locals_grid != NULL)
     {
         if (locals_grid->GetContribType() == mds_cou)
@@ -314,11 +309,6 @@ void
             c6_{I}{J}            = 0.0;
             c12_{I}{J}           = 0.0;
         }
-    }
-    else
-    {
-        c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-        c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
     }
     /*             #endif */
     /*         #endif */
@@ -513,17 +503,19 @@ void
             /*     ## For water geometries we already loaded parameters at the start of the kernel */
             /*     #if not 'Water' in GEOMETRY_J */
             /*         #if 'electrostatics' in INTERACTION_FLAGS[I][J] */
+            qq{I}{J}             = iq{I}*jq{J};
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq{I}{J}             = 0.0;
             }
-            else
-                qq{I}{J}             = iq{I}*jq{J};
             /*             #define INNERFLOPS INNERFLOPS+1 */
             /*         #endif */
             /*         #if 'vdw' in INTERACTION_FLAGS[I][J] */
             /*             #if KERNEL_VDW=='Buckingham' */
+            c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+            cexp1_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+            cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -533,13 +525,10 @@ void
                     cexp2_{I}{J}         = 0.0;
                 }
             }
-            else
-            {
-                c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-                cexp1_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
-                cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
-            }
             /*             #elif 'LJEwald' in KERNEL_VDW */
+            c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+            c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
+            c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -549,13 +538,9 @@ void
                     c6grid_{I}{J}        = 0.0;
                 }
             }
-            else
-            {
-                c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-                c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
-                c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
-            }
             /*             #else */
+            c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
+            c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -563,11 +548,6 @@ void
                     c6_{I}{J}            = 0.0;
                     c12_{I}{J}           = 0.0;
                 }
-            }
-            else
-            {
-                c6_{I}{J}            = vdwparam[vdwioffset{I}+vdwjidx{J}];
-                c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
             }
             /*             #endif */
             /*         #endif */

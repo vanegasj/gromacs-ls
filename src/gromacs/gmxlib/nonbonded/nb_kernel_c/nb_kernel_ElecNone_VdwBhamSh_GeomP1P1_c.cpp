@@ -174,6 +174,9 @@ nb_kernel_ElecNone_VdwBhamSh_GeomP1P1_VF_c
 
             r00              = rsq00*rinv00;
 
+            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+            cexp1_00         = vdwparam[vdwioffset0+vdwjidx0+1];
+            cexp2_00         = vdwparam[vdwioffset0+vdwjidx0+2];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -182,12 +185,6 @@ nb_kernel_ElecNone_VdwBhamSh_GeomP1P1_VF_c
                     cexp1_00         = 0.0;
                     cexp2_00         = 0.0;
                 }
-            }
-            else
-            {
-                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-                cexp1_00         = vdwparam[vdwioffset0+vdwjidx0+1];
-                cexp2_00         = vdwparam[vdwioffset0+vdwjidx0+2];
             }
 
             /* BUCKINGHAM DISPERSION/REPULSION */
@@ -394,6 +391,9 @@ nb_kernel_ElecNone_VdwBhamSh_GeomP1P1_F_c
 
             r00              = rsq00*rinv00;
 
+            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+            cexp1_00         = vdwparam[vdwioffset0+vdwjidx0+1];
+            cexp2_00         = vdwparam[vdwioffset0+vdwjidx0+2];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -402,12 +402,6 @@ nb_kernel_ElecNone_VdwBhamSh_GeomP1P1_F_c
                     cexp1_00         = 0.0;
                     cexp2_00         = 0.0;
                 }
-            }
-            else
-            {
-                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-                cexp1_00         = vdwparam[vdwioffset0+vdwjidx0+1];
-                cexp2_00         = vdwparam[vdwioffset0+vdwjidx0+2];
             }
 
             /* BUCKINGHAM DISPERSION/REPULSION */

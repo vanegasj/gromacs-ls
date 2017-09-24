@@ -177,13 +177,12 @@ nb_kernel_ElecEwSh_VdwNone_GeomP1P1_VF_c
 
             r00              = rsq00*rinv00;
 
+            qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq00             = 0.0;
             }
-            else
-                qq00             = iq0*jq0;
 
             /* EWALD ELECTROSTATICS */
 
@@ -395,13 +394,12 @@ nb_kernel_ElecEwSh_VdwNone_GeomP1P1_F_c
 
             r00              = rsq00*rinv00;
 
+            qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq00             = 0.0;
             }
-            else
-                qq00             = iq0*jq0;
 
             /* EWALD ELECTROSTATICS */
 

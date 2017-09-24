@@ -176,13 +176,14 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomP1P1_VF_c
 
             r00              = rsq00*rinv00;
 
+            qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq00             = 0.0;
             }
-            else
-                qq00             = iq0*jq0;
+            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+            c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -190,11 +191,6 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomP1P1_VF_c
                     c6_00            = 0.0;
                     c12_00           = 0.0;
                 }
-            }
-            else
-            {
-                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-                c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             }
 
             /* Calculate table index by multiplying r with table scale and truncate to integer */
@@ -436,13 +432,14 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomP1P1_F_c
 
             r00              = rsq00*rinv00;
 
+            qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq00             = 0.0;
             }
-            else
-                qq00             = iq0*jq0;
+            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+            c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -450,11 +447,6 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomP1P1_F_c
                     c6_00            = 0.0;
                     c12_00           = 0.0;
                 }
-            }
-            else
-            {
-                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-                c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             }
 
             /* Calculate table index by multiplying r with table scale and truncate to integer */

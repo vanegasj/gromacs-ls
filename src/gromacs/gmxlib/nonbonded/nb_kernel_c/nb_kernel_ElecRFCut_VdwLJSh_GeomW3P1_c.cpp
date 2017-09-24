@@ -216,13 +216,14 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomW3P1_VF_c
             if (rsq00<rcutoff2)
             {
 
+            qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq00             = 0.0;
             }
-            else
-                qq00             = iq0*jq0;
+            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+            c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -230,11 +231,6 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomW3P1_VF_c
                     c6_00            = 0.0;
                     c12_00           = 0.0;
                 }
-            }
-            else
-            {
-                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-                c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             }
 
             /* REACTION-FIELD ELECTROSTATICS */
@@ -294,13 +290,12 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomW3P1_VF_c
             if (rsq10<rcutoff2)
             {
 
+            qq10             = iq1*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq10             = 0.0;
             }
-            else
-                qq10             = iq1*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             velec            = qq10*(rinv10+krf*rsq10-crf);
@@ -350,13 +345,12 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomW3P1_VF_c
             if (rsq20<rcutoff2)
             {
 
+            qq20             = iq2*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq20             = 0.0;
             }
-            else
-                qq20             = iq2*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             velec            = qq20*(rinv20+krf*rsq20-crf);
@@ -612,13 +606,14 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomW3P1_F_c
             if (rsq00<rcutoff2)
             {
 
+            qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq00             = 0.0;
             }
-            else
-                qq00             = iq0*jq0;
+            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+            c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -626,11 +621,6 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomW3P1_F_c
                     c6_00            = 0.0;
                     c12_00           = 0.0;
                 }
-            }
-            else
-            {
-                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-                c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             }
 
             /* REACTION-FIELD ELECTROSTATICS */
@@ -682,13 +672,12 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomW3P1_F_c
             if (rsq10<rcutoff2)
             {
 
+            qq10             = iq1*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq10             = 0.0;
             }
-            else
-                qq10             = iq1*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             felec            = qq10*(rinv10*rinvsq10-krf2);
@@ -734,13 +723,12 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomW3P1_F_c
             if (rsq20<rcutoff2)
             {
 
+            qq20             = iq2*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq20             = 0.0;
             }
-            else
-                qq20             = iq2*jq0;
 
             /* REACTION-FIELD ELECTROSTATICS */
             felec            = qq20*(rinv20*rinvsq20-krf2);

@@ -220,6 +220,8 @@ nb_kernel_ElecCSTab_VdwLJ_GeomW4P1_VF_c
              * CALCULATE INTERACTIONS *
              **************************/
 
+            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+            c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -227,11 +229,6 @@ nb_kernel_ElecCSTab_VdwLJ_GeomW4P1_VF_c
                     c6_00            = 0.0;
                     c12_00           = 0.0;
                 }
-            }
-            else
-            {
-                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-                c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             }
 
             /* LENNARD-JONES DISPERSION/REPULSION */
@@ -283,13 +280,12 @@ nb_kernel_ElecCSTab_VdwLJ_GeomW4P1_VF_c
 
             r10              = rsq10*rinv10;
 
+            qq10             = iq1*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq10             = 0.0;
             }
-            else
-                qq10             = iq1*jq0;
 
             /* Calculate table index by multiplying r with table scale and truncate to integer */
             rt               = r10*vftabscale;
@@ -349,13 +345,12 @@ nb_kernel_ElecCSTab_VdwLJ_GeomW4P1_VF_c
 
             r20              = rsq20*rinv20;
 
+            qq20             = iq2*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq20             = 0.0;
             }
-            else
-                qq20             = iq2*jq0;
 
             /* Calculate table index by multiplying r with table scale and truncate to integer */
             rt               = r20*vftabscale;
@@ -415,13 +410,12 @@ nb_kernel_ElecCSTab_VdwLJ_GeomW4P1_VF_c
 
             r30              = rsq30*rinv30;
 
+            qq30             = iq3*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq30             = 0.0;
             }
-            else
-                qq30             = iq3*jq0;
 
             /* Calculate table index by multiplying r with table scale and truncate to integer */
             rt               = r30*vftabscale;
@@ -698,6 +692,8 @@ nb_kernel_ElecCSTab_VdwLJ_GeomW4P1_F_c
              * CALCULATE INTERACTIONS *
              **************************/
 
+            c6_00            = vdwparam[vdwioffset0+vdwjidx0];
+            c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -705,11 +701,6 @@ nb_kernel_ElecCSTab_VdwLJ_GeomW4P1_F_c
                     c6_00            = 0.0;
                     c12_00           = 0.0;
                 }
-            }
-            else
-            {
-                c6_00            = vdwparam[vdwioffset0+vdwjidx0];
-                c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
             }
 
             /* LENNARD-JONES DISPERSION/REPULSION */
@@ -755,13 +746,12 @@ nb_kernel_ElecCSTab_VdwLJ_GeomW4P1_F_c
 
             r10              = rsq10*rinv10;
 
+            qq10             = iq1*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq10             = 0.0;
             }
-            else
-                qq10             = iq1*jq0;
 
             /* Calculate table index by multiplying r with table scale and truncate to integer */
             rt               = r10*vftabscale;
@@ -815,13 +805,12 @@ nb_kernel_ElecCSTab_VdwLJ_GeomW4P1_F_c
 
             r20              = rsq20*rinv20;
 
+            qq20             = iq2*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq20             = 0.0;
             }
-            else
-                qq20             = iq2*jq0;
 
             /* Calculate table index by multiplying r with table scale and truncate to integer */
             rt               = r20*vftabscale;
@@ -875,13 +864,12 @@ nb_kernel_ElecCSTab_VdwLJ_GeomW4P1_F_c
 
             r30              = rsq30*rinv30;
 
+            qq30             = iq3*jq0;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq30             = 0.0;
             }
-            else
-                qq30             = iq3*jq0;
 
             /* Calculate table index by multiplying r with table scale and truncate to integer */
             rt               = r30*vftabscale;

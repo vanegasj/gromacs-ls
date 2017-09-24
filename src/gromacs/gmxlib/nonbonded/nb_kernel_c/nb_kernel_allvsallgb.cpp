@@ -371,25 +371,25 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
                 /* Load parameters for j atom */
                 isaj              = invsqrta[k];
                 isaprod           = isai*isaj;
+                qq                = iq*charge[k];
                 if (locals_grid != NULL)
                 {
                     if (locals_grid->GetContribType() == mds_vdw)
                         qq                = 0.0;
                 }
-                else
-                    qq                = iq*charge[k];
 
                 vcoul             = qq*rinv;
                 fscal             = vcoul*rinv;
+                qq                = isaprod*(-qq)*gbfactor;
                 if (locals_grid != NULL)
                 {
                     if (locals_grid->GetContribType() == mds_vdw)
                         qq                = 0.0;
                 }
-                else
-                    qq                = isaprod*(-qq)*gbfactor;
 
                 gbscale           = isaprod*gbtabscale;
+                c6                = pvdw[2*k];
+                c12               = pvdw[2*k+1];
                 if (locals_grid != NULL)
                 {
                     if(locals_grid->GetContribType() == mds_cou)
@@ -397,11 +397,6 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
                         c6                = 0.0;
                         c12               = 0.0;
                     }
-                }
-                else
-                {
-                    c6                = pvdw[2*k];
-                    c12               = pvdw[2*k+1];
                 }
                 rinvsq            = rinv*rinv;
 
@@ -494,25 +489,26 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
             /* Load parameters for j atom */
             isaj              = invsqrta[k];
             isaprod           = isai*isaj;
+            qq                = iq*charge[k];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq                = 0.0;
             }
-            else
-                qq                = iq*charge[k];
 
             vcoul             = qq*rinv;
             fscal             = vcoul*rinv;
+            
+            qq                = isaprod*(-qq)*gbfactor;
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
                     qq                = 0.0;
             }
-            else
-                qq                = isaprod*(-qq)*gbfactor;
 
             gbscale           = isaprod*gbtabscale;
+            c6                = pvdw[2*k];
+            c12               = pvdw[2*k+1];
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_cou)
@@ -520,11 +516,6 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
                     c6                = 0.0;
                     c12               = 0.0;
                 }
-            }
-            else
-            {
-                c6                = pvdw[2*k];
-                c12               = pvdw[2*k+1];
             }
             rinvsq            = rinv*rinv;
 

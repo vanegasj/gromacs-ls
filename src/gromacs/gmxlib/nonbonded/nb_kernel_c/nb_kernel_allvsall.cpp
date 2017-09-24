@@ -348,14 +348,15 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
                 rinvsq            = rinv*rinv;
 
                 /* Load parameters for j atom */
+                qq                = iq*charge[k];
                 if (locals_grid != NULL)
                 {
                    if (locals_grid->GetContribType() == mds_vdw)
                        qq                = 0.0;
                 }
-                else
-                    qq                = iq*charge[k];
 
+                c6                = pvdw[2*k];
+                c12               = pvdw[2*k+1];
                 if (locals_grid != NULL)
                 {
                     if (locals_grid->GetContribType() == mds_cou)
@@ -363,11 +364,6 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
                         c6                = 0.0;
                         c12               = 0.0;
                     }
-                }
-                else
-                {
-                    c6                = pvdw[2*k];
-                    c12               = pvdw[2*k+1];
                 }
 
                 /* Coulomb interaction */
@@ -437,14 +433,15 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
             rinvsq            = rinv*rinv;
 
             /* Load parameters for j atom */
+            qq                = iq*charge[k];
             if (locals_grid != NULL)
             {
                if (locals_grid->GetContribType() == mds_vdw)
                    qq                = 0.0;
             }
-            else
-                qq                = iq*charge[k];
 
+            c6                = pvdw[2*k];
+            c12               = pvdw[2*k+1];
             if (locals_grid != NULL)
             {
                 if(locals_grid->GetContribType() == mds_cou)
@@ -452,11 +449,6 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
                     c6                = 0.0;
                     c12               = 0.0;
                 }
-            }
-            else
-            {
-                c6                = pvdw[2*k];
-                c12               = pvdw[2*k+1];
             }
 
             /* Coulomb interaction */
