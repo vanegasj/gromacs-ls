@@ -1761,7 +1761,10 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
 static void
 do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
                     rvec r_ij, rvec r_kj, rvec r_kl,
-                    rvec m, rvec n, rvec4 f[])
+                    rvec m, rvec n, rvec4 f[],
+                    const t_pbc *pbc, const t_graph *g,
+                    const rvec x[], mds::StressGrid * locals_grid,
+                    int locals_contrib)
 {
     rvec f_i, f_j, f_k, f_l;
     rvec uvec, vvec, svec;
@@ -1792,6 +1795,42 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
         rvec_sub(uvec, vvec, svec);   /*  3	*/
         rvec_sub(f_i, svec, f_j);     /*  3	*/
         rvec_add(f_l, svec, f_k);     /*  3	*/
+        
+        /* begin stress tensor */
+        if (locals_grid != NULL)
+        {
+            if (locals_grid->GetContribType() == mds_all || locals_grid->GetContribType() == locals_contrib)
+            {
+                rvec Ri, Rj, Rk, Rl, dx;
+                rvec Fj, Fk;
+                rvec lpR[4], lpF[4];
+                int  lpatIDs[4];
+              
+                copy_rvec(x[i], Ri);
+                pbc_rvec_sub(pbc, x[j], x[i], dx);
+                rvec_add(Ri, dx, Rj);
+                pbc_rvec_sub(pbc, x[k], x[i], dx);
+                rvec_add(Ri, dx, Rk);
+                pbc_rvec_sub(pbc, x[l], x[i], dx);
+                rvec_add(Ri, dx, Rl);
+                /* fj and fk need to be inverted */
+                svmul(-1.0, f_j, Fj);
+                svmul(-1.0, f_k, Fk);
+              
+                lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
+                lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
+                lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
+                lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
+                lpatIDs[0] = i; lpatIDs[1] = j; lpatIDs[2] = k; lpatIDs[3] = l;
+                lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
+                lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
+                lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
+                lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
+                locals_grid->DistributeInteraction(4, lpR, lpF, lpatIDs);
+            }
+        }
+        /* end stress tensor */
+
         rvec_inc(f[i], f_i);          /*  3	*/
         rvec_dec(f[j], f_j);          /*  3	*/
         rvec_dec(f[k], f_k);          /*  3	*/
@@ -2005,7 +2044,7 @@ pdihs_noener(int nbonds,
                forceatoms[i+3] == ak &&
                forceatoms[i+4] == al);
 
-        do_dih_fup_noshiftf(ai, aj, ak, al, ddphi_tot, r_ij, r_kj, r_kl, m, n, f);
+        do_dih_fup_noshiftf(ai, aj, ak, al, ddphi_tot, r_ij, r_kj, r_kl, m, n, f, pbc, g, x, locals_grid, mds_dio);
     }
 }
 
