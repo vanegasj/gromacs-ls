@@ -70,6 +70,7 @@ nbnxn_kernel_ElecRF_VdwLJEwCombGeom_VgrpF_4xn(const nbnxn_pairlist_t    gmx_unus
                                               rvec                      gmx_unused *shift_vec,
                                               real                      gmx_unused *f,
                                               real                      gmx_unused *fshift,
+                                              mds::StressGrid           gmx_unused *locals_grid,
                                               real                      gmx_unused *Vvdw,
                                               real                      gmx_unused *Vc)
 #else /* CALC_ENERGIES */
@@ -79,7 +80,8 @@ nbnxn_kernel_ElecRF_VdwLJEwCombGeom_VgrpF_4xn(const nbnxn_pairlist_t    gmx_unus
                                               const interaction_const_t gmx_unused *ic,
                                               rvec                      gmx_unused *shift_vec,
                                               real                      gmx_unused *f,
-                                              real                      gmx_unused *fshift)
+                                              real                      gmx_unused *fshift,
+                                              mds::StressGrid           gmx_unused *locals_grid)
 #endif /* CALC_ENERGIES */
 #ifdef GMX_NBNXN_SIMD_4XN
 #include "gromacs/mdlib/nbnxn_kernels/simd_4xn/nbnxn_kernel_simd_4xn_outer.h"

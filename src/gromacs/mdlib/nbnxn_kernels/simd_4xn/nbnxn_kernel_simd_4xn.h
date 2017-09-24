@@ -52,6 +52,7 @@ nbnxn_kernel_simd_4xn(nbnxn_pairlist_set_t       *nbl_list,
                       int                         force_flags,
                       int                         clearF,
                       real                       *fshift,
+                      mds::StressGrid            *locals_grid,
                       real                       *Vc,
                       real                       *Vvdw);
 
@@ -66,6 +67,7 @@ typedef void (nbk_func_ener)(const nbnxn_pairlist_t     *nbl,
                              rvec                       *shift_vec,
                              real                       *f,
                              real                       *fshift,
+                             mds::StressGrid            *locals_grid,
                              real                       *Vvdw,
                              real                       *Vc);
 typedef nbk_func_ener *p_nbk_func_ener;
@@ -75,7 +77,8 @@ typedef void (nbk_func_noener)(const nbnxn_pairlist_t     *nbl,
                                const interaction_const_t  *ic,
                                rvec                       *shift_vec,
                                real                       *f,
-                               real                       *fshift);
+                               real                       *fshift,
+                               mds::StressGrid            *locals_grid);
 typedef nbk_func_noener *p_nbk_func_noener;
 #endif
 
@@ -171,3 +174,5 @@ nbk_func_noener       nbnxn_kernel_ElecEwTwinCut_VdwLJ_F_4xn;
 nbk_func_noener       nbnxn_kernel_ElecEwTwinCut_VdwLJFSw_F_4xn;
 nbk_func_noener       nbnxn_kernel_ElecEwTwinCut_VdwLJPSw_F_4xn;
 nbk_func_noener       nbnxn_kernel_ElecEwTwinCut_VdwLJEwCombGeom_F_4xn;
+
+

@@ -135,6 +135,7 @@ void
 {6}int                       gmx_unused  force_flags,
 {6}int                       gmx_unused  clearF,
 {6}real                      gmx_unused *fshift,
+{6}mds::StressGrid           gmx_unused *locals_grid,
 {6}real                      gmx_unused *Vc,
 {6}real                      gmx_unused *Vvdw)
 #ifdef {0}
@@ -251,7 +252,8 @@ void
                                         ic,
                                         shift_vec,
                                         out->f,
-                                        fshift_p);
+                                        fshift_p,
+                                        locals_grid);
         }}
         else if (out->nV == 1)
         {{
@@ -264,6 +266,7 @@ void
                                       shift_vec,
                                       out->f,
                                       fshift_p,
+                                      locals_grid,
                                       out->Vvdw,
                                       out->Vc);
         }}
@@ -286,6 +289,7 @@ void
                                          shift_vec,
                                          out->f,
                                          fshift_p,
+                                         locals_grid,
                                          out->VSvdw,
                                          out->VSc);
 

@@ -39,6 +39,7 @@
 #include "gromacs/math/vectypes.h"
 #include "gromacs/simd/simd.h"
 #include "gromacs/utility/real.h"
+#include "mdstress/mds_stressgrid.h"
 
 #if GMX_SIMD
 /* The nbnxn SIMD 4xN and 2x(N+N) kernels can be added independently.

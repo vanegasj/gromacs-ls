@@ -1,7 +1,7 @@
 /*
  * This file is part of the GROMACS molecular simulation package.
  *
- * Copyright (c) 2012,2013,2014,2015,2016, by the GROMACS development team, led by
+ * Copyright (c) 2012,2013,2014,2015, by the GROMACS development team, led by
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
  * and including many others, as listed in the AUTHORS file in the
  * top-level source directory and at http://www.gromacs.org.
@@ -269,6 +269,7 @@ nbnxn_kernel_simd_4xn(nbnxn_pairlist_set_t      gmx_unused *nbl_list,
                       int                       gmx_unused  force_flags,
                       int                       gmx_unused  clearF,
                       real                      gmx_unused *fshift,
+                      mds::StressGrid           gmx_unused *locals_grid,
                       real                      gmx_unused *Vc,
                       real                      gmx_unused *Vvdw)
 #ifdef GMX_NBNXN_SIMD_4XN
@@ -385,7 +386,8 @@ nbnxn_kernel_simd_4xn(nbnxn_pairlist_set_t      gmx_unused *nbl_list,
                                         ic,
                                         shift_vec,
                                         out->f,
-                                        fshift_p);
+                                        fshift_p,
+                                        locals_grid);
         }
         else if (out->nV == 1)
         {
@@ -398,6 +400,7 @@ nbnxn_kernel_simd_4xn(nbnxn_pairlist_set_t      gmx_unused *nbl_list,
                                       shift_vec,
                                       out->f,
                                       fshift_p,
+                                      locals_grid,
                                       out->Vvdw,
                                       out->Vc);
         }
@@ -420,6 +423,7 @@ nbnxn_kernel_simd_4xn(nbnxn_pairlist_set_t      gmx_unused *nbl_list,
                                          shift_vec,
                                          out->f,
                                          fshift_p,
+                                         locals_grid,
                                          out->VSvdw,
                                          out->VSc);
 

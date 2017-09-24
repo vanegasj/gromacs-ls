@@ -475,7 +475,8 @@ static void do_nb_verlet(t_forcerec *fr,
                          int flags, int ilocality,
                          int clearF,
                          t_nrnb *nrnb,
-                         gmx_wallcycle_t wcycle)
+                         gmx_wallcycle_t wcycle,
+                         mds::StressGrid *locals_grid)
 {
     int                        enr_nbnxn_kernel_ljc, enr_nbnxn_kernel_lj;
     nonbonded_verlet_group_t  *nbvg;
@@ -524,6 +525,7 @@ static void do_nb_verlet(t_forcerec *fr,
                                   flags,
                                   clearF,
                                   fr->fshift[0],
+                                  locals_grid,
                                   enerd->grpp.ener[egCOULSR],
                                   fr->bBHAM ?
                                   enerd->grpp.ener[egBHAMSR] :
@@ -537,6 +539,7 @@ static void do_nb_verlet(t_forcerec *fr,
                                    flags,
                                    clearF,
                                    fr->fshift[0],
+                                   locals_grid,
                                    enerd->grpp.ener[egCOULSR],
                                    fr->bBHAM ?
                                    enerd->grpp.ener[egBHAMSR] :
@@ -1030,7 +1033,7 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
         wallcycle_start(wcycle, ewcLAUNCH_GPU_NB);
         /* launch local nonbonded F on GPU */
         do_nb_verlet(fr, ic, enerd, flags, eintLocal, enbvClearFNo,
-                     nrnb, wcycle);
+                     nrnb, wcycle, locals_grid);
         wallcycle_stop(wcycle, ewcLAUNCH_GPU_NB);
     }
 
@@ -1105,7 +1108,7 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
             wallcycle_start(wcycle, ewcLAUNCH_GPU_NB);
             /* launch non-local nonbonded F on GPU */
             do_nb_verlet(fr, ic, enerd, flags, eintNonlocal, enbvClearFNo,
-                         nrnb, wcycle);
+                         nrnb, wcycle, locals_grid);
             cycles_force += wallcycle_stop(wcycle, ewcLAUNCH_GPU_NB);
         }
     }
@@ -1236,7 +1239,7 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
     {
         /* Maybe we should move this into do_force_lowlevel */
         do_nb_verlet(fr, ic, enerd, flags, eintLocal, enbvClearFYes,
-                     nrnb, wcycle);
+                     nrnb, wcycle, locals_grid);
     }
 
     if (fr->efep != efepNO)
@@ -1270,7 +1273,7 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
         {
             do_nb_verlet(fr, ic, enerd, flags, eintNonlocal,
                          bDiffKernels ? enbvClearFYes : enbvClearFNo,
-                         nrnb, wcycle);
+                         nrnb, wcycle, locals_grid);
         }
 
         if (!bUseOrEmulGPU)
@@ -1350,7 +1353,7 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
             {
                 wallcycle_start_nocount(wcycle, ewcFORCE);
                 do_nb_verlet(fr, ic, enerd, flags, eintNonlocal, enbvClearFYes,
-                             nrnb, wcycle);
+                             nrnb, wcycle,locals_grid);
                 cycles_force += wallcycle_stop(wcycle, ewcFORCE);
             }
             wallcycle_start(wcycle, ewcNB_XF_BUF_OPS);
@@ -1442,7 +1445,7 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
             wallcycle_start_nocount(wcycle, ewcFORCE);
             do_nb_verlet(fr, ic, enerd, flags, eintLocal,
                          DOMAINDECOMP(cr) ? enbvClearFNo : enbvClearFYes,
-                         nrnb, wcycle);
+                         nrnb, wcycle,locals_grid);
             wallcycle_stop(wcycle, ewcFORCE);
         }
         wallcycle_start(wcycle, ewcNB_XF_BUF_OPS);
