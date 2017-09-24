@@ -328,7 +328,6 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
         /* constraint virial */
         if (bCalcVir)
         {
-            printf("entered bCalcVir\n");
             mm = scaled_lagrange_multiplier[ll];
             for (d = 0; d < DIM; d++)
             {
