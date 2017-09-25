@@ -100,6 +100,8 @@ NBK_FUNC_NAME(_VgrpF)
  ,
  real                       *fshift
 #endif
+ ,
+ mds::StressGrid            *locals_grid
 #ifdef CALC_ENERGIES
  ,
  real                       *Vvdw,

@@ -153,6 +153,14 @@
             {
                 c6      = nbfp[type_i_off+type[aj]*2  ];
                 c12     = nbfp[type_i_off+type[aj]*2+1];
+                if (locals_grid != NULL)
+                {
+                    if (locals_grid->GetContribType() == mds_cou)
+                    {
+                        c6 = 0.0;
+                        c12 = 0.0;
+                    }
+                }
 
 #if defined LJ_CUT || defined LJ_FORCE_SWITCH || defined LJ_POT_SWITCH
                 rinvsix = interact*rinvsq*rinvsq*rinvsq;
@@ -213,6 +221,13 @@
 
 #ifdef LJ_EWALD_COMB_GEOM
                     c6grid       = ljc[type[ai]*2]*ljc[type[aj]*2];
+                    if (locals_grid != NULL)
+                    {
+                        if (locals_grid->GetContribType() == mds_cou)
+                        {
+                            c6grid = 0.0;
+                        }
+                    }
 #elif defined LJ_EWALD_COMB_LB
                     {
                         real sigma, sigma2, epsilon;
@@ -223,6 +238,13 @@
 
                         sigma2  = sigma*sigma;
                         c6grid  = epsilon*sigma2*sigma2*sigma2;
+                        if (locals_grid != NULL)
+                        {
+                            if (locals_grid->GetContribType() == mds_cou)
+                            {
+                                c6grid = 0.0;
+                            }
+                        }
                     }
 #else
 #error "No LJ Ewald combination rule defined"
@@ -294,6 +316,13 @@
              * to do this is to zero the charges in
              * advance. */
             qq = skipmask * qi[i] * q[aj];
+            if (locals_grid != NULL)
+            {
+                if (locals_grid->GetContribType() == mds_vdw)
+                {
+                    qq = 0.0;
+                }
+            }
 
 #ifdef CALC_COUL_RF
             fcoul  = qq*(interact*rinv*rinvsq - k_rf2);
@@ -362,6 +391,31 @@
             fx = fscal*dx;
             fy = fscal*dy;
             fz = fscal*dz;
+
+            /* begin stress tensor */
+            if (locals_grid != NULL)
+            {
+                if ((locals_grid->GetContribType() == mds_all) ||
+                    (locals_grid->GetContribType() == mds_vdw) ||
+                    (locals_grid->GetContribType() == mds_cou))
+                {
+                    int  lpatIDs[2];
+                    lpatIDs[0] = i*XI_STRIDE/3; lpatIDs[1] = aj*X_STRIDE/3;
+
+                    real ix = xi[i*XI_STRIDE+XX]; real jx = x[aj*X_STRIDE+XX];
+                    real iy = xi[i*XI_STRIDE+YY]; real jy = x[aj*X_STRIDE+YY];
+                    real iz = xi[i*XI_STRIDE+ZZ]; real jz = x[aj*X_STRIDE+ZZ];
+
+                    rvec lpR[2], lpF[2];
+                    lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
+                    lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
+                    lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
+                    lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
+
+                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                }
+            }
+            /* end stress tensor */
 
             /* Increment i-atom force */
             fi[i*FI_STRIDE+XX] += fx;

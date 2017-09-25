@@ -64,7 +64,8 @@ typedef void (*p_nbk_func_noener)(const nbnxn_pairlist_t     *nbl,
                                   const interaction_const_t  *ic,
                                   rvec                       *shift_vec,
                                   real                       *f,
-                                  real                       *fshift);
+                                  real                       *fshift,
+                                  mds::StressGrid            *locals_grid);
 
 typedef void (*p_nbk_func_ener)(const nbnxn_pairlist_t     *nbl,
                                 const nbnxn_atomdata_t     *nbat,
@@ -72,6 +73,7 @@ typedef void (*p_nbk_func_ener)(const nbnxn_pairlist_t     *nbl,
                                 rvec                       *shift_vec,
                                 real                       *f,
                                 real                       *fshift,
+                                mds::StressGrid            *locals_grid,
                                 real                       *Vvdw,
                                 real                       *Vc);
 
@@ -182,6 +184,7 @@ nbnxn_kernel_ref(const nbnxn_pairlist_set_t *nbl_list,
                  int                         force_flags,
                  int                         clearF,
                  real                       *fshift,
+                 mds::StressGrid            *locals_grid,
                  real                       *Vc,
                  real                       *Vvdw)
 {
@@ -286,7 +289,8 @@ nbnxn_kernel_ref(const nbnxn_pairlist_set_t *nbl_list,
                                         ic,
                                         shift_vec,
                                         out->f,
-                                        fshift_p);
+                                        fshift_p,
+                                        locals_grid);
         }
         else if (out->nV == 1)
         {
@@ -299,6 +303,7 @@ nbnxn_kernel_ref(const nbnxn_pairlist_set_t *nbl_list,
                                       shift_vec,
                                       out->f,
                                       fshift_p,
+                                      locals_grid,
                                       out->Vvdw,
                                       out->Vc);
         }
@@ -321,6 +326,7 @@ nbnxn_kernel_ref(const nbnxn_pairlist_set_t *nbl_list,
                                          shift_vec,
                                          out->f,
                                          fshift_p,
+                                         locals_grid,
                                          out->Vvdw,
                                          out->Vc);
         }

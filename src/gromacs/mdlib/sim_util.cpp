@@ -511,6 +511,7 @@ static void do_nb_verlet(t_forcerec *fr,
                              flags,
                              clearF,
                              fr->fshift[0],
+                             locals_grid,
                              enerd->grpp.ener[egCOULSR],
                              fr->bBHAM ?
                              enerd->grpp.ener[egBHAMSR] :

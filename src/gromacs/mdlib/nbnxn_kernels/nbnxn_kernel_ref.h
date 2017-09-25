@@ -40,6 +40,7 @@
 #include "gromacs/mdlib/nbnxn_pairlist.h"
 #include "gromacs/mdtypes/forcerec.h"
 #include "gromacs/utility/real.h"
+#include "mdstress/mds_stressgrid.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,6 +55,7 @@ nbnxn_kernel_ref(const nbnxn_pairlist_set_t *nbl_list,
                  int                         force_flags,
                  int                         clearF,
                  real                       *fshift,
+                 mds::StressGrid            *locals_grid,
                  real                       *Vc,
                  real                       *Vvdw);
 
