@@ -309,15 +309,39 @@
     jq_S        = loadDuplicateHsimd(q+aj);
     qq_S0       = iq_S0 * jq_S;
     qq_S2       = iq_S2 * jq_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+        {
+            qq_S0 = RealSimd(0.0);
+            qq_S2 = RealSimd(0.0);
+        }
+    }
 #endif
 
 #ifdef CALC_LJ
 #if !defined LJ_COMB_GEOM && !defined LJ_COMB_LB && !defined FIX_LJ_C
     SimdReal c6_S0, c12_S0;
     gatherLoadTransposeHsimd<c_simdBestPairAlignment>(nbfp0, nbfp1, type+aj, &c6_S0, &c12_S0);
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c6_S0 = RealSimd(0.0);
+            c12_S0 = RealSimd(0.0);
+        }
+    }
 #ifndef HALF_LJ
     SimdReal c6_S2, c12_S2;
     gatherLoadTransposeHsimd<c_simdBestPairAlignment>(nbfp2, nbfp3, type+aj, &c6_S2, &c12_S2);
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c6_S2 = RealSimd(0.0);
+            c12_S2 = RealSimd(0.0);
+        }
+    }
 #endif
 #endif /* not defined any LJ rule */
 
@@ -325,12 +349,40 @@
     c6s_j_S  = loadDuplicateHsimd(ljc+aj2);
     c12s_j_S = loadDuplicateHsimd(ljc+aj2+STRIDE);
     SimdReal c6_S0       = c6s_S0 * c6s_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c6_S0 = RealSimd(0.0);
+        }
+    }
 #ifndef HALF_LJ
     SimdReal c6_S2       = c6s_S2 * c6s_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c6_S2 = RealSimd(0.0);
+        }
+    }
 #endif
     SimdReal c12_S0      = c12s_S0 * c12s_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c12_S0 = RealSimd(0.0);
+        }
+    }
 #ifndef HALF_LJ
     SimdReal c12_S2      = c12s_S2 * c12s_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c12_S2 = RealSimd(0.0);
+        }
+    }
 #endif
 #endif /* LJ_COMB_GEOM */
 
@@ -340,9 +392,23 @@
 
     sig_S0      = hsig_i_S0 + hsig_j_S;
     eps_S0      = seps_i_S0 * seps_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            eps_S0 = RealSimd(0.0);
+        }
+    }
 #ifndef HALF_LJ
     sig_S2      = hsig_i_S2 + hsig_j_S;
     eps_S2      = seps_i_S2 * seps_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            eps_S2 = RealSimd(0.0);
+        }
+    }
 #endif
 #endif /* LJ_COMB_LB */
 

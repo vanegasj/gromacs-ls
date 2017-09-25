@@ -404,6 +404,16 @@
     qq_S1       = iq_S1 * jq_S;
     qq_S2       = iq_S2 * jq_S;
     qq_S3       = iq_S3 * jq_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_vdw)
+        {
+            qq_S0 = RealSimd(0.0);
+            qq_S1 = RealSimd(0.0);
+            qq_S2 = RealSimd(0.0);
+            qq_S3 = RealSimd(0.0);
+        }
+    }
 #endif
 
 #ifdef CALC_LJ
@@ -411,10 +421,30 @@
     SimdReal c6_S0, c6_S1, c12_S0, c12_S1;
     gatherLoadTranspose<c_simdBestPairAlignment>(nbfp0, type+aj, &c6_S0, &c12_S0);
     gatherLoadTranspose<c_simdBestPairAlignment>(nbfp1, type+aj, &c6_S1, &c12_S1);
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c6_S0 = RealSimd(0.0);
+            c6_S1 = RealSimd(0.0);
+            c12_S0 = RealSimd(0.0);
+            c12_S1 = RealSimd(0.0);
+        }
+    }
 #ifndef HALF_LJ
     SimdReal c6_S2, c6_S3, c12_S2, c12_S3;
     gatherLoadTranspose<c_simdBestPairAlignment>(nbfp2, type+aj, &c6_S2, &c12_S2);
     gatherLoadTranspose<c_simdBestPairAlignment>(nbfp3, type+aj, &c6_S3, &c12_S3);
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c6_S2 = RealSimd(0.0);
+            c6_S3 = RealSimd(0.0);
+            c12_S2 = RealSimd(0.0);
+            c12_S3 = RealSimd(0.0);
+        }
+    }
 #endif
 #endif /* not defined any LJ rule */
 
@@ -423,15 +453,47 @@
     c12s_j_S    = load(ljc+aj2+STRIDE);
     SimdReal c6_S0  = c6s_S0 * c6s_j_S;
     SimdReal c6_S1  = c6s_S1 * c6s_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c6_S0 = RealSimd(0.0);
+            c6_S1 = RealSimd(0.0);
+        }
+    }
 #ifndef HALF_LJ
     SimdReal c6_S2  = c6s_S2 * c6s_j_S;
     SimdReal c6_S3  = c6s_S3 * c6s_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c6_S2 = RealSimd(0.0);
+            c6_S3 = RealSimd(0.0);
+        }
+    }
 #endif
     SimdReal c12_S0 = c12s_S0 * c12s_j_S;
     SimdReal c12_S1 = c12s_S1 * c12s_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c12_S0 = RealSimd(0.0);
+            c12_S1 = RealSimd(0.0);
+        }
+    }
 #ifndef HALF_LJ
     SimdReal c12_S2 = c12s_S2 * c12s_j_S;
     SimdReal c12_S3 = c12s_S3 * c12s_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            c12_S2 = RealSimd(0.0);
+            c12_S3 = RealSimd(0.0);
+        }
+    }
 #endif
 #endif /* LJ_COMB_GEOM */
 
@@ -443,11 +505,27 @@
     sig_S1      = hsig_i_S1 + hsig_j_S;
     eps_S0      = seps_i_S0 * seps_j_S;
     eps_S1      = seps_i_S1 * seps_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            eps_S0 = RealSimd(0.0);
+            eps_S1 = RealSimd(0.0);
+        }
+    }
 #ifndef HALF_LJ
     sig_S2      = hsig_i_S2 + hsig_j_S;
     sig_S3      = hsig_i_S3 + hsig_j_S;
     eps_S2      = seps_i_S2 * seps_j_S;
     eps_S3      = seps_i_S3 * seps_j_S;
+    if (locals_grid != NULL)
+    {
+        if (locals_grid->GetContribType() == mds_coul)
+        {
+            eps_S2 = RealSimd(0.0);
+            eps_S3 = RealSimd(0.0);
+        }
+    }
 #endif
 #endif /* LJ_COMB_LB */
 
