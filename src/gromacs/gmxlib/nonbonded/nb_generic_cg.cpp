@@ -97,9 +97,15 @@ gmx_nb_generic_cg_kernel(t_nblist *                nlist,
     f                   = ff[0];
     ielec               = nlist->ielec;
     ivdw                = nlist->ivdw;
-
-    fshift              = fr->fshift[0];
+    /* begin stress tensor */
     locals_grid         = kernel_data->locals_grid;
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw){
+       ielec               = 0;
+    }else if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou){
+       ivdw                = 0;
+    }
+    /* end stress tensor */
+    fshift              = fr->fshift[0];
     Vc                  = kernel_data->energygrp_elec;
     Vvdw                = kernel_data->energygrp_vdw;
 
@@ -200,9 +206,6 @@ gmx_nb_generic_cg_kernel(t_nblist *                nlist,
                         nnn              = table_nelements*n0;
                     }
 
-                    /* if we are only interested in vdw, don't do cou */
-                    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                        ; // do nothing, 
                     /* Coulomb interaction. ielec==0 means no interaction */
                     else if (ielec > 0)
                     {
@@ -251,9 +254,6 @@ gmx_nb_generic_cg_kernel(t_nblist *                nlist,
 
 
                     /* VdW interaction. ivdw==0 means no interaction */
-                    /* if we are only interested in vdw, don't do vdw */
-                    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
-                        ; // do nothing
                     else if (ivdw > 0)
                     {
                         tj               = nti+nvdwparam*type[aj];

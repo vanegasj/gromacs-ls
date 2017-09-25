@@ -106,9 +106,17 @@ gmx_nb_generic_kernel(t_nblist *                nlist,
     f                   = ff[0];
     ielec               = nlist->ielec;
     ivdw                = nlist->ivdw;
-    
-    fshift              = fr->fshift[0];
     locals_grid         = kernel_data->locals_grid;
+
+    /* begin stress tensor */
+    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw){
+       ielec               = 0;
+    }else if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou){
+       ivdw                = 0;
+    }
+    /* end stress tensor */
+
+    fshift              = fr->fshift[0];
     velecgrp            = kernel_data->energygrp_elec;
     vvdwgrp             = kernel_data->energygrp_vdw;
 
@@ -256,9 +264,6 @@ gmx_nb_generic_kernel(t_nblist *                nlist,
                 nnn              = table_nelements*n0;
             }
 
-            /* if we are only interested in vdw, don't do cou */
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
-                ; // do nothing, 
             /* Coulomb interaction. ielec==0 means no interaction */
             else if (ielec != GMX_NBKERNEL_ELEC_NONE)
             {
@@ -341,10 +346,6 @@ gmx_nb_generic_kernel(t_nblist *                nlist,
                 vctot           += velec;
             } /* End of coulomb interactions */
 
-
-            /* if we are only interested in vdw, don't do vdw */
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
-                ; // do nothing
             /* VdW interaction. ivdw==0 means no interaction */
             else if (ivdw != GMX_NBKERNEL_VDW_NONE)
             {
