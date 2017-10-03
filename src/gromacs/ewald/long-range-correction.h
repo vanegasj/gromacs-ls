@@ -56,6 +56,7 @@
 #include "gromacs/topology/block.h"
 #include "gromacs/utility/basedefinitions.h"
 #include "gromacs/utility/real.h"
+#include "mdstress/mds_stressgrid.h"
 
 /*! \brief Calculate long-range Ewald correction terms.
  *
@@ -82,6 +83,7 @@ ewald_LRcorrection(int numAtomsLocal,
                    rvec *f, tensor vir_q, tensor vir_lj,
                    real *Vcorr_q, real *Vcorr_lj,
                    real lambda_q, real lambda_lj,
-                   real *dvdlambda_q, real *dvdlambda_lj);
+                   real *dvdlambda_q, real *dvdlambda_lj,
+                   mds::StressGrid *locals_grid);
 
 #endif

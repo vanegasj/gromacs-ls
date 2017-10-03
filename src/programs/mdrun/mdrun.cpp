@@ -536,6 +536,9 @@ int gmx_mdrun(int argc, char *argv[])
     }else if(strncmp(localsenum,"dihi",5) == 0){
       printf("\nWill only write inproper dihedral contributions to the local stress\n");
       localscontrib = mds_dii;
+    }else if(strncmp(localsenum,"diho",5) == 0){
+      printf("\nWill only write other dihedral contributions to the local stress\n");
+      localscontrib = mds_dio;
     }else if(strncmp(localsenum,"dihrb",5) == 0){
       printf("\nWill only write RB dihedral contributions to the local stress\n");
       localscontrib = mds_drb;
@@ -548,6 +551,9 @@ int gmx_mdrun(int argc, char *argv[])
     }else if(strncmp(localsenum,"shake",5) == 0){
       printf("\nWill only write SHAKE constraints contributions to the local stress\n");
       localscontrib = mds_sha;
+    }else if(strncmp(localsenum,"ewald",5) == 0){
+      printf("\nWill only write EWALD contributions to the local stress\n");
+      localscontrib = mds_ewal;
     }else if(strncmp(localsenum,"vel",5) == 0){
       printf("\nWill only write velocity contributions to the local stress\n");
       localscontrib = mds_kin;

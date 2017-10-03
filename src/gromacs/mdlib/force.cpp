@@ -468,7 +468,7 @@ void do_force_lowlevel(t_forcerec *fr,      t_inputrec *ir,
                                            fr->f_novirsum, *vir_q, *vir_lj,
                                            Vcorrt_q, Vcorrt_lj,
                                            lambda[efptCOUL], lambda[efptVDW],
-                                           dvdlt_q, dvdlt_lj);
+                                           dvdlt_q, dvdlt_lj,locals_grid);
                     }
                     GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR;
                 }

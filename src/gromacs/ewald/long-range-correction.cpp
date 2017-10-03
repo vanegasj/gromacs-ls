@@ -76,8 +76,10 @@ void ewald_LRcorrection(int numAtomsLocal,
                         rvec *f, tensor vir_q, tensor vir_lj,
                         real *Vcorr_q, real *Vcorr_lj,
                         real lambda_q, real lambda_lj,
-                        real *dvdlambda_q, real *dvdlambda_lj)
+                        real *dvdlambda_q, real *dvdlambda_lj,
+                        mds::StressGrid *locals_grid)
 {
+    printf("\ncalling the ewal_LRcorrection function\n");
     int numAtomsToBeCorrected;
     if (calc_excl_corr)
     {
@@ -173,8 +175,10 @@ void ewald_LRcorrection(int numAtomsLocal,
                 mutot[0][XX], mutot[0][YY], mutot[0][ZZ]);
     }
     bNeedLongRangeCorrection = (calc_excl_corr || dipole_coeff != 0);
+    printf("\nchecking if long range correction is needed\n");
     if (bNeedLongRangeCorrection && !bHaveChargeOrTypePerturbed)
     {
+        printf("\nneed long range correction evaluated true\n");
         for (i = start; (i < end); i++)
         {
             /* Initiate local variables (for this i-particle) to 0 */
@@ -313,6 +317,38 @@ void ewald_LRcorrection(int numAtomsLocal,
                                         }
                                     }
                                 }
+
+                                /* begin stress tensor */
+                                printf("\nmade it to the point where we are testing for null\n");
+                                if (locals_grid != NULL)
+                                {
+                                    printf("\nlocals_grid is not null\n");
+                                    rvec lpR[2], lpF[2];
+                                    int  lpatIDs[2];
+
+                                    if ((locals_grid->GetContribType() == mds_all)
+                                            || (locals_grid->GetContribType() == mds_ewal))
+                                    {
+                                        printf("\nadding contribution\n");
+                                        // positions of x_i unmodified
+                                        lpR[0][0] = x[i][0];
+                                        lpR[0][1] = x[i][1];
+                                        lpR[0][2] = x[i][2]; 
+                                        
+                                        // enforcing periodic boundary conditions in x_j
+                                        lpR[1][0] = x[i][0]-dx[0];
+                                        lpR[1][1] = x[i][1]-dx[1];
+                                        lpR[1][2] = x[i][2]-dx[2]; 
+
+                                        // since x is an rvec, these are the particle labels
+                                        lpatIDs[0] = i; lpatIDs[1] = k;
+
+                                        lpF[0][0] = df[0];  lpF[0][1] = df[1];  lpF[0][2] = df[2];
+                                        lpF[1][0] = -df[0]; lpF[1][1] = -df[1]; lpF[1][2] = -df[2];
+                                        locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                    }
+                                }
+                                /* end stress tensor */
                             }
                             else
                             {
