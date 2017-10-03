@@ -393,14 +393,14 @@
             fz = fscal*dz;
 
             /* begin stress tensor */
-            if (locals_grid != NULL)
+            if (locals_grid != NULL && abs(fscal) > 1E-12)
             {
                 if ((locals_grid->GetContribType() == mds_all) ||
                     (locals_grid->GetContribType() == mds_vdw) ||
                     (locals_grid->GetContribType() == mds_cou))
                 {
                     int  lpatIDs[2];
-                    lpatIDs[0] = i*XI_STRIDE/3; lpatIDs[1] = aj*X_STRIDE/3;
+                    lpatIDs[0] = ai; lpatIDs[1] = aj;
 
                     real ix = xi[i*XI_STRIDE+XX]; real jx = x[aj*X_STRIDE+XX];
                     real iy = xi[i*XI_STRIDE+YY]; real jy = x[aj*X_STRIDE+YY];
