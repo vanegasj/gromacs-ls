@@ -576,7 +576,8 @@ void do_force_lowlevel(t_forcerec *fr,      t_inputrec *ir,
                              md->chargeA, md->chargeB,
                              box_size, cr, md->homenr,
                              fr->vir_el_recip, fr->ewaldcoeff_q,
-                             lambda[efptCOUL], &dvdl_long_range_q, fr->ewald_table);
+                             lambda[efptCOUL], &dvdl_long_range_q,
+                             fr->ewald_table, locals_grid);
         }
 
         /* Note that with separate PME nodes we get the real energies later */

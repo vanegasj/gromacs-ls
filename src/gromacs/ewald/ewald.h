@@ -71,6 +71,7 @@
 #include "gromacs/mdtypes/commrec.h"
 #include "gromacs/mdtypes/forcerec.h"
 #include "gromacs/utility/real.h"
+#include "mdstress/mds_stressgrid.h"
 
 struct t_inputrec;
 
@@ -91,7 +92,8 @@ do_ewald(t_inputrec *ir,
          t_commrec *cr,  int natoms,
          matrix lrvir,   real ewaldcoeff,
          real lambda,    real *dvdlambda,
-         struct gmx_ewald_tab_t *et);
+         struct gmx_ewald_tab_t *et,
+         mds::StressGrid *locals_grid);
 
 /*! \brief Calculate the correction to the Ewald sum, due to a net system
  * charge.

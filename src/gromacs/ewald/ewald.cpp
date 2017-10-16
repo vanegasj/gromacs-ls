@@ -141,7 +141,8 @@ real do_ewald(t_inputrec *ir,
               t_commrec *cr,   int natoms,
               matrix lrvir,    real ewaldcoeff,
               real lambda,     real *dvdlambda,
-              struct gmx_ewald_tab_t *et)
+              struct gmx_ewald_tab_t *et,
+              mds::StressGrid *locals_grid)
 {
     real     factor     = -1.0/(4*ewaldcoeff*ewaldcoeff);
     real     scaleRecip = 4.0*M_PI/(box[XX]*box[YY]*box[ZZ])*ONE_4PI_EPS0/ir->epsilon_r; /* 1/(Vol*e0) */
