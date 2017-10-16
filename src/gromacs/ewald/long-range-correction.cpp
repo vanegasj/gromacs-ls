@@ -319,8 +319,8 @@ void ewald_LRcorrection(int numAtomsLocal,
                                 }
 
                                 /* begin stress tensor */
-                                printf("\nmade it to the point where we are testing for null\n");
-                                if (locals_grid != NULL)
+                                /* removed this since we are doing all the work in ewald.cpp
+                                 * if (locals_grid != NULL)
                                 {
                                     printf("\nlocals_grid is not null\n");
                                     rvec lpR[2], lpF[2];
@@ -347,7 +347,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                                         lpF[1][0] = -df[0]; lpF[1][1] = -df[1]; lpF[1][2] = -df[2];
                                         locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
                                     }
-                                }
+                                }*/
                                 /* end stress tensor */
                             }
                             else
