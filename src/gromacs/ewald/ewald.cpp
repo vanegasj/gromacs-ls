@@ -178,6 +178,11 @@ real do_ewald(t_inputrec *ir,
 
     calc_lll(box, lll);
     tabulateStructureFactors(natoms, x, et->kmax, et->eir, lll);
+    // local stress
+    rvec fij, mvec, rij, fk;
+    int ai, aj;
+    real fscal, qq;
+    // local stress
 
     for (q = 0; q < (bFreeEnergy ? 2 : 1); q++)
     {
@@ -199,6 +204,39 @@ real do_ewald(t_inputrec *ir,
         lowiy        = 0;
         lowiz        = 1;
         energy_AB[q] = 0;
+        /* begin stress tensor */
+        if (locals_grid != NULL)
+        {
+            for (ai = 0; ai < natoms; ai++)
+            {
+                for (aj = ai+1; aj < natoms; aj++)
+                {
+                    qq = charge[ai]*charge[aj]*scaleRecip;
+                    rvec_sub(x[ai], x[aj], rij); // need pbc here
+                    clear_rvec(fij);
+
+                    // need to exclude bonded pairs here (look at long_range_corrections.cpp)
+                    for (ix = 0; ix < et->nx; ix++)
+                    {
+                        mx = ix*lll[XX];
+                        for (iy = lowiy; iy < et->ny; iy++)
+                        {
+                            my = iy*lll[YY];
+                            for (iz = lowiz; iz < et->nz; iz++)
+                            {
+                                mz  = iz*lll[ZZ];
+                                m2  = mx*mx+my*my+mz*mz;
+                                ak  = exp(m2*factor)/m2;
+                                mvec[0] = mx; mvec[1] = my; mvec[2] = mz;
+                                fscal = ak*sin(iprod(mvec, rij));
+                                rvec_inc(fij, fk);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        /* end stress tensor */
         for (ix = 0; ix < et->nx; ix++)
         {
             mx = ix*lll[XX];
