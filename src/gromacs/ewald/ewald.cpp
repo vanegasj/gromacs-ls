@@ -204,7 +204,7 @@ real do_ewald(t_inputrec *ir,
         lowiy        = 0;
         lowiz        = 1;
         energy_AB[q] = 0;
-        /* begin stress tensor */
+        /* begin stress tensor
         if (locals_grid != NULL)
         {
             for (ai = 0; ai < natoms; ai++)
@@ -236,7 +236,7 @@ real do_ewald(t_inputrec *ir,
                 }
             }
         }
-        /* end stress tensor */
+        end stress tensor */
         for (ix = 0; ix < et->nx; ix++)
         {
             mx = ix*lll[XX];
