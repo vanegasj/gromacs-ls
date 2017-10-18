@@ -181,7 +181,7 @@ option(GMX_RELAXED_DOUBLE_PRECISION "Accept single precision 1/sqrt(x) when usin
 mark_as_advanced(GMX_RELAXED_DOUBLE_PRECISION)
 
 option(GMX_MPI    "Build a parallel (message-passing) version of GROMACS" OFF)
-option(GMX_THREAD_MPI  "Build a thread-MPI-based multithreaded version of GROMACS (not compatible with MPI)" ON)
+option(GMX_THREAD_MPI  "Build a thread-MPI-based multithreaded version of GROMACS (not compatible with MPI)" OFF)
 gmx_dependent_option(
     GMX_MPI_IN_PLACE
     "Enable MPI_IN_PLACE for MPIs that have it defined"
@@ -281,7 +281,7 @@ gmx_dependent_cache_variable(GMX_SIMD_REF_DOUBLE_WIDTH "Reference SIMD double pr
 option(GMX_BROKEN_CALLOC "Work around broken calloc()" OFF)
 mark_as_advanced(GMX_BROKEN_CALLOC)
 
-option(GMX_OPENMP "Enable OpenMP-based multithreading" ON)
+option(GMX_OPENMP "Enable OpenMP-based multithreading" OFF)
 
 option(GMX_USE_TNG "Use the TNG library for trajectory I/O" ON)
 
