@@ -1771,8 +1771,6 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
     real iprm, iprn, nrkj, nrkj2, nrkj_1, nrkj_2;
     real a, b, p, q, toler;
     
-    gmx_fatal(FARGS,"Cannot do local stress with do_dih_fun_noshiftf function (yet!).");
-
     iprm  = iprod(m, m);       /*  5    */
     iprn  = iprod(n, n);       /*  5	*/
     nrkj2 = iprod(r_kj, r_kj); /*  5	*/
@@ -2008,8 +2006,6 @@ pdihs_noener(int nbonds,
     rvec r_ij, r_kj, r_kl, m, n;
     real phi, sign, ddphi_tot, ddphi;
     
-    gmx_fatal(FARGS,"Cannot do local stress with pdihs_noener function (yet!).");
-
     for (i = 0; (i < nbonds); )
     {
         ai   = forceatoms[i+1];
@@ -2619,8 +2615,6 @@ real restrangles(int nbonds,
     rvec f_i, f_j, f_k;
     real prefactor, ratio_ante, ratio_post;
     rvec delta_ante, delta_post, vec_temp;
-  
-    gmx_fatal(FARGS,"Cannot do local stress with angle restraints.");
 
     vtot = 0.0;
     for (i = 0; (i < nbonds); )
@@ -2679,6 +2673,10 @@ real restrangles(int nbonds,
             f_k[d] = prefactor * (delta_ante[d] - ratio_post * delta_post[d]);
         }
 
+        /* begin stress tensor */
+        locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+        /* end stress tensor */
+
         /*   Computation of potential energy   */
 
         vtot += v;
@@ -2730,8 +2728,6 @@ real restrdihs(int nbonds,
     real factor_phi_al_ante, factor_phi_al_crnt, factor_phi_al_post;
     real prefactor_phi;
   
-    gmx_fatal(FARGS,"Cannot do local stress with restrdihs function (yet!).");
-
     vtot = 0.0;
     for (i = 0; (i < nbonds); )
     {
@@ -2777,7 +2773,40 @@ real restrdihs(int nbonds,
 
         vtot += v;
 
-
+        /* begin stress tensor */
+        if (locals_grid != NULL)
+        {
+            if (locals_grid->GetContribType() == mds_all || locals_grid->GetContribType() == mds_dio)
+            {
+                rvec Ri, Rj, Rk, Rl, dx;
+                rvec Fj, Fk;
+                rvec lpR[4], lpF[4];
+                int  lpatIDs[4];
+              
+                copy_rvec(x[ai], Ri);
+                pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+                rvec_add(Ri, dx, Rj);
+                pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+                rvec_add(Ri, dx, Rk);
+                pbc_rvec_sub(pbc, x[al], x[ai], dx);
+                rvec_add(Ri, dx, Rl);
+                /* fj and fk need to be inverted */
+                svmul(-1.0, f_j, Fj);
+                svmul(-1.0, f_k, Fk);
+              
+                lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
+                lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
+                lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
+                lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
+                lpatIDs[0] = ai; lpatIDs[1] = aj; lpatIDs[2] = ak; lpatIDs[3] = al;
+                lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
+                lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
+                lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
+                lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
+                locals_grid->DistributeInteraction(4, lpR, lpF, lpatIDs);
+            }
+        }
+        /* end stress tensor */
 
         /*    Updating the forces */
 
@@ -2838,8 +2867,6 @@ real cbtdihs(int nbonds,
     rvec f_theta_ante_ai, f_theta_ante_aj, f_theta_ante_ak;
     rvec f_theta_post_aj, f_theta_post_ak, f_theta_post_al;
 
-    gmx_fatal(FARGS,"Cannot do local stress with cbtdihs function yet.");
-
     vtot = 0.0;
     for (i = 0; (i < nbonds); )
     {
@@ -2888,6 +2915,40 @@ real cbtdihs(int nbonds,
 
         vtot += v;
 
+        /* begin stress tensor */
+        if (locals_grid != NULL)
+        {
+            if (locals_grid->GetContribType() == mds_all || locals_grid->GetContribType() == mds_dio)
+            {
+                rvec Ri, Rj, Rk, Rl, dx;
+                rvec Fj, Fk;
+                rvec lpR[4], lpF[4];
+                int  lpatIDs[4];
+              
+                copy_rvec(x[ai], Ri);
+                pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+                rvec_add(Ri, dx, Rj);
+                pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+                rvec_add(Ri, dx, Rk);
+                pbc_rvec_sub(pbc, x[al], x[ai], dx);
+                rvec_add(Ri, dx, Rl);
+                /* fj and fk need to be inverted */
+                svmul(-1.0, f_j, Fj);
+                svmul(-1.0, f_k, Fk);
+              
+                lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
+                lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
+                lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
+                lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
+                lpatIDs[0] = ai; lpatIDs[1] = aj; lpatIDs[2] = ak; lpatIDs[3] = al;
+                lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
+                lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
+                lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
+                lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
+                locals_grid->DistributeInteraction(4, lpR, lpF, lpatIDs);
+            }
+        }
+        /* end stress tensor */
 
         /*  Updating the forces */
         rvec_inc(f[ai], f_i);
