@@ -266,6 +266,7 @@ typedef struct nbnxn_atomdata_t {
     int                      xstride;         /* stride for a coordinate in x (usually 3 or 4)      */
     int                      fstride;         /* stride for a coordinate in f (usually 3 or 4)      */
     real                    *x;               /* x and possibly q, size natoms*xstride              */
+    int                     *x_id;            /* the particle id of x, size natoms */
 
     /* j-atom minus i-atom index for generating self and Newton exclusions
      * cluster-cluster pairs of the diagonal, for 4xn and 2xnn kernels.

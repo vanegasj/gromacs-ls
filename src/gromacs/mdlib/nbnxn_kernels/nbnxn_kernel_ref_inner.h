@@ -393,26 +393,39 @@
             fz = fscal*dz;
 
             /* begin stress tensor */
-            if (locals_grid != NULL && abs(fscal) > 1E-12)
+            if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                int  lpatIDs[2];
+                lpatIDs[0] = xi_id[i]; lpatIDs[1] = x_id[aj];
+                
+                // remove the 'far away' particles
+                if (lpatIDs[0] != -1 && lpatIDs[1] != -1)
                 {
-                    int  lpatIDs[2];
-                    lpatIDs[0] = ai; lpatIDs[1] = aj;
+                    int cont_type = locals_grid->GetContribType();
+                    if (cont_type == mds_all ||
+                        cont_type == mds_vdw ||
+                        cont_type == mds_cou)
+                    {
+                        real ix = xi[i*XI_STRIDE+XX]; real jx = x[aj*X_STRIDE+XX];
+                        real iy = xi[i*XI_STRIDE+YY]; real jy = x[aj*X_STRIDE+YY];
+                        real iz = xi[i*XI_STRIDE+ZZ]; real jz = x[aj*X_STRIDE+ZZ];
 
-                    real ix = xi[i*XI_STRIDE+XX]; real jx = x[aj*X_STRIDE+XX];
-                    real iy = xi[i*XI_STRIDE+YY]; real jy = x[aj*X_STRIDE+YY];
-                    real iz = xi[i*XI_STRIDE+ZZ]; real jz = x[aj*X_STRIDE+ZZ];
+                        const real farAway = -1000000;
+                        if (ix <= farAway || jx <= farAway)
+                        {
+                            printf("\na farAway ID slipped through!\n");
+                            printf("i%i, %18.12e\n", lpatIDs[0], ix);
+                            printf("j%i, %18.12e\n", lpatIDs[1], jx);
+                        }
 
-                    rvec lpR[2], lpF[2];
-                    lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
-                    lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
-                    lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
-                    lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
+                        rvec lpR[2], lpF[2];
+                        lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
+                        lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
+                        lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
+                        lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
 
-                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                        locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                    }
                 }
             }
             /* end stress tensor */

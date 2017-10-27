@@ -65,7 +65,7 @@ void nbnxn_atomdata_realloc(nbnxn_atomdata_t *nbat, int n);
  */
 void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                             const rvec *x, int nbatFormat,
-                            real *xnb, int a0);
+                            real *xnb, int *xnb_id, int a0);
 
 enum {
     enbnxninitcombruleDETECT, enbnxninitcombruleGEOM, enbnxninitcombruleLB, enbnxninitcombruleNONE

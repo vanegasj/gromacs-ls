@@ -140,6 +140,10 @@ void nbnxn_atomdata_realloc(nbnxn_atomdata_t *nbat, int n)
                        nbat->natoms*nbat->xstride*sizeof(*nbat->x),
                        n*nbat->xstride*sizeof(*nbat->x),
                        nbat->alloc, nbat->free);
+    nbnxn_realloc_void((void **)&nbat->x_id,
+                       nbat->natoms*sizeof(*nbat->x_id),
+                       n*sizeof(*nbat->x_id),
+                       nbat->alloc, nbat->free);
     for (t = 0; t < nbat->nout; t++)
     {
         /* Allocate one element extra for possible signaling with GPUs */
@@ -257,7 +261,7 @@ static void clear_nbat_real(int na, int nbatFormat, real *xnb, int a0)
 
 void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                             const rvec *x, int nbatFormat,
-                            real *xnb, int a0)
+                            real *xnb, int *xnb_id, int a0)
 {
     /* We complete partially filled cells, can only be the last one in each
      * column, with coordinates farAway. The actual coordinate value does
@@ -269,19 +273,22 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
      * So for performance it is better to have their bounding boxes far away,
      * such that filler only clusters don't end up in the pair list.
      */
+    const int fakeid = -1;
     const real farAway = -1000000;
 
-    int        i, j, c;
+    int        i, j, k, c;
 
     switch (nbatFormat)
     {
         case nbatXYZ:
             j = a0*STRIDE_XYZ;
+            k = a0;
             for (i = 0; i < na; i++)
             {
                 xnb[j++] = x[a[i]][XX];
                 xnb[j++] = x[a[i]][YY];
                 xnb[j++] = x[a[i]][ZZ];
+                xnb_id[k++] = a[i];
             }
             /* Complete the partially filled last cell with farAway elements */
             for (; i < na_round; i++)
@@ -289,16 +296,19 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                 xnb[j++] = farAway;
                 xnb[j++] = farAway;
                 xnb[j++] = farAway;
+                xnb_id[k++] = fakeid;
             }
             break;
         case nbatXYZQ:
             j = a0*STRIDE_XYZQ;
+            k = a0;
             for (i = 0; i < na; i++)
             {
                 xnb[j++] = x[a[i]][XX];
                 xnb[j++] = x[a[i]][YY];
                 xnb[j++] = x[a[i]][ZZ];
                 j++;
+                xnb_id[k++] = a[i];
             }
             /* Complete the partially filled last cell with zeros */
             for (; i < na_round; i++)
@@ -307,11 +317,13 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                 xnb[j++] = farAway;
                 xnb[j++] = farAway;
                 j++;
+                xnb_id[k++] = fakeid;
             }
             break;
         case nbatX4:
             j = atom_to_x_index<c_packX4>(a0);
             c = a0 & (c_packX4-1);
+            k = a0;
             for (i = 0; i < na; i++)
             {
                 xnb[j+XX*c_packX4] = x[a[i]][XX];
@@ -324,6 +336,7 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                     j += (DIM-1)*c_packX4;
                     c  = 0;
                 }
+                xnb_id[k++] = a[i];
             }
             /* Complete the partially filled last cell with zeros */
             for (; i < na_round; i++)
@@ -338,11 +351,13 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                     j += (DIM-1)*c_packX4;
                     c  = 0;
                 }
+                xnb_id[k++] = fakeid;
             }
             break;
         case nbatX8:
             j = atom_to_x_index<c_packX8>(a0);
             c = a0 & (c_packX8 - 1);
+            k = a0;
             for (i = 0; i < na; i++)
             {
                 xnb[j+XX*c_packX8] = x[a[i]][XX];
@@ -355,6 +370,7 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                     j += (DIM-1)*c_packX8;
                     c  = 0;
                 }
+                xnb_id[k++] = a[i];
             }
             /* Complete the partially filled last cell with zeros */
             for (; i < na_round; i++)
@@ -369,6 +385,7 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                     j += (DIM-1)*c_packX8;
                     c  = 0;
                 }
+                xnb_id[k++] = fakeid;
             }
             break;
         default:
@@ -1204,7 +1221,7 @@ void nbnxn_atomdata_copy_x_to_nbat_x(const nbnxn_search_t nbs,
                         na_fill = na;
                     }
                     copy_rvec_to_nbat_real(nbs->a+ash, na, na_fill, x,
-                                           nbat->XFormat, nbat->x, ash);
+                                           nbat->XFormat, nbat->x, nbat->x_id, ash);
                 }
             }
         }

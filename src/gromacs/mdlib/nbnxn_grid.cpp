@@ -879,7 +879,7 @@ static void fill_cell(const nbnxn_search_t nbs,
     }
 
     copy_rvec_to_nbat_real(nbs->a+a0, a1-a0, grid->na_c, x,
-                           nbat->XFormat, nbat->x, a0);
+                           nbat->XFormat, nbat->x, nbat->x_id, a0);
 
     if (nbat->XFormat == nbatX4)
     {
