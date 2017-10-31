@@ -273,7 +273,7 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
      * So for performance it is better to have their bounding boxes far away,
      * such that filler only clusters don't end up in the pair list.
      */
-    const int fakeid = -1;
+    const int fakeid = -1; /*localstress*/
     const real farAway = -1000000;
 
     int        i, j, k, c;
@@ -282,13 +282,13 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
     {
         case nbatXYZ:
             j = a0*STRIDE_XYZ;
-            k = a0;
+            k = a0; /*localstress*/
             for (i = 0; i < na; i++)
             {
                 xnb[j++] = x[a[i]][XX];
                 xnb[j++] = x[a[i]][YY];
                 xnb[j++] = x[a[i]][ZZ];
-                xnb_id[k++] = a[i];
+                xnb_id[k++] = a[i]; /*array of real id numbers for localstress calc*/
             }
             /* Complete the partially filled last cell with farAway elements */
             for (; i < na_round; i++)
@@ -296,19 +296,19 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                 xnb[j++] = farAway;
                 xnb[j++] = farAway;
                 xnb[j++] = farAway;
-                xnb_id[k++] = fakeid;
+                xnb_id[k++] = fakeid; /*localstress*/
             }
             break;
         case nbatXYZQ:
             j = a0*STRIDE_XYZQ;
-            k = a0;
+            k = a0; /*localstress*/
             for (i = 0; i < na; i++)
             {
                 xnb[j++] = x[a[i]][XX];
                 xnb[j++] = x[a[i]][YY];
                 xnb[j++] = x[a[i]][ZZ];
                 j++;
-                xnb_id[k++] = a[i];
+                xnb_id[k++] = a[i]; /*localstress*/
             }
             /* Complete the partially filled last cell with zeros */
             for (; i < na_round; i++)
@@ -317,13 +317,13 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                 xnb[j++] = farAway;
                 xnb[j++] = farAway;
                 j++;
-                xnb_id[k++] = fakeid;
+                xnb_id[k++] = fakeid; /*localstress*/
             }
             break;
         case nbatX4:
             j = atom_to_x_index<c_packX4>(a0);
             c = a0 & (c_packX4-1);
-            k = a0;
+            k = a0; /*localstress*/
             for (i = 0; i < na; i++)
             {
                 xnb[j+XX*c_packX4] = x[a[i]][XX];
@@ -336,7 +336,7 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                     j += (DIM-1)*c_packX4;
                     c  = 0;
                 }
-                xnb_id[k++] = a[i];
+                xnb_id[k++] = a[i]; /*localstress*/
             }
             /* Complete the partially filled last cell with zeros */
             for (; i < na_round; i++)
@@ -351,7 +351,7 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                     j += (DIM-1)*c_packX4;
                     c  = 0;
                 }
-                xnb_id[k++] = fakeid;
+                xnb_id[k++] = fakeid; /*localstress*/
             }
             break;
         case nbatX8:
@@ -370,7 +370,7 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                     j += (DIM-1)*c_packX8;
                     c  = 0;
                 }
-                xnb_id[k++] = a[i];
+                xnb_id[k++] = a[i]; /*localstress*/
             }
             /* Complete the partially filled last cell with zeros */
             for (; i < na_round; i++)
@@ -385,7 +385,7 @@ void copy_rvec_to_nbat_real(const int *a, int na, int na_round,
                     j += (DIM-1)*c_packX8;
                     c  = 0;
                 }
-                xnb_id[k++] = fakeid;
+                xnb_id[k++] = fakeid; /*localstress*/
             }
             break;
         default:

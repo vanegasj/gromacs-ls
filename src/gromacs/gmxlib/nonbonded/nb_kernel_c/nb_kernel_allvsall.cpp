@@ -245,7 +245,6 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
                    nb_kernel_data_t *        kernel_data,
                    t_nrnb *                  nrnb)
 {
-    printf("\nnb_kernel_allvsall\n");
     gmx_allvsall_data_t *aadata;
     int                  natoms;
     int                  ni0, ni1;

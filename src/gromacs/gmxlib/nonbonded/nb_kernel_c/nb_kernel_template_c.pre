@@ -120,7 +120,6 @@ void
                      nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
-    printf("\n{KERNEL_NAME}\n");
     /* ## Not all variables are used for all kernels, but any optimizing compiler fixes that, */
     /* ## so there is no point in going to extremes to exclude variables that are not needed. */
     int              i_shift_offset,i_coord_offset,j_coord_offset;

@@ -115,7 +115,7 @@ NBK_FUNC_NAME(_VgrpF)
     const real         *q;
     const real         *shiftvec;
     const real         *x;
-    const int          *x_id;
+    const int          *x_id; /*atom id numbers used for localstress*/
     const real         *nbfp;
     real                rcut2;
 #ifdef VDW_CUTOFF_CHECK
@@ -129,7 +129,7 @@ NBK_FUNC_NAME(_VgrpF)
     int                 cjind0, cjind1, cjind;
 
     real                xi[UNROLLI*XI_STRIDE];
-    int                 xi_id[UNROLLI];
+    int                 xi_id[UNROLLI]; /*atom id numbers used for localstress*/
     real                fi[UNROLLI*FI_STRIDE];
     real                qi[UNROLLI];
 
@@ -281,7 +281,7 @@ NBK_FUNC_NAME(_VgrpF)
 
         for (i = 0; i < UNROLLI; i++)
         {
-            xi_id[i] = x_id[(ci*UNROLLI+i)];
+            xi_id[i] = x_id[(ci*UNROLLI+i)]; /*localstress*/
             for (d = 0; d < DIM; d++)
             {
                 xi[i*XI_STRIDE+d] = x[(ci*UNROLLI+i)*X_STRIDE+d] + shiftvec[ishf+d];

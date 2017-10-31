@@ -410,14 +410,6 @@
                         real iy = xi[i*XI_STRIDE+YY]; real jy = x[aj*X_STRIDE+YY];
                         real iz = xi[i*XI_STRIDE+ZZ]; real jz = x[aj*X_STRIDE+ZZ];
 
-                        const real farAway = -1000000;
-                        if (ix <= farAway || jx <= farAway)
-                        {
-                            printf("\na farAway ID slipped through!\n");
-                            printf("i%i, %18.12e\n", lpatIDs[0], ix);
-                            printf("j%i, %18.12e\n", lpatIDs[1], jx);
-                        }
-
                         rvec lpR[2], lpF[2];
                         lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
                         lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
