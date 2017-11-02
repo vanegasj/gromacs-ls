@@ -70,6 +70,7 @@
 #include "gromacs/math/vectypes.h"
 #include "gromacs/mdtypes/commrec.h"
 #include "gromacs/mdtypes/forcerec.h"
+#include "gromacs/topology/block.h"
 #include "gromacs/utility/real.h"
 #include "mdstress/mds_stressgrid.h"
 
@@ -85,10 +86,10 @@ init_ewald_tab(struct gmx_ewald_tab_t **et, const t_inputrec *ir,
 
 /*! \brief Do the long-ranged part of an Ewald calculation */
 real
-do_ewald(t_inputrec *ir,
+do_ewald(t_inputrec *ir, t_blocka *excl,
          rvec x[],        rvec f[],
          real chargeA[],  real chargeB[],
-         rvec box,
+         rvec box, matrix full_box,
          t_commrec *cr,  int natoms,
          matrix lrvir,   real ewaldcoeff,
          real lambda,    real *dvdlambda,

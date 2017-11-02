@@ -134,10 +134,10 @@ static void tabulateStructureFactors(int natom, rvec x[], int kmax, cvec **eir, 
     }
 }
 
-real do_ewald(t_inputrec *ir,
+real do_ewald(t_inputrec *ir, t_blocka *excl,
               rvec x[],        rvec f[],
               real chargeA[],  real chargeB[],
-              rvec box,
+              rvec box, matrix full_box,
               t_commrec *cr,   int natoms,
               matrix lrvir,    real ewaldcoeff,
               real lambda,     real *dvdlambda,
@@ -151,6 +151,11 @@ real do_ewald(t_inputrec *ir,
     int      lowiy, lowiz, ix, iy, iz, n, q;
     real     tmp, cs, ss, ak, akv, mx, my, mz, m2, scale;
     gmx_bool bFreeEnergy;
+    // local stress
+    rvec fij, mvec, rij, fk;
+    int ai, aj, ai1, ai2, ai3, m;
+    real fscal, qq;
+    // local stress
 
     if (cr != NULL)
     {
@@ -178,12 +183,6 @@ real do_ewald(t_inputrec *ir,
 
     calc_lll(box, lll);
     tabulateStructureFactors(natoms, x, et->kmax, et->eir, lll);
-    // local stress
-    rvec fij, mvec, rij, fk;
-    int ai, aj;
-    real fscal, qq;
-    // local stress
-
     for (q = 0; q < (bFreeEnergy ? 2 : 1); q++)
     {
         if (!bFreeEnergy)
@@ -204,39 +203,86 @@ real do_ewald(t_inputrec *ir,
         lowiy        = 0;
         lowiz        = 1;
         energy_AB[q] = 0;
-        /* begin stress tensor
-        if (locals_grid != NULL)
+
+        /* begin stress tensor */
+        if (locals_grid != NULL &&
+                (locals_grid->GetContribType() == mds_all ||
+                 locals_grid->GetContribType() == mds_ewal))
         {
             for (ai = 0; ai < natoms; ai++)
             {
+                ai1 = excl->index[ai];
+                ai2 = excl->index[ai+1];
+
                 for (aj = ai+1; aj < natoms; aj++)
                 {
-                    qq = charge[ai]*charge[aj]*scaleRecip;
-                    rvec_sub(x[ai], x[aj], rij); // need pbc here
-                    clear_rvec(fij);
-
-                    // need to exclude bonded pairs here (look at long_range_corrections.cpp)
-                    for (ix = 0; ix < et->nx; ix++)
+                    bool exclude = false;
+                    for (ai3 = ai1; ai3 < ai2; ++ai3)
                     {
-                        mx = ix*lll[XX];
-                        for (iy = lowiy; iy < et->ny; iy++)
+                        if (excl->a[ai3] == aj)
+                            exclude = true;
+                    }
+
+                    // need to exclude bonded pairs here
+                    if (!exclude)
+                    {
+                        qq = charge[ai]*charge[aj]*scaleRecip;
+                        rvec_sub(x[ai], x[aj], rij);
+
+                        // need pbc here
+                        for (m = DIM-1; m >= 0; m--)
                         {
-                            my = iy*lll[YY];
-                            for (iz = lowiz; iz < et->nz; iz++)
+                            if (rij[m] > 0.5*full_box[m][m])
+                                rvec_dec(rij, full_box[m]);
+                            else
+                            if (rij[m] < -0.5*full_box[m][m])
+                                rvec_inc(rij, full_box[m]);
+                        }
+
+                        // clear the old force calculate the new
+                        clear_rvec(fij);
+                        for (ix = 0; ix < et->nx; ix++)
+                        {
+                            mx = ix*lll[XX];
+                            for (iy = lowiy; iy < et->ny; iy++)
                             {
-                                mz  = iz*lll[ZZ];
-                                m2  = mx*mx+my*my+mz*mz;
-                                ak  = exp(m2*factor)/m2;
-                                mvec[0] = mx; mvec[1] = my; mvec[2] = mz;
-                                fscal = ak*sin(iprod(mvec, rij));
-                                rvec_inc(fij, fk);
+                                my = iy*lll[YY];
+                                for (iz = lowiz; iz < et->nz; iz++)
+                                {
+                                    mz  = iz*lll[ZZ];
+                                    m2  = mx*mx+my*my+mz*mz;
+                                    ak  = exp(m2*factor)/m2;
+                                    mvec[0] = mx; mvec[1] = my; mvec[2] = mz;
+                                    fscal = ak*sin(iprod(mvec, rij));
+                                    svmul(fscal, mvec, fk);
+                                    rvec_inc(fij, fk);
+                                }
                             }
                         }
+
+                        // call mdstress library here
+                        int lpatIDs[2];
+                        lpatIDs[0] = ai; lpatIDs[1] = aj;
+
+                        real ix = x[ai][0]; real iy = x[ai][1]; real iz = x[ai][2];
+                        real jx = x[aj][0]; real jy = x[aj][1]; real jz = x[aj][2];
+
+                        // periodic boundary conditions
+                        jx += rij[0]; jy += rij[1]; jz += rij[2];
+
+                        rvec lpR[2], lpF[2];
+                        lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
+                        lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
+                        lpF[0][0] = fij[0];  lpF[0][1] = fij[1];  lpF[0][2] = fij[2];
+                        lpF[1][0] = -fij[0]; lpF[1][1] = -fij[1]; lpF[1][2] = -fij[2];
+                        
+                        locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
                     }
                 }
             }
         }
-        end stress tensor */
+        /* end stress tensor */
+
         for (ix = 0; ix < et->nx; ix++)
         {
             mx = ix*lll[XX];

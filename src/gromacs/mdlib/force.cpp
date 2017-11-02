@@ -572,9 +572,9 @@ void do_force_lowlevel(t_forcerec *fr,      t_inputrec *ir,
 
         if (!EEL_PME(fr->eeltype) && EEL_PME_EWALD(fr->eeltype))
         {
-            Vlr_q = do_ewald(ir, x, fr->f_novirsum,
+            Vlr_q = do_ewald(ir, excl, x, fr->f_novirsum,
                              md->chargeA, md->chargeB,
-                             box_size, cr, md->homenr,
+                             box_size, box, cr, md->homenr,
                              fr->vir_el_recip, fr->ewaldcoeff_q,
                              lambda[efptCOUL], &dvdl_long_range_q,
                              fr->ewald_table, locals_grid);
