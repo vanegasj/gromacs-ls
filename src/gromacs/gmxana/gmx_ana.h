@@ -79,6 +79,9 @@ int
 gmx_density(int argc, char *argv[]);
 
 int
+gmx_density3D(int argc, char *argv[]);
+
+int
 gmx_densmap(int argc, char *argv[]);
 
 int
