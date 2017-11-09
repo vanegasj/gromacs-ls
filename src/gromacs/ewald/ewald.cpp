@@ -209,6 +209,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                 (locals_grid->GetContribType() == mds_all ||
                  locals_grid->GetContribType() == mds_ewal))
         {
+            printf("called the ewald function and am now summing\n");
             for (ai = 0; ai < natoms; ai++)
             {
                 ai1 = excl->index[ai];
@@ -220,7 +221,10 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                     for (ai3 = ai1; ai3 < ai2; ++ai3)
                     {
                         if (excl->a[ai3] == aj)
+                        {
                             exclude = true;
+                            break;
+                        }
                     }
 
                     // need to exclude bonded pairs here
@@ -241,24 +245,30 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
 
                         // clear the old force calculate the new
                         clear_rvec(fij);
-                        for (ix = 0; ix < et->nx; ix++)
+                        for (ix = -et->nx + 1; ix < et->nx; ix++)
                         {
                             mx = ix*lll[XX];
-                            for (iy = lowiy; iy < et->ny; iy++)
+                            for (iy = -et->ny + 1; iy < et->ny; iy++)
                             {
                                 my = iy*lll[YY];
-                                for (iz = lowiz; iz < et->nz; iz++)
+                                for (iz = -et->nz + 1; iz < et->nz; iz++)
                                 {
                                     mz  = iz*lll[ZZ];
                                     m2  = mx*mx+my*my+mz*mz;
-                                    ak  = exp(m2*factor)/m2;
-                                    mvec[0] = mx; mvec[1] = my; mvec[2] = mz;
-                                    fscal = ak*sin(iprod(mvec, rij));
-                                    svmul(fscal, mvec, fk);
-                                    rvec_inc(fij, fk);
+                                    if (abs(m2) > 0.0)
+                                    {
+                                        ak = exp(m2*factor)/m2;
+                                        mvec[0] = mx; mvec[1] = my; mvec[2] = mz;
+                                        fscal = ak*sin(iprod(mvec, rij));
+                                        svmul(fscal, mvec, fk);
+                                        rvec_inc(fij, fk);
+                                        //printf("mx: %5.2e, my: %5.2e, mz: %5.2e, m2: %5.2e, ak: %5.2e, fscal: %5.2e\n",
+                                        //        mx,my,mz,m2,ak,fscal);
+                                    }
                                 }
                             }
                         }
+                        svmul(qq, fij, fij);
 
                         // call mdstress library here
                         int lpatIDs[2];
@@ -280,6 +290,10 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                     }
                 }
             }
+        
+            // need to reset lowiy and lowiz
+            lowiy        = 0;
+            lowiz        = 1;
         }
         /* end stress tensor */
 
