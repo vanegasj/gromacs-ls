@@ -209,13 +209,15 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                 (locals_grid->GetContribType() == mds_all ||
                  locals_grid->GetContribType() == mds_ewal))
         {
-            printf("called the ewald function and am now summing\n");
-            for (ai = 0; ai < natoms; ai++)
+            //printf("called the ewald function and am now summing\n");
+            printf("\nLx: %6.2f, Ly: %6.2f, Lz: %6.2f\n",box[0],box[1],box[2]);
+            for (ai = 9; ai >= 0; ai--)
             {
                 ai1 = excl->index[ai];
                 ai2 = excl->index[ai+1];
 
-                for (aj = ai+1; aj < natoms; aj++)
+                //printf("adding interaction of particle %i and:", ai);
+                for (aj = ai-1; aj >= 0; aj--)
                 {
                     bool exclude = false;
                     for (ai3 = ai1; ai3 < ai2; ++ai3)
@@ -230,6 +232,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                     // need to exclude bonded pairs here
                     if (!exclude)
                     {
+                        //printf(" %i", aj);
                         qq = charge[ai]*charge[aj]*scaleRecip;
                         rvec_sub(x[ai], x[aj], rij);
 
@@ -255,20 +258,24 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                                 {
                                     mz  = iz*lll[ZZ];
                                     m2  = mx*mx+my*my+mz*mz;
-                                    if (abs(m2) > 0.0)
+                                    if (ix + iy + iz != 0)
                                     {
                                         ak = exp(m2*factor)/m2;
                                         mvec[0] = mx; mvec[1] = my; mvec[2] = mz;
                                         fscal = ak*sin(iprod(mvec, rij));
                                         svmul(fscal, mvec, fk);
                                         rvec_inc(fij, fk);
-                                        //printf("mx: %5.2e, my: %5.2e, mz: %5.2e, m2: %5.2e, ak: %5.2e, fscal: %5.2e\n",
-                                        //        mx,my,mz,m2,ak,fscal);
+                                        //printf(" mx: %5.2e, my: %5.2e, mz: %5.2e, m2: %5.2e, ak: %5.2e, fscal: %5.2e\n",
+                                                //mx,my,mz,m2,ak,fscal);
                                     }
                                 }
                             }
                         }
                         svmul(qq, fij, fij);
+
+                        printf(" %i on %i: %5.1f degrees; ",ai, aj, 360.0*acos(iprod(fij,rij)/(sqrt(iprod(fij,fij))*sqrt(iprod(rij,rij))))/(2.0*M_PI));
+                        printf(" ri: %6.2f,%6.2f, %6.2f; rj: %6.2f, %6.2f, %6.2f; rij: %6.2f, %6.2f, %6.2f\n",
+                                x[ai][0],x[ai][1],x[ai][2],x[aj][0],x[aj][1],x[aj][2],rij[0],rij[1],rij[2]);
 
                         // call mdstress library here
                         int lpatIDs[2];
@@ -289,6 +296,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
                     }
                 }
+                //printf("\n");
             }
         
             // need to reset lowiy and lowiz
