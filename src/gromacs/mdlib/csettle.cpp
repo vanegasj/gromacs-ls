@@ -745,8 +745,9 @@ static void settleTemplate(const gmx_settledata_t settled,
                         
                         real x_hw3_p[3*packSize];
                         transposeScatterStoreU<3>(x_hw3_p, offset, x_ow1[XX] + dist31[XX], x_ow1[YY] + dist31[YY], x_ow1[ZZ] + dist31[ZZ]);
+
+                        T idtmOf, idtmHf;
                         
-                        T idtmO;
                         idtmOf = invdt*invdt*mOf;
                         
                         real fa_p[3*packSize];
