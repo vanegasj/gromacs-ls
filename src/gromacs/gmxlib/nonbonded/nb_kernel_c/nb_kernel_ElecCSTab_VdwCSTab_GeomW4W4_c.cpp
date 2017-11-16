@@ -61,6 +61,7 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomW4W4_VF_c
                      nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
+    printf("\ncalling nonbonded kernel: %s\n", __FUNCTION__);
     int              i_shift_offset,i_coord_offset,j_coord_offset;
     int              j_index_start,j_index_end;
     int              nri,inr,ggid,iidx,jidx,jnr,outeriter,inneriter;
@@ -992,6 +993,7 @@ nb_kernel_ElecCSTab_VdwCSTab_GeomW4W4_F_c
                      nb_kernel_data_t            * gmx_restrict kernel_data,
                      t_nrnb                      * gmx_restrict        nrnb)
 {
+    printf("\ncalling nonbonded kernel: %s\n", __FUNCTION__);
     int              i_shift_offset,i_coord_offset,j_coord_offset;
     int              j_index_start,j_index_end;
     int              nri,inr,ggid,iidx,jidx,jnr,outeriter,inneriter;
