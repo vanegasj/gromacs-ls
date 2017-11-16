@@ -109,7 +109,6 @@ NBK_FUNC_NAME(_VgrpF)
 #endif
 )
 {
-    printf("\ncalling verlet kernel: %s\n",__FUNCTION__);
     const nbnxn_ci_t   *nbln;
     const nbnxn_cj_t   *l_cj;
     const int          *type;

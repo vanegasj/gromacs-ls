@@ -246,7 +246,6 @@ nb_kernel_allvsallgb(t_nblist gmx_unused *     nlist,
                      nb_kernel_data_t *        kernel_data,
                      t_nrnb *                  nrnb)
 {
-    printf("\ncalling nonbonded kernel: %s\n", __FUNCTION__);
     gmx_allvsall_data_t *aadata;
     int                  natoms;
     int                  ni0, ni1;

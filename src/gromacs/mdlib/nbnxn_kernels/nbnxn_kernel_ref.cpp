@@ -188,7 +188,6 @@ nbnxn_kernel_ref(const nbnxn_pairlist_set_t *nbl_list,
                  real                       *Vc,
                  real                       *Vvdw)
 {
-    printf("\ncalling verlet kernel: %s\n",__FUNCTION__);
     int                nnbl;
     nbnxn_pairlist_t **nbl;
     int                coult;
