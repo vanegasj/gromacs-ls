@@ -71,6 +71,7 @@
 struct gmx_ewald_tab_t
 {
     int        nx, ny, nz, kmax;
+    real       fs; //ir->fourier_spacing
     cvec     **eir;
     t_complex *tab_xy, *tab_qxyz;
 };
@@ -87,6 +88,7 @@ void init_ewald_tab(struct gmx_ewald_tab_t **et, const t_inputrec *ir, FILE *fp)
     (*et)->ny       = ir->nky+1;
     (*et)->nz       = ir->nkz+1;
     (*et)->kmax     = std::max((*et)->nx, std::max((*et)->ny, (*et)->nz));
+    (*et)->fs       = ir->fourier_spacing;
     (*et)->eir      = NULL;
     (*et)->tab_xy   = NULL;
     (*et)->tab_qxyz = NULL;
@@ -153,7 +155,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
     gmx_bool bFreeEnergy;
     // local stress
     rvec fij, mvec, rij, fk;
-    int ai, aj, ai1, ai2, ai3, m;
+    int ai, aj, ai1, ai2, ai3, d;
     real fscal, qq;
     // local stress
 
@@ -211,13 +213,39 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
         {
             //printf("called the ewald function and am now summing\n");
             printf("\nLx: %6.2f, Ly: %6.2f, Lz: %6.2f\n",box[0],box[1],box[2]);
-            for (ai = 9; ai >= 0; ai--)
+            real ang_av = 0.0, ang;
+            real mx[2*et->nx - 1];
+            real my[2*et->ny - 1];
+            real mz[2*et->nz - 1];
+            real ak[2*et->nx - 1][2*et->ny - 1][2*et->nz - 1];
+            int ixp, iyp, izp, counter=0;
+
+            for (ix = -et->nx + 1; ix < et->nx; ix++)
+            {
+                ixp = ix + et->nx - 1;
+                mx[ixp] = 0.5*ix*lll[XX];
+                for (iy = -et->ny + 1; iy < et->ny; iy++)
+                {
+                    iyp = iy + et->ny - 1;
+                    my[iyp] = 0.5*iy*lll[YY];
+                    for (iz = -et->nz + 1; iz < et->nz; iz++)
+                    {
+                        izp = iz + et->nz - 1;
+                        mz[izp]  = 0.5*iz*lll[ZZ];
+                        m2 = mx[ixp]*mx[ixp] + my[iyp]*my[iyp] + mz[izp]*mz[izp];
+                        ak[ixp][iyp][izp] = exp(m2*factor)/m2;
+                        //printf("ak = %6.4e\n",ak[ix][iy][iz]);
+                    }
+                }
+            }
+            //natoms = 500;
+            for (ai = 0; ai < natoms; ai++)
             {
                 ai1 = excl->index[ai];
                 ai2 = excl->index[ai+1];
 
                 //printf("adding interaction of particle %i and:", ai);
-                for (aj = ai-1; aj >= 0; aj--)
+                for (aj = ai+1; aj < natoms; aj++)
                 {
                     bool exclude = false;
                     for (ai3 = ai1; ai3 < ai2; ++ai3)
@@ -234,74 +262,78 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                     {
                         //printf(" %i", aj);
                         qq = charge[ai]*charge[aj]*scaleRecip;
+                        clear_rvec(rij);
                         rvec_sub(x[ai], x[aj], rij);
 
-                        // need pbc here
-                        for (m = DIM-1; m >= 0; m--)
+                        // simple pbc
+                        for (d = 0; d < DIM; d++)
                         {
-                            if (rij[m] > 0.5*full_box[m][m])
-                                rvec_dec(rij, full_box[m]);
-                            else
-                            if (rij[m] < -0.5*full_box[m][m])
-                                rvec_inc(rij, full_box[m]);
+                            if (rij[d] > 0.5*box[d])
+                            {
+                                rij[d] -= box[d];
+                            }
+                            else if (rij[d] <= -0.5*box[d])
+                            {
+                                rij[d] += box[d];
+                            }
                         }
 
                         // clear the old force calculate the new
                         clear_rvec(fij);
                         for (ix = -et->nx + 1; ix < et->nx; ix++)
                         {
-                            mx = ix*lll[XX];
+                            ixp = ix + et->nx - 1;
+                            //mx = 0.5*ix*lll[XX];
                             for (iy = -et->ny + 1; iy < et->ny; iy++)
                             {
-                                my = iy*lll[YY];
+                                iyp = iy + et->ny - 1;
+                                //my = 0.5*iy*lll[YY];
                                 for (iz = -et->nz + 1; iz < et->nz; iz++)
                                 {
-                                    mz  = iz*lll[ZZ];
-                                    m2  = mx*mx+my*my+mz*mz;
-                                    if (ix + iy + iz != 0)
+                                    izp = iz + et->nz - 1;
+                                    //mz  = 0.5*iz*lll[ZZ];
+                                    //m2  = mx*mx + my*my + mz*mz;
+                                    if (abs(ix) + abs(iy) + abs(iz) > 0)
                                     {
-                                        ak = exp(m2*factor)/m2;
-                                        mvec[0] = mx; mvec[1] = my; mvec[2] = mz;
-                                        fscal = ak*sin(iprod(mvec, rij));
+                                        //ak = 2*exp(m2*factor)/m2;
+                                        mvec[0] = mx[ixp]; mvec[1] = my[iyp]; mvec[2] = mz[izp];
+                                        fscal = ak[ixp][iyp][izp]*sin(iprod(mvec, rij));
                                         svmul(fscal, mvec, fk);
                                         rvec_inc(fij, fk);
-                                        //printf(" mx: %5.2e, my: %5.2e, mz: %5.2e, m2: %5.2e, ak: %5.2e, fscal: %5.2e\n",
-                                                //mx,my,mz,m2,ak,fscal);
+                                        //printf(" ix: %d, iy: %d, iz: %d, m2: %5.2e, ak: %5.2e, fscal: %5.2e\n",ix,iy,iz,m2,ak,fscal);
                                     }
                                 }
                             }
                         }
                         svmul(qq, fij, fij);
-
-                        printf(" %i on %i: %5.1f degrees; ",ai, aj, 360.0*acos(iprod(fij,rij)/(sqrt(iprod(fij,fij))*sqrt(iprod(rij,rij))))/(2.0*M_PI));
-                        printf(" ri: %6.2f,%6.2f, %6.2f; rj: %6.2f, %6.2f, %6.2f; rij: %6.2f, %6.2f, %6.2f\n",
-                                x[ai][0],x[ai][1],x[ai][2],x[aj][0],x[aj][1],x[aj][2],rij[0],rij[1],rij[2]);
-
+                        ang = 360.0*acos(abs(iprod(fij,rij))/(sqrt(iprod(fij,fij))*sqrt(iprod(rij,rij))))/(2.0*M_PI);
+                        ang_av += ang;
+                        counter += 1;
+                        printf(" %i on %i: %5.4f degrees; ",ai, aj, ang);
+                        //printf(" ri: %6.4f, %6.4f, %6.4f; rj: %6.4f, %6.4f, %6.4f; rij: %6.4f, %6.4f, %6.4f, |rij| = %6.4f\n",
+                        //        x[ai][0],x[ai][1],x[ai][2],x[aj][0],x[aj][1],x[aj][2],rij[0]/box[XX],rij[1]/box[YY],rij[2]/box[ZZ], norm(rij));
+                        rvec fij_unit, rij_unit;
+                        unitv(fij, fij_unit);
+                        unitv(rij, rij_unit);
+                        //printf("\nai = %d, aj = %d", ai, aj);
+                        printf("rij = %6.4f %6.4f %6.4f, fij = %6.4f %6.4f %6.4f; |rij| = %6.4f; |k| = %6.4f; |rij|/|k| = %6.4f\n", rij_unit[0], rij_unit[1], rij_unit[2], fij_unit[0], fij_unit[1], fij_unit[2], norm(rij), norm(mvec), norm(rij)/norm(mvec));
                         // call mdstress library here
                         int lpatIDs[2];
                         lpatIDs[0] = ai; lpatIDs[1] = aj;
 
-                        real ix = x[ai][0]; real iy = x[ai][1]; real iz = x[ai][2];
-                        real jx = x[aj][0]; real jy = x[aj][1]; real jz = x[aj][2];
-
-                        // periodic boundary conditions
-                        jx += rij[0]; jy += rij[1]; jz += rij[2];
-
                         rvec lpR[2], lpF[2];
-                        lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
-                        lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
+                        lpR[0][0] = x[ai][0]; lpR[0][1] = x[ai][1]; lpR[0][2] = x[ai][2];
+                        lpR[1][0] = x[ai][0] - rij[0]; lpR[1][1] = x[ai][1] - rij[1]; lpR[1][2] = x[ai][2] - rij[2];
                         lpF[0][0] = fij[0];  lpF[0][1] = fij[1];  lpF[0][2] = fij[2];
                         lpF[1][0] = -fij[0]; lpF[1][1] = -fij[1]; lpF[1][2] = -fij[2];
-                        
                         locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
                     }
                 }
                 //printf("\n");
+                //printf("\n ai = %d ; Fls = %6.4f %6.4f %6.4f", ai, fcumul[XX], fcumul[YY], fcumul[ZZ]);
+                printf("ai = %d\n", ai);
             }
-        
-            // need to reset lowiy and lowiz
-            lowiy        = 0;
-            lowiz        = 1;
+            printf("\nAng_av = %6.4f\n",ang_av/counter);
         }
         /* end stress tensor */
 
