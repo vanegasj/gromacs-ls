@@ -216,7 +216,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                 (locals_grid->GetContribType() == mds_all ||
                  locals_grid->GetContribType() == mds_ewal))
         {
-            printf("called the ewald function and am now summing\n");
+            printf("/ncalled the ewald function and am now summing\n");
             //printf("\nLx: %6.2f, Ly: %6.2f, Lz: %6.2f\n",box[0],box[1],box[2]);
             real ang_av = 0.0, ang;
             real mx[2*et->nx - 1];
@@ -249,7 +249,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                 ai1 = excl->index[ai];
                 ai2 = excl->index[ai+1];
 
-                printf("adding interaction of particle %i and:", ai);
+                //printf("adding interaction of particle %i and", ai);
                 for (aj = ai+1; aj < natoms; aj++)
                 {
                     bool exclude = false;
@@ -265,7 +265,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                     // need to exclude bonded pairs here
                     if (!exclude)
                     {
-                        printf(" %i", aj);
+                        //printf(" %i:\n", aj);
                         qq = charge[ai]*charge[aj]*scaleRecip;
 
                         // place them in the box, position wise
@@ -339,8 +339,8 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         rvec fij_unit, rij_unit;
                         unitv(fij, fij_unit);
                         unitv(rij, rij_unit);
-                        printf("\nai = %d, aj = %d", ai, aj);
-                        printf("rij = %6.4f %6.4f %6.4f, fij = %6.4f %6.4f %6.4f; |rij| = %6.4f; |k| = %6.4f; |rij|/|k| = %6.4f\n", rij_unit[0], rij_unit[1], rij_unit[2], fij_unit[0], fij_unit[1], fij_unit[2], norm(rij), norm(mvec), norm(rij)/norm(mvec));
+                        //printf("\nai = %d, aj = %d", ai, aj);
+                        //printf("rij = %6.4f %6.4f %6.4f, fij = %6.4f %6.4f %6.4f; |rij| = %6.4f; |k| = %6.4f; |rij|/|k| = %6.4f\n", rij_unit[0], rij_unit[1], rij_unit[2], fij_unit[0], fij_unit[1], fij_unit[2], norm(rij), norm(mvec), norm(rij)/norm(mvec));
                         // call mdstress library here
                         int lpatIDs[2];
                         lpatIDs[0] = ai; lpatIDs[1] = aj;
@@ -357,11 +357,11 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         rvec_dec(fsum_pairs_ls[aj], fij);
                     }
                 }
-                //printf("\n");
+                printf("\n");
                 //printf("\n ai = %d ; Fls = %6.4f %6.4f %6.4f", ai, fcumul[XX], fcumul[YY], fcumul[ZZ]);
                 //printf("ai = %d\n", ai);
             }
-            printf("\nAng_av = %6.4f\n",ang_av/counter);
+            printf("Ang_av = %6.4f\n\n",ang_av/counter);
         }
         /* end stress tensor */
 
