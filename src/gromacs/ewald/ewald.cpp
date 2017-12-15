@@ -185,6 +185,11 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
 
     calc_lll(box, lll);
     tabulateStructureFactors(natoms, x, et->kmax, et->eir, lll);
+
+    /* tracking forces on each particle as a test, need arrays for that */
+    rvec fsum_pairs_ls[natoms] = {{0.0,0.0,0.0,},};
+    rvec fsum_pairs_ew[natoms] = {{0.0,0.0,0.0,},};
+
     for (q = 0; q < (bFreeEnergy ? 2 : 1); q++)
     {
         if (!bFreeEnergy)
@@ -211,8 +216,8 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                 (locals_grid->GetContribType() == mds_all ||
                  locals_grid->GetContribType() == mds_ewal))
         {
-            //printf("called the ewald function and am now summing\n");
-            printf("\nLx: %6.2f, Ly: %6.2f, Lz: %6.2f\n",box[0],box[1],box[2]);
+            printf("called the ewald function and am now summing\n");
+            //printf("\nLx: %6.2f, Ly: %6.2f, Lz: %6.2f\n",box[0],box[1],box[2]);
             real ang_av = 0.0, ang;
             real mx[2*et->nx - 1];
             real my[2*et->ny - 1];
@@ -223,17 +228,17 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
             for (ix = -et->nx + 1; ix < et->nx; ix++)
             {
                 ixp = ix + et->nx - 1;
-                mx[ixp] = 0.5*ix*lll[XX];
+                mx[ixp] = ix*lll[XX];
                 for (iy = -et->ny + 1; iy < et->ny; iy++)
                 {
                     iyp = iy + et->ny - 1;
-                    my[iyp] = 0.5*iy*lll[YY];
+                    my[iyp] = iy*lll[YY];
                     for (iz = -et->nz + 1; iz < et->nz; iz++)
                     {
                         izp = iz + et->nz - 1;
-                        mz[izp]  = 0.5*iz*lll[ZZ];
+                        mz[izp]  = iz*lll[ZZ];
                         m2 = mx[ixp]*mx[ixp] + my[iyp]*my[iyp] + mz[izp]*mz[izp];
-                        ak[ixp][iyp][izp] = exp(m2*factor)/m2;
+                        ak[ixp][iyp][izp] = scale*exp(m2*factor)/m2;
                         //printf("ak = %6.4e\n",ak[ix][iy][iz]);
                     }
                 }
@@ -244,29 +249,48 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                 ai1 = excl->index[ai];
                 ai2 = excl->index[ai+1];
 
-                //printf("adding interaction of particle %i and:", ai);
+                printf("adding interaction of particle %i and:", ai);
                 for (aj = ai+1; aj < natoms; aj++)
                 {
                     bool exclude = false;
-                    for (ai3 = ai1; ai3 < ai2; ++ai3)
+                    /*for (ai3 = ai1; ai3 < ai2; ++ai3)
                     {
                         if (excl->a[ai3] == aj)
                         {
                             exclude = true;
                             break;
                         }
-                    }
+                    }*/
 
                     // need to exclude bonded pairs here
                     if (!exclude)
                     {
-                        //printf(" %i", aj);
+                        printf(" %i", aj);
                         qq = charge[ai]*charge[aj]*scaleRecip;
-                        clear_rvec(rij);
-                        rvec_sub(x[ai], x[aj], rij);
 
-                        // simple pbc
+                        // place them in the box, position wise
+                        rvec xx; rvec xy;
                         for (d = 0; d < DIM; d++)
+                        {
+                            // position xx
+                            xx[d] = x[ai][d];
+                            if (xx[d] < -box[d])
+                                xx[d] += box[d];
+                            if (xx[d] >= box[d])
+                                xx[d] -= box[d];
+
+                            // position xy
+                            xy[d] = x[aj][d];
+                            if (xy[d] < -box[d])
+                                xy[d] += box[d];
+                            if (xy[d] >= box[d])
+                                xy[d] -= box[d];
+                        }
+
+                        // now take the minimal distance
+                        clear_rvec(rij);
+                        rvec_sub(xx, xy, rij);
+                        /*for (d = 0; d < DIM; d++)
                         {
                             if (rij[d] > 0.5*box[d])
                             {
@@ -276,7 +300,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                             {
                                 rij[d] += box[d];
                             }
-                        }
+                        }*/
 
                         // clear the old force calculate the new
                         clear_rvec(fij);
@@ -310,12 +334,12 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         ang_av += ang;
                         counter += 1;
                         printf(" %i on %i: %5.4f degrees; ",ai, aj, ang);
-                        //printf(" ri: %6.4f, %6.4f, %6.4f; rj: %6.4f, %6.4f, %6.4f; rij: %6.4f, %6.4f, %6.4f, |rij| = %6.4f\n",
-                        //        x[ai][0],x[ai][1],x[ai][2],x[aj][0],x[aj][1],x[aj][2],rij[0]/box[XX],rij[1]/box[YY],rij[2]/box[ZZ], norm(rij));
+                        printf(" ri: %6.4f, %6.4f, %6.4f; rj: %6.4f, %6.4f, %6.4f; rij: %6.4f, %6.4f, %6.4f, |rij| = %6.4f\n",
+                                xx[0],xx[1],xx[2],xy[0],xy[1],xy[2],rij[0]/box[XX],rij[1]/box[YY],rij[2]/box[ZZ], norm(rij));
                         rvec fij_unit, rij_unit;
                         unitv(fij, fij_unit);
                         unitv(rij, rij_unit);
-                        //printf("\nai = %d, aj = %d", ai, aj);
+                        printf("\nai = %d, aj = %d", ai, aj);
                         printf("rij = %6.4f %6.4f %6.4f, fij = %6.4f %6.4f %6.4f; |rij| = %6.4f; |k| = %6.4f; |rij|/|k| = %6.4f\n", rij_unit[0], rij_unit[1], rij_unit[2], fij_unit[0], fij_unit[1], fij_unit[2], norm(rij), norm(mvec), norm(rij)/norm(mvec));
                         // call mdstress library here
                         int lpatIDs[2];
@@ -327,11 +351,15 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         lpF[0][0] = fij[0];  lpF[0][1] = fij[1];  lpF[0][2] = fij[2];
                         lpF[1][0] = -fij[0]; lpF[1][1] = -fij[1]; lpF[1][2] = -fij[2];
                         locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+
+                        /* sum the forces felt by each particle */
+                        rvec_inc(fsum_pairs_ls[ai], fij);
+                        rvec_dec(fsum_pairs_ls[aj], fij);
                     }
                 }
                 //printf("\n");
                 //printf("\n ai = %d ; Fls = %6.4f %6.4f %6.4f", ai, fcumul[XX], fcumul[YY], fcumul[ZZ]);
-                printf("ai = %d\n", ai);
+                //printf("ai = %d\n", ai);
             }
             printf("\nAng_av = %6.4f\n",ang_av/counter);
         }
@@ -401,6 +429,10 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         f[n][XX] += tmp*mx*2*scaleRecip;
                         f[n][YY] += tmp*my*2*scaleRecip;
                         f[n][ZZ] += tmp*mz*2*scaleRecip;
+                        
+                        fsum_pairs_ew[n][XX] += tmp*mx*2*scaleRecip;
+                        fsum_pairs_ew[n][YY] += tmp*my*2*scaleRecip;
+                        fsum_pairs_ew[n][ZZ] += tmp*mz*2*scaleRecip;
 #if 0
                         f[n][XX] += tmp*mx;
                         f[n][YY] += tmp*my;
@@ -412,6 +444,15 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                 lowiy = 1-et->ny;
             }
         }
+    }
+
+    /* lets look at the forces on each particle */
+    for (ai = 0; ai < natoms; ai++)
+    {
+        printf("ls forces on %03i: %18.12e, %18.12e, %18.12e\n", ai, fsum_pairs_ls[ai][XX],
+                fsum_pairs_ls[ai][YY], fsum_pairs_ls[ai][ZZ]);
+        printf("ew forces on %03i: %18.12e, %18.12e, %18.12e\n\n", ai, fsum_pairs_ew[ai][XX],
+                fsum_pairs_ew[ai][YY], fsum_pairs_ew[ai][ZZ]);
     }
 
     if (!bFreeEnergy)
