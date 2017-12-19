@@ -190,6 +190,11 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
     rvec fsum_pairs_ls[natoms] = {{0.0,0.0,0.0,},};
     rvec fsum_pairs_ew[natoms] = {{0.0,0.0,0.0,},};
 
+    /* tracking pressure, need a 3x3 matrix */
+    rvec Pxxz = {0.0,0.0,0.0,};
+    rvec Pyxz = {0.0,0.0,0.0,};
+    rvec Pzxz = {0.0,0.0,0.0,};
+
     for (q = 0; q < (bFreeEnergy ? 2 : 1); q++)
     {
         if (!bFreeEnergy)
@@ -355,6 +360,11 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         /* sum the forces felt by each particle */
                         rvec_inc(fsum_pairs_ls[ai], fij);
                         rvec_dec(fsum_pairs_ls[aj], fij);
+
+                        /* sum the pressure */
+                        Pxxz[0] += rij[0]*fij[0]; Pxxz[1] += rij[0]*fij[1]; Pxxz[2] += rij[0]*fij[2];
+                        Pyxz[0] += rij[1]*fij[0]; Pyxz[1] += rij[1]*fij[1]; Pyxz[2] += rij[1]*fij[2];
+                        Pzxz[0] += rij[2]*fij[0]; Pzxz[1] += rij[2]*fij[1]; Pzxz[2] += rij[2]*fij[2];
                     }
                 }
                 printf("\n");
@@ -363,6 +373,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
             }
             printf("Ang_av = %6.4f\n\n",ang_av/counter);
         }
+
         /* end stress tensor */
 
         for (ix = 0; ix < et->nx; ix++)
@@ -445,6 +456,17 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
             }
         }
     }
+
+    /* print pressure tensor */
+    printf("ls_pressure:\n");
+    printf("Pxx: %18.12e, Pyx: %18.12e, Pzx: %18.12e\n", Pxxz[0], Pxxz[1], Pxxz[2]);
+    printf("Pxy: %18.12e, Pyy: %18.12e, Pzy: %18.12e\n", Pyxz[0], Pyxz[1], Pyxz[2]);
+    printf("Pxz: %18.12e, Pyz: %18.12e, Pzz: %18.12e\n\n", Pzxz[0], Pzxz[1], Pzxz[2]);
+
+    printf("ew_pressure:\n");
+    printf("Pxx: %18.12e, Pyx: %18.12e, Pzx: %18.12e\n", lrvir[XX][XX], lrvir[YY][XX], lrvir[ZZ][XX]);
+    printf("Pxy: %18.12e, Pyy: %18.12e, Pzy: %18.12e\n", lrvir[XX][YY], lrvir[YY][YY], lrvir[ZZ][YY]);
+    printf("Pxz: %18.12e, Pyz: %18.12e, Pzz: %18.12e\n\n", lrvir[XX][ZZ], lrvir[YY][ZZ], lrvir[ZZ][ZZ]);
 
     /* lets look at the forces on each particle */
     for (ai = 0; ai < natoms; ai++)
