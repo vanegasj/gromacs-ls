@@ -362,9 +362,9 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         rvec_dec(fsum_pairs_ls[aj], fij);
 
                         /* sum the pressure */
-                        Pxxz[0] += rij[0]*fij[0]; Pxxz[1] += rij[0]*fij[1]; Pxxz[2] += rij[0]*fij[2];
-                        Pyxz[0] += rij[1]*fij[0]; Pyxz[1] += rij[1]*fij[1]; Pyxz[2] += rij[1]*fij[2];
-                        Pzxz[0] += rij[2]*fij[0]; Pzxz[1] += rij[2]*fij[1]; Pzxz[2] += rij[2]*fij[2];
+                        Pxxz[0] += 0.5*rij[0]*fij[0]; Pxxz[1] += 0.5*rij[0]*fij[1]; Pxxz[2] += 0.5*rij[0]*fij[2];
+                        Pyxz[0] += 0.5*rij[1]*fij[0]; Pyxz[1] += 0.5*rij[1]*fij[1]; Pyxz[2] += 0.5*rij[1]*fij[2];
+                        Pzxz[0] += 0.5*rij[2]*fij[0]; Pzxz[1] += 0.5*rij[2]*fij[1]; Pzxz[2] += 0.5*rij[2]*fij[2];
                     }
                 }
                 printf("\n");
@@ -463,11 +463,6 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
     printf("Pxy: %18.12e, Pyy: %18.12e, Pzy: %18.12e\n", Pyxz[0], Pyxz[1], Pyxz[2]);
     printf("Pxz: %18.12e, Pyz: %18.12e, Pzz: %18.12e\n\n", Pzxz[0], Pzxz[1], Pzxz[2]);
 
-    printf("ew_pressure:\n");
-    printf("Pxx: %18.12e, Pyx: %18.12e, Pzx: %18.12e\n", lrvir[XX][XX], lrvir[YY][XX], lrvir[ZZ][XX]);
-    printf("Pxy: %18.12e, Pyy: %18.12e, Pzy: %18.12e\n", lrvir[XX][YY], lrvir[YY][YY], lrvir[ZZ][YY]);
-    printf("Pxz: %18.12e, Pyz: %18.12e, Pzz: %18.12e\n\n", lrvir[XX][ZZ], lrvir[YY][ZZ], lrvir[ZZ][ZZ]);
-
     /* lets look at the forces on each particle */
     for (ai = 0; ai < natoms; ai++)
     {
@@ -497,6 +492,12 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
     lrvir[YY][XX] = lrvir[XX][YY];
     lrvir[ZZ][XX] = lrvir[XX][ZZ];
     lrvir[ZZ][YY] = lrvir[YY][ZZ];
+    
+    printf("ew_pressure:\n");
+    printf("Pxx: %18.12e, Pyx: %18.12e, Pzx: %18.12e\n", lrvir[XX][XX], lrvir[YY][XX], lrvir[ZZ][XX]);
+    printf("Pxy: %18.12e, Pyy: %18.12e, Pzy: %18.12e\n", lrvir[XX][YY], lrvir[YY][YY], lrvir[ZZ][YY]);
+    printf("Pxz: %18.12e, Pyz: %18.12e, Pzz: %18.12e\n\n", lrvir[XX][ZZ], lrvir[YY][ZZ], lrvir[ZZ][ZZ]);
+
 
     energy *= scaleRecip;
 
