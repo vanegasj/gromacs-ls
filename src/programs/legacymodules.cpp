@@ -255,6 +255,8 @@ void registerLegacyModules(gmx::CommandLineModuleManager *manager)
                    "Calculate the density of the system");
     registerModule(manager, &gmx_density3D, "density3D",
                    "Calculate the 3D density of the system");
+    registerModule(manager, &gmx_voronoi, "voronoi",
+                   "Calculate the voronoi volumes of the system particles");
     registerModule(manager, &gmx_densmap, "densmap",
                    "Calculate 2D planar or axial-radial density maps");
     registerModule(manager, &gmx_densorder, "densorder",

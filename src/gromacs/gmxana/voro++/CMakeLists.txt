@@ -32,15 +32,5 @@
 # To help us fund GROMACS development, we humbly ask that you cite
 # the research papers on the package. Check out http://www.gromacs.org.
 
-file(GLOB GMXANA_SOURCES *.cpp)
-add_subdirectory(voro++)
-
-gmx_install_headers(
-    gstat.h
-    )
-
-set(LIBGROMACS_SOURCES ${LIBGROMACS_SOURCES} ${GMXANA_SOURCES} PARENT_SCOPE)
-
-if(BUILD_TESTING)
-    add_subdirectory(legacytests)
-endif()
+file(GLOB VORO_SOURCES *.cpp)
+set(LIBGROMACS_SOURCES ${LIBGROMACS_SOURCES} ${VORO_SOURCES} PARENT_SCOPE)
