@@ -138,7 +138,7 @@ static void pr_nbfp(FILE *fp, real *nbfp, gmx_bool bBHAM, int atnr)
 }
 #endif
 
-static real *mk_nbfp(const gmx_ffparams_t *idef, gmx_bool bBHAM)
+real *mk_nbfp(const gmx_ffparams_t *idef, gmx_bool bBHAM)
 {
     real *nbfp;
     int   i, j, k, atnr;

@@ -118,6 +118,9 @@ void init_forcerec(FILE                   *fplog,
                    gmx_bool                bNoSolvOpt,
                    real                    print_force);
 
+/*! \brief Create a new nbfp structure */
+real *mk_nbfp(const gmx_ffparams_t *idef, gmx_bool bBHAM);
+
 /*! \brief Divide exclusions over threads
  *
  * Set the exclusion load for the local exclusions and possibly threads
