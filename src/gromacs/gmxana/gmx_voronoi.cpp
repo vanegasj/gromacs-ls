@@ -68,7 +68,6 @@
 #include "gromacs/utility/fatalerror.h"
 #include "gromacs/utility/futil.h"
 #include "gromacs/utility/gmxassert.h"
-//#include "gromacs/utility/statutil.h"
 #include "gromacs/utility/smalloc.h"
 
 #include "gromacs/mdtypes/inputrec.h"
@@ -612,11 +611,12 @@ int gmx_voronoi(int argc,char *argv[])
     ""
   };
   t_tpxheader header;
-  t_inputrec  ir;
-  gmx_mtop_t  mtop;
-  rvec        *xtop;
+  t_inputrec  *ir;
+  t_state     *state;
+  gmx_mtop_t  *mtop;
   t_forcerec  *fr;
   t_commrec   *cr;
+  gmx_hw_info_t *hwinfo;
   matrix      box;
   gmx_output_env_t * oenv;
   static int fullout = xNone;
@@ -694,24 +694,17 @@ int gmx_voronoi(int argc,char *argv[])
     gmx_fatal(FARGS,"Cannot use -3d and -mol together.\n");
 
   if (bRad){
-    read_tpxheader(ftp2fn(efTPR,NFILE,fnm),&header,FALSE);
-    snew(xtop,header.natoms);
-    read_tpx(ftp2fn(efTPR,NFILE,fnm),&ir,box,&ntopatoms,xtop,NULL,&mtop);
-    printf("mtop natoms = %i \n",mtop.natoms);
+    snew(ir, 1);
+    snew(state, 1);
+    snew(mtop, 1);
+    read_tpx_state(ftp2fn(efTPR,NFILE,fnm),ir,state,mtop);
+
+    // only need the C6 and C12 parameters, no need for a full forcerec
+    // initialization
     fr = mk_forcerec();
-    init_forcerec(stdout,
-            fr,
-            NULL,
-            &ir,
-            &mtop,
-            cr,
-            box,
-            NULL,
-            NULL,
-            NULL,
-            NULL,
-            FALSE,
-            -1);
+    fr->bBHAM = (mtop->ffparams.functype[0] == F_BHAM);
+    fr->ntype = mtop->ffparams.atnr;
+    fr->nbfp  = mk_nbfp(&mtop->ffparams, fr->bBHAM);
   }
   
   if (strncmp(fullsel,"none",6) == 0) {
