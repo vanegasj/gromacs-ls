@@ -529,6 +529,16 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         printf("\n");
         exit(1);
     }
+        
+    if(EEL_PME(ir->coulombtype)) 
+    {
+        printf("STOP!\n");
+        printf("The contributions from PME cannot currently be added to the stress tensor.\n");
+        printf("If you ran your simulation using PME, then create a new tpr file where the\n");
+        printf("electrostatics are treated with a plain cut-off or reaction-field (rcoul >= 2.0 nm).\n");
+        printf("\n");
+        gmx_fatal(FARGS,"Stopping the local stress analysis\n");
+    }
 
     /*if(EEL_PME(ir->coulombtype)) 
     {
