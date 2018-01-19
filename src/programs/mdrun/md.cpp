@@ -648,9 +648,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 }
             }
         }
-
-        // initialize the voronoi portion of mdstresslib
-        locals_grid.Init_Voronoi();
     }
 
     //calc_recipbox(state->box,locals_grid.invbox); /**/// possibly call Update() here?
@@ -1943,6 +1940,9 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         // we should add the voronoi particles here
         if(localsspatialatom == mds_atom)
         {
+            // initialize the voronoi portion of mdstresslib
+            locals_grid.Init_Voronoi();
+
             rvec voro_pos;
             
             int pid = 0;
