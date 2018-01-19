@@ -217,7 +217,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
         energy_AB[q] = 0;
 
         /* begin stress tensor */
-        if (locals_grid != NULL &&
+        /*if (locals_grid != NULL &&
                 (locals_grid->GetContribType() == mds_all ||
                  locals_grid->GetContribType() == mds_ewal))
         {
@@ -258,14 +258,14 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                 for (aj = ai+1; aj < natoms; aj++)
                 {
                     bool exclude = false;
-                    /*for (ai3 = ai1; ai3 < ai2; ++ai3)
+                    for (ai3 = ai1; ai3 < ai2; ++ai3)
                     {
                         if (excl->a[ai3] == aj)
                         {
                             exclude = true;
                             break;
                         }
-                    }*/
+                    }
 
                     // need to exclude bonded pairs here
                     if (!exclude)
@@ -295,7 +295,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         // now take the minimal distance
                         clear_rvec(rij);
                         rvec_sub(xx, xy, rij);
-                        /*for (d = 0; d < DIM; d++)
+                        for (d = 0; d < DIM; d++)
                         {
                             if (rij[d] > 0.5*box[d])
                             {
@@ -305,7 +305,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                             {
                                 rij[d] += box[d];
                             }
-                        }*/
+                        }
 
                         // clear the old force calculate the new
                         clear_rvec(fij);
@@ -357,11 +357,9 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         lpF[1][0] = -fij[0]; lpF[1][1] = -fij[1]; lpF[1][2] = -fij[2];
                         locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
 
-                        /* sum the forces felt by each particle */
                         rvec_inc(fsum_pairs_ls[ai], fij);
                         rvec_dec(fsum_pairs_ls[aj], fij);
 
-                        /* sum the pressure */
                         Pxxz[0] += 0.5*rij[0]*fij[0]; Pxxz[1] += 0.5*rij[0]*fij[1]; Pxxz[2] += 0.5*rij[0]*fij[2];
                         Pyxz[0] += 0.5*rij[1]*fij[0]; Pyxz[1] += 0.5*rij[1]*fij[1]; Pyxz[2] += 0.5*rij[1]*fij[2];
                         Pzxz[0] += 0.5*rij[2]*fij[0]; Pzxz[1] += 0.5*rij[2]*fij[1]; Pzxz[2] += 0.5*rij[2]*fij[2];
@@ -372,7 +370,7 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                 //printf("ai = %d\n", ai);
             }
             printf("Ang_av = %6.4f\n\n",ang_av/counter);
-        }
+        }*/
 
         /* end stress tensor */
 
@@ -458,19 +456,17 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
     }
 
     /* print pressure tensor */
-    printf("ls_pressure:\n");
+    /*printf("ls_pressure:\n");
     printf("Pxx: %18.12e, Pyx: %18.12e, Pzx: %18.12e\n", Pxxz[0], Pxxz[1], Pxxz[2]);
     printf("Pxy: %18.12e, Pyy: %18.12e, Pzy: %18.12e\n", Pyxz[0], Pyxz[1], Pyxz[2]);
     printf("Pxz: %18.12e, Pyz: %18.12e, Pzz: %18.12e\n\n", Pzxz[0], Pzxz[1], Pzxz[2]);
-
-    /* lets look at the forces on each particle */
     for (ai = 0; ai < natoms; ai++)
     {
         printf("ls forces on %03i: %18.12e, %18.12e, %18.12e\n", ai, fsum_pairs_ls[ai][XX],
                 fsum_pairs_ls[ai][YY], fsum_pairs_ls[ai][ZZ]);
         printf("ew forces on %03i: %18.12e, %18.12e, %18.12e\n\n", ai, fsum_pairs_ew[ai][XX],
                 fsum_pairs_ew[ai][YY], fsum_pairs_ew[ai][ZZ]);
-    }
+    }*/
 
     if (!bFreeEnergy)
     {
@@ -493,11 +489,10 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
     lrvir[ZZ][XX] = lrvir[XX][ZZ];
     lrvir[ZZ][YY] = lrvir[YY][ZZ];
     
-    printf("ew_pressure:\n");
+    /*printf("ew_pressure:\n");
     printf("Pxx: %18.12e, Pyx: %18.12e, Pzx: %18.12e\n", lrvir[XX][XX], lrvir[YY][XX], lrvir[ZZ][XX]);
     printf("Pxy: %18.12e, Pyy: %18.12e, Pzy: %18.12e\n", lrvir[XX][YY], lrvir[YY][YY], lrvir[ZZ][YY]);
-    printf("Pxz: %18.12e, Pyz: %18.12e, Pzz: %18.12e\n\n", lrvir[XX][ZZ], lrvir[YY][ZZ], lrvir[ZZ][ZZ]);
-
+    printf("Pxz: %18.12e, Pyz: %18.12e, Pzz: %18.12e\n\n", lrvir[XX][ZZ], lrvir[YY][ZZ], lrvir[ZZ][ZZ]);*/
 
     energy *= scaleRecip;
 

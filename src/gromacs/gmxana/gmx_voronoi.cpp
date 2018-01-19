@@ -75,7 +75,7 @@
 #include "gromacs/gmxlib/network.h"
 #include "gromacs/mdlib/forcerec.h"
 
-#include "gromacs/gmxana/voro++/voro++.h"
+#include "mdstress/voro++.hh"
 
 #define xNone 0
 #define xTs 1

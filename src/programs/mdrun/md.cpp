@@ -300,6 +300,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     real mass;
     rvec box_size;
     rvec x_rerun, v_rerun, v_update;
+    real * radii;
 
     /* local stress end */
 
@@ -596,7 +597,52 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     }
     else if(localsspatialatom == mds_atom)
     {
+        // allocate space for the radius array
+        snew(radii, top_global->natoms);
+        std::cout << top_global->natoms << std::endl;
+
+        // now set the number of atoms for mdstresslib
         locals_grid.SetNumberOfAtoms(top_global->natoms);
+        
+        // periodic boundary conditions
+        if (ir->ePBC == epbcXYZ)
+        {
+            locals_grid.SetPeriodicBoundaries(true,true,true);
+        }
+        else
+        if (ir->ePBC == epbcXY)
+        {
+            locals_grid.SetPeriodicBoundaries(true,true,false);
+        }
+        else
+        {
+            locals_grid.SetPeriodicBoundaries(false,false,false);
+        }
+
+        // calculate the radii (once)
+        int atom_index = 0;
+        for (int mb = 0; mb < top_global->nmolblock; ++mb)
+        {
+            gmx_molblock_t * molb = &top_global->molblock[mb];
+
+            for (int mol = 0; mol < molb->nmol; ++mol)
+            {
+                for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
+                {
+                    int ii = top_global->moltype[molb->type].atoms.atom[mol_atom].type;
+                    double c6 = C6(fr->nbfp,fr->ntype,ii,ii);
+                    double c12 = C12(fr->nbfp,fr->ntype,ii,ii);
+                    if (c6 > 0.0)
+                        radii[atom_index] = pow(c12/c6,1/6.0)/2;
+                    else
+                        radii[atom_index] = 0.0;
+
+                    //printf("atom: %i, c6: %12.5e, c12: %12.5e, r: %12.5e\n", atom_index, c6, c12, radii[atom_index]);
+
+                    atom_index += 1;
+                }
+            }
+        }
     }
 
     // this will initialize locals_grid.current_grid and locals_grid.sum_grid
@@ -1889,10 +1935,31 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
 
         /* local stress begin */
+        // we should add the voronoi particles here
+        if(localsspatialatom == mds_atom)
+        {
+            rvec voro_pos;
 
+            int pid = 0;
+            for (int i = 0; i < top_global->natoms; ++i)
+            {
+                // grab the atom positions and put it in the box
+                voro_pos[XX] = state->x[pid][XX];
+                voro_pos[YY] = state->x[pid][YY];
+                voro_pos[ZZ] = state->x[pid][ZZ];
+                put_atoms_in_box(ir->ePBC, state->box, 1, &voro_pos);
+
+                // add the particle to locals_grid
+                locals_grid.AddVoronoiAtom(voro_pos[0], voro_pos[1], voro_pos[2],
+                        radii[pid], pid);
+
+                // next atom
+                pid += 1;
+            }
+        }
         //copy the values from locals.current_grid to sum_grid, set current_grid to 0, and update frame counter
         locals_grid.SumGrid();
-
+        
         /* local stress end */
 
         /* TODO make a counter-reset module */

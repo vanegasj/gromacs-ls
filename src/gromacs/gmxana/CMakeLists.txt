@@ -33,7 +33,6 @@
 # the research papers on the package. Check out http://www.gromacs.org.
 
 file(GLOB GMXANA_SOURCES *.cpp)
-add_subdirectory(voro++)
 
 gmx_install_headers(
     gstat.h
