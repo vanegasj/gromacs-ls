@@ -316,19 +316,20 @@ void check_ir(const char *mdparin, t_inputrec *ir, t_gromppopts *opts,
             warning_error(wi, "With Verlet lists only full pbc or pbc=xy with walls is supported");
         }
 
-        // We don't (yet) have general Verlet kernels for rcoulomb!=rvdw
-        if (ir->rcoulomb != ir->rvdw)
+        // begin local stress, rcoulomb>=rvdw
+        if (ir->rcoulomb < ir->rvdw)
         {
             // Since we have PME coulomb + LJ cut-off kernels with rcoulomb>rvdw
             // for PME load balancing, we can support this exception.
-            bool bUsesPmeTwinRangeKernel = (EEL_PME_EWALD(ir->coulombtype) &&
-                                            ir->vdwtype == evdwCUT &&
+            //bool bUsesPmeTwinRangeKernel = (EEL_PME_EWALD(ir->coulombtype) &&
+            //                                ir->vdwtype == evdwCUT &&
                                             ir->rcoulomb > ir->rvdw);
-            if (!bUsesPmeTwinRangeKernel)
-            {
-                warning_error(wi, "With Verlet lists rcoulomb!=rvdw is not supported (except for rcoulomb>rvdw with PME electrostatics)");
-            }
+            //if (!bUsesPmeTwinRangeKernel)
+            //{
+            warning_error(wi, "With Verlet lists rcoulomb >= rvdw");
+            //}
         }
+        //end local stress
 
         if (ir->vdwtype == evdwSHIFT || ir->vdwtype == evdwSWITCH)
         {

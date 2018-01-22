@@ -3198,14 +3198,14 @@ void init_forcerec(FILE              *fp,
     {
         // We checked the cut-offs in grompp, but double-check here.
         // We have PME+LJcutoff kernels for rcoulomb>rvdw.
-        if (EEL_PME_EWALD(ir->coulombtype) && ir->vdwtype == eelCUT)
+        if (ir->vdwtype == eelCUT)
         {
-            GMX_RELEASE_ASSERT(ir->rcoulomb >= ir->rvdw, "With Verlet lists and PME we should have rcoulomb>=rvdw");
+            GMX_RELEASE_ASSERT(ir->rcoulomb >= ir->rvdw, "With Verlet lists we should have rcoulomb >= rvdw");
         }
-        else
-        {
-            GMX_RELEASE_ASSERT(ir->rcoulomb == ir->rvdw, "With Verlet lists and no PME rcoulomb and rvdw should be identical");
-        }
+        //else
+        //{
+        //    GMX_RELEASE_ASSERT(ir->rcoulomb == ir->rvdw, "With Verlet lists and no PME rcoulomb and rvdw should be identical");
+        //}
 
         init_nb_verlet(fp, &fr->nbv, bFEP_NonBonded, ir, fr, cr, nbpu_opt);
     }

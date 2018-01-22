@@ -529,7 +529,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         printf("\n");
         exit(1);
     }
-        
+
     if(EEL_PME(ir->coulombtype)) 
     {
         printf("STOP!\n");
@@ -539,16 +539,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         printf("\n");
         gmx_fatal(FARGS,"Stopping the local stress analysis\n");
     }
-
-    /*if(EEL_PME(ir->coulombtype)) 
-    {
-        printf("STOP!\n");
-        printf("The contributions from PME cannot currently be added to the stress tensor.\n");
-        printf("If you ran your simulation using PME, then create a new tpr file where the\n");
-        printf("electrostatics are treated with a plain cut-off or reaction-field (rcoul >= 2.0 nm).\n");
-        printf("\n");
-        gmx_fatal(FARGS,"Stopping the local stress analysis\n");
-    }*/
 
     // initialization
     locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
@@ -1755,9 +1745,9 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
              */
             bSumEkinhOld = TRUE;
         }
-        
-        /* begin stress tensor */
-        
+
+        /* begin local stress */
+
         for(i=0; i < mdatoms->homenr; i++)
         {
             mass = mdatoms->massT[i];
@@ -1774,8 +1764,39 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             if ((locals_grid.GetContribType() == mds_all) || (locals_grid.GetContribType() == mds_kin))
                 locals_grid.DistributeKinetic(mass, x_rerun, v_rerun, v_update, i);
         }
-        
-        /* end stress tensor */
+
+        // If using stress per atom, calculate the radical voronoi tesselation to obtain the particle volumes
+        if(localsspatialatom == mds_atom)
+        {
+            // initialize the voronoi portion of mdstresslib
+            locals_grid.Init_Voronoi();
+            rvec voro_pos;
+
+            int pid = 0;
+            for (int mb = 0; mb < top_global->nmolblock; ++mb)
+            {
+                gmx_molblock_t * molb = &top_global->molblock[mb];
+                for (int mid = 0; mid < molb->nmol; ++mid)
+                {
+                    for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
+                    {
+                        // grab the atom positions and put it in the box
+                        voro_pos[XX] = state->x[pid][XX];
+                        voro_pos[YY] = state->x[pid][YY];
+                        voro_pos[ZZ] = state->x[pid][ZZ];
+                        put_atoms_in_box(ir->ePBC, state->box, 1, &voro_pos);
+
+                        // add the particle to locals_grid
+                        locals_grid.AddVoronoiAtom(voro_pos[0], voro_pos[1], voro_pos[2], pid, mid);
+                        pid += 1;
+                    }
+                }
+            }
+        }
+        //copy the values from locals.current_grid to sum_grid, set current_grid to 0, and update frame counter
+        locals_grid.SumGrid();
+
+        /* end local stress */
 
         /* #########  BEGIN PREPARING EDR OUTPUT  ###########  */
 
@@ -1946,42 +1967,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             step_rel++;
         }
 
-        /* local stress begin */
-        // we should add the voronoi particles here
-        if(localsspatialatom == mds_atom)
-        {
-            // initialize the voronoi portion of mdstresslib
-            locals_grid.Init_Voronoi();
-
-            rvec voro_pos;
-            
-            int pid = 0;
-            for (int mb = 0; mb < top_global->nmolblock; ++mb)
-            {
-                gmx_molblock_t * molb = &top_global->molblock[mb];
-                for (int mid = 0; mid < molb->nmol; ++mid)
-                {
-                    for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
-                    {
-                        // grab the atom positions and put it in the box
-                        voro_pos[XX] = state->x[pid][XX];
-                        voro_pos[YY] = state->x[pid][YY];
-                        voro_pos[ZZ] = state->x[pid][ZZ];
-                        put_atoms_in_box(ir->ePBC, state->box, 1, &voro_pos);
-
-                        // add the particle to locals_grid
-                        locals_grid.AddVoronoiAtom(voro_pos[0], voro_pos[1], voro_pos[2], pid, mid);
-
-                        pid += 1;
-                    }
-                }
-            }
-        }
-        //copy the values from locals.current_grid to sum_grid, set current_grid to 0, and update frame counter
-        locals_grid.SumGrid();
-        
-        /* local stress end */
-
         /* TODO make a counter-reset module */
         /* If it is time to reset counters, set a flag that remains
            true until counters actually get reset */
@@ -2029,7 +2014,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     /* local stress begin */
 
     locals_grid.Write();
-    //should set free all the memory allocated for locals calculations
+
     /* local stress end */
 
     /* Closing TNG files can include compressing data. Therefore it is good to do that
