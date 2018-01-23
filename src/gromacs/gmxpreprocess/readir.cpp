@@ -323,7 +323,7 @@ void check_ir(const char *mdparin, t_inputrec *ir, t_gromppopts *opts,
             // for PME load balancing, we can support this exception.
             //bool bUsesPmeTwinRangeKernel = (EEL_PME_EWALD(ir->coulombtype) &&
             //                                ir->vdwtype == evdwCUT &&
-                                            ir->rcoulomb > ir->rvdw);
+            //                                ir->rcoulomb > ir->rvdw);
             //if (!bUsesPmeTwinRangeKernel)
             //{
             warning_error(wi, "With Verlet lists rcoulomb >= rvdw");

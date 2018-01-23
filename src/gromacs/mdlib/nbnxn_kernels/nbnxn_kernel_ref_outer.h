@@ -118,9 +118,9 @@ NBK_FUNC_NAME(_VgrpF)
     const int          *x_id; /*atom id numbers used for localstress*/
     const real         *nbfp;
     real                rcut2;
-#ifdef VDW_CUTOFF_CHECK
+//#ifdef VDW_CUTOFF_CHECK, always do a rvdw != rcoul for local stress calculations
     real                rvdw2;
-#endif
+//#endif
     int                 ntype2;
     real                facel;
     int                 n, ci, ci_sh;
@@ -221,9 +221,9 @@ NBK_FUNC_NAME(_VgrpF)
 
 
     rcut2               = ic->rcoulomb*ic->rcoulomb;
-#ifdef VDW_CUTOFF_CHECK
+//#ifdef VDW_CUTOFF_CHECK, allways do rvdw != rcoul for local stress calculations
     rvdw2               = ic->rvdw*ic->rvdw;
-#endif
+//#endif
 
     ntype2              = nbat->ntype*2;
     nbfp                = nbat->nbfp;

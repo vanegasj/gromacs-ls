@@ -187,8 +187,8 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
     tabulateStructureFactors(natoms, x, et->kmax, et->eir, lll);
 
     /* tracking forces on each particle as a test, need arrays for that */
-    rvec fsum_pairs_ls[natoms] = {{0.0,0.0,0.0,},};
-    rvec fsum_pairs_ew[natoms] = {{0.0,0.0,0.0,},};
+    //rvec fsum_pairs_ls[natoms] = {{0.0,0.0,0.0,},};
+    //rvec fsum_pairs_ew[natoms] = {{0.0,0.0,0.0,},};
 
     /* tracking pressure, need a 3x3 matrix */
     rvec Pxxz = {0.0,0.0,0.0,};
@@ -439,9 +439,9 @@ real do_ewald(t_inputrec *ir, t_blocka *excl,
                         f[n][YY] += tmp*my*2*scaleRecip;
                         f[n][ZZ] += tmp*mz*2*scaleRecip;
                         
-                        fsum_pairs_ew[n][XX] += tmp*mx*2*scaleRecip;
-                        fsum_pairs_ew[n][YY] += tmp*my*2*scaleRecip;
-                        fsum_pairs_ew[n][ZZ] += tmp*mz*2*scaleRecip;
+                        //fsum_pairs_ew[n][XX] += tmp*mx*2*scaleRecip;
+                        //fsum_pairs_ew[n][YY] += tmp*my*2*scaleRecip;
+                        //fsum_pairs_ew[n][ZZ] += tmp*mz*2*scaleRecip;
 #if 0
                         f[n][XX] += tmp*mx;
                         f[n][YY] += tmp*my;

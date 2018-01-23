@@ -100,7 +100,6 @@ typedef void (*p_nbk_func_ener)(const nbnxn_pairlist_t     *nbl,
 #undef LJ_EWALD
 #undef CALC_COUL_RF
 
-
 /* Tabulated exclusion interaction electrostatics kernels */
 #define CALC_COUL_TAB
 #define LJ_CUT
@@ -122,6 +121,7 @@ typedef void (*p_nbk_func_ener)(const nbnxn_pairlist_t     *nbl,
 #undef LJ_EWALD_COMB_LB
 #undef LJ_CUT
 #undef LJ_EWALD
+
 /* Twin-range cut-off kernels */
 #define VDW_CUTOFF_CHECK
 #define LJ_CUT

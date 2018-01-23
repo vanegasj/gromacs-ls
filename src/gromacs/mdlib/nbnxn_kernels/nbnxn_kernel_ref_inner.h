@@ -275,7 +275,8 @@
                 }
 #endif          /* LJ_EWALD */
 
-#ifdef VDW_CUTOFF_CHECK
+// Always do a rvdw != rcoul check for local stress calculations
+//#ifdef VDW_CUTOFF_CHECK
                 /* Mask for VdW cut-off shorter than Coulomb cut-off */
                 {
                     real skipmask_rvdw;
@@ -283,16 +284,16 @@
                     skipmask_rvdw = (rsq < rvdw2);
                     frLJ         *= skipmask_rvdw;
 #ifdef CALC_ENERGIES
-                    VLJ    *= skipmask_rvdw;
+                    VLJ *= skipmask_rvdw;
 #endif
                 }
-#else
-#if defined CALC_ENERGIES
+//#else
+//#if defined CALC_ENERGIES
                 /* Need to zero the interaction if r >= rcut */
-                VLJ     = VLJ * skipmask;
+//                VLJ     = VLJ * skipmask;
                 /* 1 more flop for LJ energy */
-#endif
-#endif          /* VDW_CUTOFF_CHECK */
+//#endif
+//#endif          /* VDW_CUTOFF_CHECK */
 
 
 #ifdef CALC_ENERGIES
@@ -399,7 +400,7 @@
                 lpatIDs[0] = xi_id[i]; lpatIDs[1] = x_id[aj];
                 
                 // remove the 'far away' particles
-                if (lpatIDs[0] != -1 && lpatIDs[1] != -1)
+                if (lpatIDs[0] != -1 && lpatIDs[1] != -1 && skipmask > 0)
                 {
                     int cont_type = locals_grid->GetContribType();
                     if (cont_type == mds_all ||
