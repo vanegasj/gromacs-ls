@@ -1769,7 +1769,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         if(localsspatialatom == mds_atom)
         {
             // initialize the voronoi portion of mdstresslib
-            locals_grid.Init_Voronoi();
             rvec voro_pos;
 
             int pid = 0;
@@ -1781,9 +1780,9 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                     for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
                     {
                         // grab the atom positions and put it in the box
-                        voro_pos[XX] = state->x[pid][XX];
-                        voro_pos[YY] = state->x[pid][YY];
-                        voro_pos[ZZ] = state->x[pid][ZZ];
+                        voro_pos[XX] = rerun_fr.x[pid][XX];
+                        voro_pos[YY] = rerun_fr.x[pid][YY];
+                        voro_pos[ZZ] = rerun_fr.x[pid][ZZ];
                         put_atoms_in_box(ir->ePBC, state->box, 1, &voro_pos);
 
                         // add the particle to locals_grid
