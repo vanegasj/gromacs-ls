@@ -392,6 +392,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
   }
   
   /*********** Start processing trajectory ***********/
+  int compute_cells = 0;
   do {
     particle_order vorpo(nr_ndx);
     /* Compute parameters and initialize voronoi tesselation */
@@ -411,7 +412,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       for (n = 0; n < nr_grps; n++) {
         for (i = 0; i < nr_mols[n]; i++) {   /* loop over all molecules in each group and add them to voronoi container*/
           copy_rvec2d(axis, gmx_box, xmol[pid], px);
-          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],1.0);
+          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.001);
           pid += 1;
         }
       }
@@ -420,7 +421,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       for (n = 0; n < nr_grps; n++) {
         for (i = 0; i < grpsize[n]; i++) {   /* loop over all atoms in each group and add them to voronoi container*/
           copy_rvec3d(gmx_box, x0[index[n][i]], px);
-          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],radii[index[n][i]]);
+          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.01*radii[index[n][i]]);
           pid += 1;
         }
       }
@@ -429,7 +430,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       for (n = 0; n < nr_grps; n++) {
         for (i = 0; i < grpsize[n]; i++) {   /* loop over all atoms in each group and add them to voronoi container*/
           copy_rvec2d(axis, gmx_box, x0[index[n][i]], px);
-          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],1.0);
+          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.001);
           pid += 1;
         }
       }
@@ -448,6 +449,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
           frame_areas[i] = cell_area;
           areas[i] += cell_area;
           vor_frame_area += cell_area;
+          compute_cells += 1;
         }
         i += 1;
       }while(vl.inc());
@@ -537,6 +539,8 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     }
     nr_frames++;
   } while (read_next_x(oenv,status,&tt,x0,gmx_box));
+
+  printf("Cells computed this frame: %i\n", compute_cells);
 
   gmx_rmpbc_done(gpbc);
 
