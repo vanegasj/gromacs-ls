@@ -1,7 +1,9 @@
-GROMACS-LS - This is NOT an official version of GROMACS!
+*** THIS IS NOT AN OFFICIAL VERSION OF GROMACS ***
 
-GROMACS-LS is a post-processing tool to analyze existing MD trajectories
-and calculate the local stress.
+GROMACS-LS is a modified version of GROMACS for post-processing analysis
+of existing MD trajectories to calculate the local stress.
+
+For more information, please visit http://mdstress.org
 
                                * * * * *
 
