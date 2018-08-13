@@ -230,7 +230,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   int localscontrib,
                   int localsfdecomp,
                   int localsspatialatom,
-                  gmx_bool localsnodispcor,
+                  gmx_bool localsdispcor,
                   unsigned long Flags,
                   gmx_walltime_accounting_t walltime_accounting)
 {
@@ -542,7 +542,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
     // initialization
     locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
-    if (localsnodispcor)
+    if (localsdispcor == FALSE)
         locals_grid.DisableDispersionCorrection();
     
     for(i=0; (i<DIM); i++)

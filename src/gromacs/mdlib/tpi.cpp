@@ -170,7 +170,7 @@ double do_tpi(FILE *fplog, t_commrec *cr,
               int localscontrib,
               int localsfdecomp,
               int localsspatialatom,
-              int localsnodispcor,
+              int localsdispcor,
               unsigned long gmx_unused Flags,
               gmx_walltime_accounting_t walltime_accounting)
 {
