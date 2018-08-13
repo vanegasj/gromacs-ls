@@ -231,6 +231,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   int localsfdecomp,
                   int localsspatialatom,
                   gmx_bool localsdispcor,
+                  gmx_bool localspbc,
                   unsigned long Flags,
                   gmx_walltime_accounting_t walltime_accounting)
 {
@@ -552,7 +553,27 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     locals_grid.SetContribType(localscontrib);
     locals_grid.SetStressType(localsspatialatom);
     locals_grid.SetForceDecomposition(localsfdecomp);
+
+    // setup periodic boundary conditions
+    bool xper, yper, zper, periodic;
+    periodic = (localspbc == TRUE);
+    if (ir->ePBC == epbcXYZ)
+    {
+        xper = yper = zper = true;
+    }
+    else
+    if (ir->ePBC == epbcXY)
+    {
+        xper = yper = true;
+        zper = false;
+    }
+    else
+    {
+        xper = yper = zper = false;
+    }
+    locals_grid.SetPeriodicBoundaries(xper,yper,zper,periodic);
     
+    // setup spatial/atomic specific variables
     if (localsspatialatom == mds_spat)
     {
         if(localsgridspacing<=0)
@@ -602,21 +623,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         // now set the number of atoms for mdstresslib
         locals_grid.SetNumberOfAtoms(top_global->natoms);
         
-        // periodic boundary conditions
-        if (ir->ePBC == epbcXYZ)
-        {
-            locals_grid.SetPeriodicBoundaries(true,true,true);
-        }
-        else
-        if (ir->ePBC == epbcXY)
-        {
-            locals_grid.SetPeriodicBoundaries(true,true,false);
-        }
-        else
-        {
-            locals_grid.SetPeriodicBoundaries(false,false,false);
-        }
-    
         // this will initialize locals_grid.current_grid and locals_grid.sum_grid
         locals_grid.Init();
 
