@@ -293,11 +293,15 @@ void check_ir(const char *mdparin, t_inputrec *ir, t_gromppopts *opts,
 
         if (ir->rlist > 0 && ir->rlist < ir->rcoulomb)
         {
-            gmx_fatal(FARGS, "rcoulomb must not be greater than rlist (twin-range schemes are not supported)");
+            warning_note(wi,
+                    "rcoulomb greater than rlist (note that twin-range schemes are not supported "
+                    "by PME)");
         }
         if (ir->rlist > 0 && ir->rlist < ir->rvdw)
         {
-            gmx_fatal(FARGS, "rvdw must not be greater than rlist (twin-range schemes are not supported)");
+            warning_note(wi,
+                    "rvdw greater than rlist (note that twin-range schemes are not supported "
+                    "by PME)");
         }
 
         if (ir->rlist == 0 && ir->ePBC != epbcNONE)
