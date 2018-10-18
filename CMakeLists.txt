@@ -1,4 +1,4 @@
-#
+
 # This file is part of the GROMACS molecular simulation package.
 #
 # Copyright (c) 2009,2010,2011,2012,2013,2014,2015,2016, by the GROMACS development team, led by
@@ -532,7 +532,16 @@ if(MDSTRESS_FOUND)
     include_directories(${MDSTRESS_INCLUDE_DIRS})
     list(APPEND GMX_EXTRA_LIBRARIES ${MDSTRESS_LIBRARIES})
 else()
-    message(FATAL_ERROR "MDStress package support required, but not found.")
+    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/src/contrib/mdstress-library)
+      message("** Downloading MDStress Library")
+      execute_process(
+          COMMAND git clone https://bitbucket.org/mdstresslib/mdstress-library
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/contrib)
+    endif()
+    message("** Going to compile MDStress Library in build stage")
+    add_subdirectory(src/contrib/mdstress-library)
+    include_directories(src/contrib/mdstress-library/include)
+    list(APPEND GMX_EXTRA_LIBRARIES ${CMAKE_BINARY_DIR}/lib/libmdstress.so)
 endif()
 
 option(GMX_EXTERNAL_TINYXML2 "Use external TinyXML-2 instead of compiling the version bundled with GROMACS." OFF)
