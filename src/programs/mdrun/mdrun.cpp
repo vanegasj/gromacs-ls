@@ -554,9 +554,6 @@ int gmx_mdrun(int argc, char *argv[])
     }else if(strncmp(localsenum,"shake",5) == 0){
       printf("\nWill only write SHAKE constraints contributions to the local stress\n");
       localscontrib = mds_sha;
-    }else if(strncmp(localsenum,"ewal",5) == 0){
-      printf("\nWill only write EWALD contributions to the local stress\n");
-      localscontrib = mds_ewal;
     }else if(strncmp(localsenum,"vel",5) == 0){
       printf("\nWill only write velocity contributions to the local stress\n");
       localscontrib = mds_kin;
