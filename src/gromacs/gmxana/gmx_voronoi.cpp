@@ -329,7 +329,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     }
   }else{
     for (i = 0; i < natoms; i++)
-      radii[i] = 1.0;
+      radii[i] = 0.1;
   }
 
   for (i = 0; i < nr_grps; i++)
@@ -412,7 +412,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       for (n = 0; n < nr_grps; n++) {
         for (i = 0; i < nr_mols[n]; i++) {   /* loop over all molecules in each group and add them to voronoi container*/
           copy_rvec2d(axis, gmx_box, xmol[pid], px);
-          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.001);
+          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.1);
           pid += 1;
         }
       }
@@ -421,7 +421,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       for (n = 0; n < nr_grps; n++) {
         for (i = 0; i < grpsize[n]; i++) {   /* loop over all atoms in each group and add them to voronoi container*/
           copy_rvec3d(gmx_box, x0[index[n][i]], px);
-          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.01*radii[index[n][i]]);
+          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],radii[index[n][i]]);
           pid += 1;
         }
       }
@@ -430,7 +430,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       for (n = 0; n < nr_grps; n++) {
         for (i = 0; i < grpsize[n]; i++) {   /* loop over all atoms in each group and add them to voronoi container*/
           copy_rvec2d(axis, gmx_box, x0[index[n][i]], px);
-          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.001);
+          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],radii[index[n][i]]);
           pid += 1;
         }
       }
@@ -579,6 +579,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
   t = 0;
   for (n = 0; n < nr_grps; n++){
     fprintf(avgfp,"# Average %s of all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n], grp_areas_err[n], units[s]);
+    fprintf(avgfp,"# Total %s of all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n]*grpsize[n], grp_areas_err[n]*sqrt(grpsize[n]), units[s]);
     fprintf(avgfp,"# Average %s of each molecule in group %s:\n", label[s], grpname[n]);
     if (vorAA){
       for (i = 0; i < fgrpsize[n]; i++){
@@ -631,9 +632,9 @@ int gmx_voronoi(int argc,char *argv[])
   gmx_bool vorPBC=TRUE;
   gmx_bool bMol=FALSE;
   gmx_bool vert=FALSE;
-  gmx_bool vorAA=FALSE;
-  gmx_bool vor3d=FALSE;
-  gmx_bool bRad=FALSE;
+  gmx_bool vorAA=TRUE;
+  gmx_bool vor3d=TRUE;
+  gmx_bool bRad=TRUE;
   t_pargs pa[] = {
     { "-d",    FALSE, etSTR, {&axtitle},
       "Take the normal on the membrane in direction X, Y or Z." },
@@ -691,8 +692,8 @@ int gmx_voronoi(int argc,char *argv[])
   if (vor3d)
     vorAA = TRUE;
   
-  if ((bRad && vor3d==FALSE) || (bRad && bMol))
-    gmx_fatal(FARGS,"-rad only works with -3d\n");
+//  if ((bRad && vor3d==FALSE) || (bRad && bMol))
+//    gmx_fatal(FARGS,"-rad only works with -3d\n");
   
   if (vor3d && bMol)
     gmx_fatal(FARGS,"Cannot use -3d and -mol together.\n");
