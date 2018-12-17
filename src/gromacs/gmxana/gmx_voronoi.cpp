@@ -252,7 +252,7 @@ void calc_mol_com(int nr_grps, int nr_mols[], int nr_atoms_mol[], atom_id **inde
 
 /* compute the voronoi tesselation and output selected quantities */
 void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology *top, int ePBC, int axis, int nr_grps, char *grpname[],
-                     gmx_bool bMol, gmx_bool vorPBC, gmx_bool vert, gmx_bool vorAA, gmx_bool vor3d, gmx_bool bRad, int fullout,
+                     gmx_bool bMol, gmx_bool vorPBC, gmx_bool vert, gmx_bool vorAA, gmx_bool vor3d, gmx_bool bRad, real tessRadius, int fullout,
                      t_forcerec *fr,
                      const char *avgfile, const char *tsfile, const char *allfile, const char *vfile, const char *pfile,
                      const gmx_output_env_t *oenv)
@@ -313,6 +313,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     gmx_fatal(FARGS,"Could not read coordinates from statusfile\n");
   
   /* Compute the VDW radii for all the atoms from the C6 and C12 LJ parameters */
+  int AA_index[natoms];
   double radii[natoms];
   if (bRad){
     double c6,c12;
@@ -325,11 +326,15 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
         radii[i] = pow(c12/c6,1/6.0)/2;
       else
         radii[i] = 0.0;
-      /*printf("\nAtom %i radius = %f nm\n",i,radii[i]);*/
+      //printf("\nAtom %i radius = %f nm\n",i,radii[i]);
+      AA_index[i] = 0;
     }
   }else{
-    for (i = 0; i < natoms; i++)
-      radii[i] = 0.1;
+    for (i = 0; i < natoms; i++){
+      radii[i] = tessRadius;
+      //printf("\nAtom %i radius = %f nm\n",i,radii[i]);
+      AA_index[i] = 0;
+    }
   }
 
   for (i = 0; i < nr_grps; i++)
@@ -376,8 +381,8 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     fprintf(tsfp,"# All %s units in %s\n",label[s], units[s]);
     fprintf(tsfp,"# Time (ps)\t");
     for (n = 0; n < nr_grps; n++)
-      fprintf(tsfp,"%s\t+/- S.D.\t", grpname[n]);
-    fprintf(tsfp,"\n");
+      fprintf(tsfp,"Per mol. Avg %s\t+/- S.D.\tTotal %s\t+/- S.D.\t", grpname[n],grpname[n]);
+    fprintf(tsfp,"Total voronoi\n");
   } else if (fullout == xAll){
     allfp = fopen(allfile,"w");
   } else if (fullout == xAll_Ts){
@@ -387,33 +392,44 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     fprintf(tsfp,"# All %s units in %s\n",label[s], units[s]);
     fprintf(tsfp,"# Time (ps)\t\t");
     for (n = 0; n < nr_grps; n++)
-      fprintf(tsfp,"%s\t+/- S.D.\t", grpname[n]);
-    fprintf(tsfp,"\n");
+      fprintf(tsfp,"Per mol. Avg %s\t+/- S.D.\tTotal %s\t+/- S.D.\t", grpname[n],grpname[n]);
+    fprintf(tsfp,"Total voronoi\n");
   }
   
   /*********** Start processing trajectory ***********/
   int compute_cells = 0;
+  int maxcells, nparticles;
   do {
-    particle_order vorpo(nr_ndx);
+    if (vorAA)
+      nparticles = natoms;
+    else
+      nparticles = nr_ndx;
+
+    particle_order vorpo(nparticles);
+
     /* Compute parameters and initialize voronoi tesselation */
     if (vor3d)
-      init_voro_par3d(nr_ndx, gmx_box, vor_box, gridn);
+      init_voro_par3d(natoms, gmx_box, vor_box, gridn);
     else
       init_voro_par2d(nr_ndx, axis, gmx_box, vor_box, gridn);
-    
+
     gmx_frame_area = vor_box[XX]*vor_box[YY]*vor_box[ZZ];
     gmx_tot_area += gmx_frame_area;
+
     container_poly vorcon(0.0,vor_box[XX],0.0,vor_box[YY],0.0,vor_box[ZZ],gridn[0],gridn[1],gridn[2],xper,yper,zper,8);
-    
+
     gmx_rmpbc(gpbc,natoms,gmx_box,x0);
     pid = 0;
+    maxcells = 0;
+
     if (bMol){
       calc_mol_com(nr_grps, nr_mols, nr_atoms_mol, index, &top->atoms, x0, xmol);
       for (n = 0; n < nr_grps; n++) {
         for (i = 0; i < nr_mols[n]; i++) {   /* loop over all molecules in each group and add them to voronoi container*/
           copy_rvec2d(axis, gmx_box, xmol[pid], px);
-          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.1);
+          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.01);
           pid += 1;
+          maxcells += 1;
         }
       }
     }
@@ -423,15 +439,25 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
           copy_rvec3d(gmx_box, x0[index[n][i]], px);
           vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],radii[index[n][i]]);
           pid += 1;
+          maxcells += 1;
+          AA_index[index[n][i]] = 1;
         }
+      }
+      for (i = 0; i < natoms; i++) {   // loop over the remaining atoms in the trajectory and add them to voronoi container although their volumes will not be computed
+          if (AA_index[i] == 0) {
+            copy_rvec3d(gmx_box, x0[i], px);
+            vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],radii[i]);
+            pid += 1;
+          }
       }
     }
     else {
       for (n = 0; n < nr_grps; n++) {
         for (i = 0; i < grpsize[n]; i++) {   /* loop over all atoms in each group and add them to voronoi container*/
           copy_rvec2d(axis, gmx_box, x0[index[n][i]], px);
-          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],radii[index[n][i]]);
+          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.01*radii[index[n][i]]);
           pid += 1;
+          maxcells += 1;
         }
       }
     }
@@ -440,7 +466,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
 
     i = 0;
     vor_frame_area = 0.0;
-        
+
     if (vl.start()){   /* loop over all particles in voronoi container and get areas */
       do{
         if (vorcon.compute_cell(c,vl)){
@@ -452,11 +478,10 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
           compute_cells += 1;
         }
         i += 1;
-      }while(vl.inc());
+      }while((vl.inc()) && (i < maxcells));
     }
-    
     vor_tot_area += vor_frame_area;
-    
+
     /* If computing a global tesselation over all atoms, sum the atoms corresponding to each molecule */
     if (vorAA){
       t = 0;
@@ -483,8 +508,11 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     if (fullout == xTs){
       fprintf(tsfp,"%6.3f\t\t",tt);
       for (n = 0; n < nr_grps; n++)
-        fprintf(tsfp,"%6.6f\t%6.6f\t", grp_areas[n], grp_areas_err[n]);
-      fprintf(tsfp,"\n");
+        if (vorAA)
+          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], grp_areas_err[n], grp_areas[n]*fgrpsize[n], grp_areas_err[n]*sqrt(fgrpsize[n]));
+        else
+          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], grp_areas_err[n], grp_areas[n]*grpsize[n], grp_areas_err[n]*sqrt(grpsize[n]));
+      fprintf(tsfp,"%6.6f\n", vor_frame_area);
     } else if (fullout == xAll){
       fprintf(allfp,"###############################\n");
       fprintf(allfp,"# Time frame = %6.4f ps\n",tt);
@@ -529,8 +557,11 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       } 
       fprintf(tsfp,"%6.3f\t\t",tt);
       for (n = 0; n < nr_grps; n++)
-        fprintf(tsfp,"%6.6f\t%6.6f\t", grp_areas[n], grp_areas_err[n]);
-      fprintf(tsfp,"\n");
+        if (vorAA)
+          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], grp_areas_err[n], grp_areas[n]*fgrpsize[n], grp_areas_err[n]*sqrt(fgrpsize[n]));
+        else
+          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], grp_areas_err[n], grp_areas[n]*grpsize[n], grp_areas_err[n]*sqrt(grpsize[n]));
+      fprintf(tsfp,"%6.6f\n", vor_frame_area);
     }
 
     if (vert && nr_frames == 0){ /* output optional voronoi information */
@@ -541,12 +572,12 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
   } while (read_next_x(oenv,status,&tt,x0,gmx_box));
 
   printf("Cells computed this frame: %i\n", compute_cells);
-
+  fprintf(stderr,"\nRead %d frames from trajectory.\n", nr_frames);
   gmx_rmpbc_done(gpbc);
 
   /*********** done with status file **********/
-  close_trj(status);
-  fprintf(stderr,"\nRead %d frames from trajectory.\n", nr_frames);
+  //close_trj(status);
+
 
   if (fullout == xTs){
     fclose(tsfp);
@@ -579,7 +610,10 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
   t = 0;
   for (n = 0; n < nr_grps; n++){
     fprintf(avgfp,"# Average %s of all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n], grp_areas_err[n], units[s]);
-    fprintf(avgfp,"# Total %s of all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n]*grpsize[n], grp_areas_err[n]*sqrt(grpsize[n]), units[s]);
+    if (vorAA)
+        fprintf(avgfp,"# Total %s for all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n]*fgrpsize[n], grp_areas_err[n]*sqrt(fgrpsize[n]), units[s]);
+    else
+        fprintf(avgfp,"# Total %s for all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n]*grpsize[n], grp_areas_err[n]*sqrt(grpsize[n]), units[s]);
     fprintf(avgfp,"# Average %s of each molecule in group %s:\n", label[s], grpname[n]);
     if (vorAA){
       for (i = 0; i < fgrpsize[n]; i++){
@@ -610,9 +644,17 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
 int gmx_voronoi(int argc,char *argv[])
 {
   const char *desc[] = {
-    "Compute voronoi tesselation in a simulation of a membrane bilayer or monolayer.[PAR]",
-    "You need trajectory/pdb/gro file with coordinates, an index file, and a tpr file",
-    "[TT]g_energy[tt] instead.",
+    "[THISMODULE] is a tool to compute voronoi tesselations and calculate volumes/areas from a structure (pdb, gro, etc.) ",
+    "or a simulation trajectory. In addition to the positions of the particles, you will need a tpr and an index file.[PAR]",
+    "The default behavior of [THISMODULE] is to compute a radical voronoi tesselation (option [TT]-radtess[tt]) in 3D (option [TT]-3d[tt]) using ",
+    "all atoms (option [TT]-aa[tt]) in the system. In a radical tesselation, the particle radii (obtained from the VdW parameters) ",
+    "are used to weight the location of the boundaries between them. Tesselations can be computed assumming periodic boundary conditions ",
+    "(option [TT]-pbc[tt]) or hard walls ([TT]-nopbc[tt]). Conventional voronoi tesselation (non-radical) can be performed with the option ",
+    "[TT]-noradtess[tt], and the default particle radii can be set with option [TT]-radius[tt]. Please note that if the default particle ",
+    "radius is too large, the tesselation may not provide accurate results.[PAR]",
+    "In addition to 3D volume calculations, [THISMODULE] can compute a 2D tesselation of the particle's projection onto a plane defined by a ",
+    "normal axis (option [TT]-normal[tt]). "
+    
     ""
   };
   t_tpxheader header;
@@ -627,7 +669,7 @@ int gmx_voronoi(int argc,char *argv[])
   static int fullout = xNone;
   static int axis = 2;          /* normal to memb. default z  */
   static const char *axtitle="Z";
-  static const char *fullsel="none";
+  static const char *fullsel="ts";
   static int  ngrps   = 1;       /* nr. of groups              */
   gmx_bool vorPBC=TRUE;
   gmx_bool bMol=FALSE;
@@ -635,8 +677,9 @@ int gmx_voronoi(int argc,char *argv[])
   gmx_bool vorAA=TRUE;
   gmx_bool vor3d=TRUE;
   gmx_bool bRad=TRUE;
+  real tessRadius = 0.001;
   t_pargs pa[] = {
-    { "-d",    FALSE, etSTR, {&axtitle},
+    { "-normal",    FALSE, etSTR, {&axtitle},
       "Take the normal on the membrane in direction X, Y or Z." },
     { "-ng",   FALSE, etINT, {&ngrps},
       "Number of groups to compute voronoi cells on" },
@@ -648,8 +691,10 @@ int gmx_voronoi(int argc,char *argv[])
       "Output the information needed to plot the voronoi tesselation. Use -ov to specify the file containing the vertices, and -op to specify the file containing the tesselation points" },
     { "-aa", FALSE, etBOOL, {&vorAA},
       "Compute a complete tesselation over all atoms and sum for each molecule" },
-    { "-rad", FALSE, etBOOL, {&bRad},
+    { "-radtess", FALSE, etBOOL, {&bRad},
       "Compute Radical tesselation where the vdw radii are used to weight the voronoi cells" },
+    { "-radius", FALSE, etREAL, {&tessRadius},
+      "Default particle radius for non-radical tesselation"},
     { "-3d", FALSE, etBOOL, {&vor3d},
       "Compute tesselation in 3D, turns on -aa"},
     { "-full", FALSE, etSTR, {&fullsel},
@@ -691,27 +736,26 @@ int gmx_voronoi(int argc,char *argv[])
 
   if (vor3d)
     vorAA = TRUE;
-  
-//  if ((bRad && vor3d==FALSE) || (bRad && bMol))
-//    gmx_fatal(FARGS,"-rad only works with -3d\n");
-  
+
+  if (bRad && bMol)
+    gmx_fatal(FARGS,"-rad is incompatible with -mol\n");
+
   if (vor3d && bMol)
     gmx_fatal(FARGS,"Cannot use -3d and -mol together.\n");
 
-  if (bRad){
-    snew(ir, 1);
-    snew(state, 1);
-    snew(mtop, 1);
-    read_tpx_state(ftp2fn(efTPR,NFILE,fnm),ir,state,mtop);
+  // get the radii for a radical tesselation
+  snew(ir, 1);
+  snew(state, 1);
+  snew(mtop, 1);
+  read_tpx_state(ftp2fn(efTPR,NFILE,fnm),ir,state,mtop);
 
-    // only need the C6 and C12 parameters, no need for a full forcerec
-    // initialization
-    fr = mk_forcerec();
-    fr->bBHAM = (mtop->ffparams.functype[0] == F_BHAM);
-    fr->ntype = mtop->ffparams.atnr;
-    fr->nbfp  = mk_nbfp(&mtop->ffparams, fr->bBHAM);
-  }
-  
+  // only need the C6 and C12 parameters, no need for a full forcerec
+  // initialization
+  fr = mk_forcerec();
+  fr->bBHAM = (mtop->ffparams.functype[0] == F_BHAM);
+  fr->ntype = mtop->ffparams.atnr;
+  fr->nbfp  = mk_nbfp(&mtop->ffparams, fr->bBHAM);
+
   if (strncmp(fullsel,"none",6) == 0) {
     fullout = xNone;
   } else if (strncmp(fullsel,"all",6) == 0) {
@@ -725,6 +769,6 @@ int gmx_voronoi(int argc,char *argv[])
   }
   
   compute_voronoi(ftp2fn(efTRX,NFILE,fnm), index, grpsize, top, ePBC, axis, ngrps, grpname, bMol, vorPBC, vert, vorAA, vor3d,
-                  bRad, fullout, fr, opt2fn("-avg",NFILE,fnm), opt2fn("-ts",NFILE,fnm), opt2fn("-all",NFILE,fnm), opt2fn("-ov",NFILE,fnm), opt2fn("-op",NFILE,fnm), oenv);
+                  bRad, tessRadius, fullout, fr, opt2fn("-avg",NFILE,fnm), opt2fn("-ts",NFILE,fnm), opt2fn("-all",NFILE,fnm), opt2fn("-ov",NFILE,fnm), opt2fn("-op",NFILE,fnm), oenv);
   return 0;
 }
