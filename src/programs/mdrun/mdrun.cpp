@@ -422,7 +422,7 @@ int gmx_mdrun(int argc, char *argv[])
         { "-lscont", FALSE, etSTR, {&localsenum},
           "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel"},
         { "-lsfd", FALSE, etSTR, {&localsfdenum},
-          "Select the type of force decomposition to be used: ccfd (covariant central force decomposition, default), ncfd (non-covariant central force decomposition), gld (Goetz-Lipowsky decomposition), or mop (method of planes)"},
+          "Select the type of force decomposition to be used: ccfd (covariant central force decomposition, default), ncfd (non-covariant central force decomposition), or gld (Goetz-Lipowsky decomposition)"},
         { "-lssa", FALSE, etSTR, {&localssanum},
           "Select the type of stress to calculate: spat (spatial stress from IKN theory, default), atom (stress per atom)"},
         { "-lsdispcor",  FALSE, etBOOL, {&localsdispcor},

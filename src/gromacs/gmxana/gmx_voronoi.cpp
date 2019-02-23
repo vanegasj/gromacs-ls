@@ -652,8 +652,9 @@ int gmx_voronoi(int argc,char *argv[])
     "(option [TT]-pbc[tt]) or hard walls ([TT]-nopbc[tt]). Conventional voronoi tesselation (non-radical) can be performed with the option ",
     "[TT]-noradtess[tt], and the default particle radii can be set with option [TT]-radius[tt]. Please note that if the default particle ",
     "radius is too large, the tesselation may not provide accurate results.[PAR]",
-    "In addition to 3D volume calculations, [THISMODULE] can compute a 2D tesselation of the particle's projection onto a plane defined by a ",
-    "normal axis (option [TT]-normal[tt]). "
+    "[THISMODULE] was created with molecular quantities in mind, therefore it assumes that index groups correspond to groups of whole molecules",
+    "In addition to 3D volume calculations, [THISMODULE] can compute a 2D tesselation (option [TT]-no3d[tt]) of the particle's projection onto a plane defined by a ",
+    "normal axis (option [TT]-normal[tt]). In this case, the output will be the areas "
     
     ""
   };
