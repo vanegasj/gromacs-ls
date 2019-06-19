@@ -642,7 +642,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
                     double radius;
                     if (c6 > 0.0)
-                        radius = pow(c12/c6,1/6.0)/2;
+                        radius = pow(0.5*c12/c6,1/6.0)/2.0; // The 0.5 factor inside the pow function is needed due to internal scaling of the C6 and C12 constants
                     else
                         radius = 0.0;
 

@@ -86,21 +86,18 @@ typedef int atom_id;
 
 void put_atom_in_box(matrix box,rvec x)
 {
-    int i,m,d;
-
-    for(m=DIM-1; m>=0; m--) {
-        while (x[m] < 0) 
-            for(d=0; d<=m; d++)
-                x[d] += box[m][d];
-        while (x[m] >= box[m][m])
-            for(d=0; d<=m; d++)
-                x[d] -= box[m][d];
-    }
+  int i,m,d;
+  for (d=0; d<DIM; d++){
+    if (x[d] < 0.0)
+      x[d] += box[d][d];
+    else if (x[d] >= box[d][d])
+      x[d] -= box[d][d];
+  }
 }
 
 using namespace voro;
 
-void avg_areas(int nr_grps, int grpsize[], double areas[], double grp_areas[], double grp_areas_err[])
+void avg_areas(int nr_grps, int grpsize[], double areas[], double grp_areas[], double grp_areas_var[])
 {
   int n,t,i;
   double sum, diff;
@@ -122,7 +119,7 @@ void avg_areas(int nr_grps, int grpsize[], double areas[], double grp_areas[], d
       sum += diff*diff;
       t += 1;
     }
-    grp_areas_err[n] = sqrt(sum/grpsize[n]);
+    grp_areas_var[n] = sum/grpsize[n];
   }
 }
 
@@ -158,8 +155,8 @@ void get_mol_size(atom_id **index, int nr_grps, int grpsize[], char *grpname[], 
    extends from 0 to 1.0 */
 void copy_rvec2d(int axis, matrix gmx_box, rvec a, rvec b)
 {
-  put_atom_in_box(gmx_box,a);
   copy_rvec(a,b);
+  put_atom_in_box(gmx_box,b);
   if (axis == XX)
     b[XX] = 0.5;
   else if (axis == YY)
@@ -170,8 +167,8 @@ void copy_rvec2d(int axis, matrix gmx_box, rvec a, rvec b)
 
 void copy_rvec3d(matrix gmx_box, rvec a, rvec b)
 {
-  put_atom_in_box(gmx_box,a);
   copy_rvec(a,b);
+  put_atom_in_box(gmx_box,b);
 }
 
 /* Initialize the parameters needed to start the voronoi tesselation */
@@ -219,8 +216,9 @@ void init_voro_par3d(int nr_ndx, matrix gmx_box, double vor_box[], int gridn[])
   gfxy = vor_box[YY]/vor_box[XX];
   gfxz = vor_box[ZZ]/vor_box[XX];
   gridn[0] = pow(nr_ndx/(3*gfxy*gfxz), 1/3.0);
-  gridn[1] = gridn[0]*gfxy;
-  gridn[2] = gridn[0]*gfxz;
+  gridn[1] = pow(nr_ndx/(3*gfxy*gfxz), 1/3.0)*gfxy;
+  gridn[2] = pow(nr_ndx/(3*gfxy*gfxz), 1/3.0)*gfxz;
+  //printf("\nGridx %d, gridy %d, gridz %d \n",gridn[0],gridn[1],gridn[2]);
 }
 
 /* calculate the COM of each molecule in x0 and save the COM coord into xmol */
@@ -268,7 +266,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
   int nr_frames=0;       /* nr. atoms in trj */
   int gridn[3];          /* gridi size for voronoi tesselation (see init_voro_par) */
   double *areas, *frame_areas, *frame_areas_full, *areas_full;
-  double grp_areas[nr_grps], grp_areas_err[nr_grps], sum;
+  double grp_areas[nr_grps], grp_areas_var[nr_grps], avg_grp_areas_var[nr_grps], sum;
   double gmx_frame_area, gmx_tot_area = 0.0, vor_tot_area = 0.0;
   double cell_area, vor_frame_area;
   t_trxstatus *status;
@@ -304,9 +302,11 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       //printf("\n\n fgrpsize = %d\n\n",fgrpsize[i]);
     }
     snew(areas_full, nr_full);
-    for (i = 0; i < nr_full; i++)
-      areas_full[i] = 0.0;
     snew(frame_areas_full, nr_full);
+    for (i = 0; i < nr_full; i++){
+      areas_full[i] = 0.0;
+      frame_areas_full[i] = 0.0;
+   }
   }
 
   if ((natoms = read_first_x(oenv,&status,fn,&tt,&x0,gmx_box)) == 0)
@@ -323,22 +323,23 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       c6 = C6(fr->nbfp,fr->ntype,ii,ii);
       c12 = C12(fr->nbfp,fr->ntype,ii,ii);
       if (c6 > 0.0)
-        radii[i] = pow(c12/c6,1/6.0)/2;
+        radii[i] = pow(0.5*c12/c6,1/6.0)/2.0;
       else
         radii[i] = 0.0;
-      //printf("\nAtom %i radius = %f nm\n",i,radii[i]);
+        //printf("\nAtom %i radius = %f nm\n",i,radii[i]);
       AA_index[i] = 0;
     }
   }else{
     for (i = 0; i < natoms; i++){
       radii[i] = tessRadius;
-      //printf("\nAtom %i radius = %f nm\n",i,radii[i]);
       AA_index[i] = 0;
     }
   }
 
-  for (i = 0; i < nr_grps; i++)
+  for (i = 0; i < nr_grps; i++){
     nr_ndx += grpsize[i];
+    avg_grp_areas_var[i] = 0.0;
+  }
 
   if (bMol)
     snew(xmol, nr_ndx);
@@ -346,8 +347,10 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
   snew(areas,nr_ndx);
   snew(frame_areas,nr_ndx);
 
-  for (i = 0; i < nr_ndx; i++);
+  for (i = 0; i < nr_ndx; i++){
     areas[i] = 0.0;
+    frame_areas[i] = 0.0;
+  }
 
   gpbc = gmx_rmpbc_init(&top->idef,ePBC,top->atoms.nr);
 
@@ -398,13 +401,17 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
   
   /*********** Start processing trajectory ***********/
   int compute_cells = 0;
-  int maxcells, nparticles;
+  int maxcells, nparticles, id;
+  double x,y,z,r;
   do {
     if (vorAA)
       nparticles = natoms;
     else
       nparticles = nr_ndx;
 
+    for (i = 0; i < nr_ndx; i++){
+      frame_areas[i] = 0.0;
+    }
     particle_order vorpo(nparticles);
 
     /* Compute parameters and initialize voronoi tesselation */
@@ -415,7 +422,6 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
 
     gmx_frame_area = vor_box[XX]*vor_box[YY]*vor_box[ZZ];
     gmx_tot_area += gmx_frame_area;
-
     container_poly vorcon(0.0,vor_box[XX],0.0,vor_box[YY],0.0,vor_box[ZZ],gridn[0],gridn[1],gridn[2],xper,yper,zper,8);
 
     gmx_rmpbc(gpbc,natoms,gmx_box,x0);
@@ -463,21 +469,20 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     }
     voronoicell c;
     c_loop_order vl(vorcon, vorpo);
-
-    i = 0;
     vor_frame_area = 0.0;
-
+    i=0;
     if (vl.start()){   /* loop over all particles in voronoi container and get areas */
       do{
         if (vorcon.compute_cell(c,vl)){
           cell_area = c.volume();
-          //printf("%6.6f\n", c.volume());
-          frame_areas[i] = cell_area;
-          areas[i] += cell_area;
+          vl.pos(id,x,y,z,r);
+          //printf("\ni= %d, vol=%6.6f, radius = %f, xyz = %f %f %f",id, cell_area,r,x,y,z);
+          frame_areas[id] = cell_area;
+          areas[id] += cell_area;
           vor_frame_area += cell_area;
           compute_cells += 1;
         }
-        i += 1;
+        i+=1;
       }while((vl.inc()) && (i < maxcells));
     }
     vor_tot_area += vor_frame_area;
@@ -486,10 +491,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     if (vorAA){
       t = 0;
       k = 0;
-      //nr_ndx = 0;
       for (n = 0; n < nr_grps; n++){
-        //fgrpsize[n] = nr_mols[n];
-        //nr_ndx += grpsize[n];
         for (i = 0; i < nr_mols[n]; i++){
           sum = 0.0;
           for (j = 0; j < nr_atoms_mol[n]; j++){
@@ -501,17 +503,23 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
           k += 1;
         }
       }
-      if ((fullout == xTs) || (fullout == xAll_Ts))
-        avg_areas(nr_grps, fgrpsize, frame_areas_full, grp_areas, grp_areas_err);
     }
+    if (vorAA){
+        avg_areas(nr_grps, fgrpsize, frame_areas_full, grp_areas, grp_areas_var);
+    } else {
+        avg_areas(nr_grps, grpsize, frame_areas, grp_areas, grp_areas_var);
+    }
+
+    for (n = 0; n < nr_grps; n++)
+      avg_grp_areas_var[n] += grp_areas_var[n];
 
     if (fullout == xTs){
       fprintf(tsfp,"%6.3f\t\t",tt);
       for (n = 0; n < nr_grps; n++)
         if (vorAA)
-          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], grp_areas_err[n], grp_areas[n]*fgrpsize[n], grp_areas_err[n]*sqrt(fgrpsize[n]));
+          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], sqrt(grp_areas_var[n]), grp_areas[n]*fgrpsize[n], sqrt(grp_areas_var[n]*fgrpsize[n]));
         else
-          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], grp_areas_err[n], grp_areas[n]*grpsize[n], grp_areas_err[n]*sqrt(grpsize[n]));
+          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], sqrt(grp_areas_var[n]), grp_areas[n]*grpsize[n], sqrt(grp_areas_var[n]*grpsize[n]));
       fprintf(tsfp,"%6.6f\n", vor_frame_area);
     } else if (fullout == xAll){
       fprintf(allfp,"###############################\n");
@@ -558,9 +566,9 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       fprintf(tsfp,"%6.3f\t\t",tt);
       for (n = 0; n < nr_grps; n++)
         if (vorAA)
-          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], grp_areas_err[n], grp_areas[n]*fgrpsize[n], grp_areas_err[n]*sqrt(fgrpsize[n]));
+          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], sqrt(grp_areas_var[n]), grp_areas[n]*fgrpsize[n], sqrt(grp_areas_var[n]*fgrpsize[n]));
         else
-          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], grp_areas_err[n], grp_areas[n]*grpsize[n], grp_areas_err[n]*sqrt(grpsize[n]));
+          fprintf(tsfp,"%6.6f\t%6.6f\t%6.6f\t%6.6f\t", grp_areas[n], sqrt(grp_areas_var[n]), grp_areas[n]*grpsize[n], sqrt(grp_areas_var[n]*grpsize[n]));
       fprintf(tsfp,"%6.6f\n", vor_frame_area);
     }
 
@@ -591,17 +599,20 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
   if (vorAA){
     for (i = 0; i < nr_full; i++)
       areas_full[i] /= nr_frames;
-    avg_areas(nr_grps, fgrpsize, areas_full, grp_areas, grp_areas_err);
+    avg_areas(nr_grps, fgrpsize, areas_full, grp_areas, grp_areas_var);
   } else {
     for (n = 0; n < nr_ndx; n++)
       areas[n] /= nr_frames;
-    avg_areas(nr_grps, grpsize, areas, grp_areas, grp_areas_err);
+    avg_areas(nr_grps, grpsize, areas, grp_areas, grp_areas_var);
   }
 
   vor_tot_area /= nr_frames;
   gmx_tot_area /= nr_frames;
+  for (n = 0; n < nr_grps; n++){
+    avg_grp_areas_var[n] /= nr_frames;
+  }
   /* write areas to file */
-  
+
   FILE * avgfp;
   avgfp = fopen(avgfile,"w");
   fprintf(avgfp,"# Total number of frames analyzed = %i\n", nr_frames);
@@ -609,11 +620,11 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
   fprintf(avgfp,"# Average total voronoi %s = %6.6f %s\n",label[s], vor_tot_area, units[s]);
   t = 0;
   for (n = 0; n < nr_grps; n++){
-    fprintf(avgfp,"# Average %s of all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n], grp_areas_err[n], units[s]);
+    fprintf(avgfp,"# Average %s per molecule in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n], sqrt(avg_grp_areas_var[n]), units[s]);
     if (vorAA)
-        fprintf(avgfp,"# Total %s for all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n]*fgrpsize[n], grp_areas_err[n]*sqrt(fgrpsize[n]), units[s]);
+        fprintf(avgfp,"# Average %s for all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n]*fgrpsize[n], sqrt(avg_grp_areas_var[n]*fgrpsize[n]), units[s]);
     else
-        fprintf(avgfp,"# Total %s for all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n]*grpsize[n], grp_areas_err[n]*sqrt(grpsize[n]), units[s]);
+        fprintf(avgfp,"# Average %s for all molecules in group %s = %6.6f +/- %6.6f %s\n", label[s], grpname[n], grp_areas[n]*grpsize[n], sqrt(avg_grp_areas_var[n]*grpsize[n]), units[s]);
     fprintf(avgfp,"# Average %s of each molecule in group %s:\n", label[s], grpname[n]);
     if (vorAA){
       for (i = 0; i < fgrpsize[n]; i++){

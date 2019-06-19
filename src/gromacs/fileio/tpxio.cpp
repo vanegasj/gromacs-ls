@@ -146,7 +146,7 @@ static const int tpx_generation = 26;
 /* This number should be the most recent backwards incompatible version
  * I.e., if this number is 9, we cannot read tpx version 9 with this code.
  */
-static const int tpx_incompatible_version = 9;
+static const int tpx_incompatible_version = 109;
 
 
 
@@ -3364,7 +3364,7 @@ static void do_tpxheader(t_fileio *fio, gmx_bool bRead, t_tpxheader *tpx,
         (fileGeneration > tpx_generation) ||
         tpx_version == 80) /*80 was used by both 5.0-dev and 4.6-dev*/
     {
-        gmx_fatal(FARGS, "reading tpx file (%s) version %d with version %d program",
+        gmx_fatal(FARGS, "reading tpx file (%s) version %d with version %d program. Please generate a new tpr file compatible with this program (v2016 or newer).",
                   gmx_fio_getname(fio), fileVersion, tpx_version);
     }
 
