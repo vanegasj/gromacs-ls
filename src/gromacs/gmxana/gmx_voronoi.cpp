@@ -156,7 +156,7 @@ void get_mol_size(atom_id **index, int nr_grps, int grpsize[], char *grpname[], 
 void copy_rvec2d(int axis, matrix gmx_box, rvec a, rvec b)
 {
   copy_rvec(a,b);
-  put_atom_in_box(gmx_box,b);
+  //put_atom_in_box(gmx_box, b);
   if (axis == XX)
     b[XX] = 0.5;
   else if (axis == YY)
@@ -168,7 +168,7 @@ void copy_rvec2d(int axis, matrix gmx_box, rvec a, rvec b)
 void copy_rvec3d(matrix gmx_box, rvec a, rvec b)
 {
   copy_rvec(a,b);
-  put_atom_in_box(gmx_box,b);
+  //put_atom_in_box(gmx_box,b);
 }
 
 /* Initialize the parameters needed to start the voronoi tesselation */
@@ -219,6 +219,7 @@ void init_voro_par3d(int nr_ndx, matrix gmx_box, double vor_box[], int gridn[])
   gridn[1] = pow(nr_ndx/(3*gfxy*gfxz), 1/3.0)*gfxy;
   gridn[2] = pow(nr_ndx/(3*gfxy*gfxz), 1/3.0)*gfxz;
   //printf("\nGridx %d, gridy %d, gridz %d \n",gridn[0],gridn[1],gridn[2]);
+  //printf("\nBox x %f, Box y %f, Box z %f \n",gmx_box[XX][XX],gmx_box[YY][YY],gmx_box[ZZ][ZZ]);
 }
 
 /* calculate the COM of each molecule in x0 and save the COM coord into xmol */
@@ -277,7 +278,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
   gmx_rmpbc_t  gpbc=NULL;
   const char *label[2] = {"volume","area"};
   const char *units[2] = {"nm^3","nm^2"};
-  
+
   if (vor3d)
     s = 0;
   else
@@ -311,7 +312,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
 
   if ((natoms = read_first_x(oenv,&status,fn,&tt,&x0,gmx_box)) == 0)
     gmx_fatal(FARGS,"Could not read coordinates from statusfile\n");
-  
+
   /* Compute the VDW radii for all the atoms from the C6 and C12 LJ parameters */
   int AA_index[natoms];
   double radii[natoms];
@@ -320,19 +321,20 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     int ii;
     for (i = 0; i < natoms; i++){
       ii = top->atoms.atom[i].type;
-      c6 = C6(fr->nbfp,fr->ntype,ii,ii);
-      c12 = C12(fr->nbfp,fr->ntype,ii,ii);
+      c6 = C6(fr->nbfp,fr->ntype,ii,ii)/6.0;
+      c12 = C12(fr->nbfp,fr->ntype,ii,ii)/12.0;
       if (c6 > 0.0)
-        radii[i] = pow(0.5*c12/c6,1/6.0)/2.0;
+        radii[i] = (int)(1000000*pow(c12/c6,1/6.0)/2.0)/1000000.0; // keeping only 6 sig digits for radius to avoid problems with the tesselation
       else
         radii[i] = 0.0;
-        //printf("\nAtom %i radius = %f nm\n",i,radii[i]);
+      //printf("Atom %i radius = %f nm\n",i,radii[i]);
       AA_index[i] = 0;
     }
   }else{
     for (i = 0; i < natoms; i++){
       radii[i] = tessRadius;
       AA_index[i] = 0;
+      //printf("\nAtom %i radius = %f nm\n",i,radii[i]);
     }
   }
 
@@ -352,7 +354,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     frame_areas[i] = 0.0;
   }
 
-  gpbc = gmx_rmpbc_init(&top->idef,ePBC,top->atoms.nr);
+  //gpbc = gmx_rmpbc_init(&top->idef,ePBC,top->atoms.nr);
 
   if (vorPBC){
     if (axis == XX){
@@ -424,7 +426,8 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
     gmx_tot_area += gmx_frame_area;
     container_poly vorcon(0.0,vor_box[XX],0.0,vor_box[YY],0.0,vor_box[ZZ],gridn[0],gridn[1],gridn[2],xper,yper,zper,8);
 
-    gmx_rmpbc(gpbc,natoms,gmx_box,x0);
+    //gmx_rmpbc(gpbc,natoms,gmx_box,x0);
+    put_atoms_in_box(ePBC,gmx_box,natoms,x0);
     pid = 0;
     maxcells = 0;
 
@@ -433,7 +436,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       for (n = 0; n < nr_grps; n++) {
         for (i = 0; i < nr_mols[n]; i++) {   /* loop over all molecules in each group and add them to voronoi container*/
           copy_rvec2d(axis, gmx_box, xmol[pid], px);
-          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.01);
+          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],1.0);
           pid += 1;
           maxcells += 1;
         }
@@ -461,7 +464,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
       for (n = 0; n < nr_grps; n++) {
         for (i = 0; i < grpsize[n]; i++) {   /* loop over all atoms in each group and add them to voronoi container*/
           copy_rvec2d(axis, gmx_box, x0[index[n][i]], px);
-          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],0.01*radii[index[n][i]]);
+          vorcon.put(vorpo,pid,px[XX],px[YY],px[ZZ],radii[index[n][i]]);
           pid += 1;
           maxcells += 1;
         }
@@ -476,7 +479,7 @@ void compute_voronoi(const char *fn, atom_id **index, int grpsize[], t_topology 
         if (vorcon.compute_cell(c,vl)){
           cell_area = c.volume();
           vl.pos(id,x,y,z,r);
-          //printf("\ni= %d, vol=%6.6f, radius = %f, xyz = %f %f %f",id, cell_area,r,x,y,z);
+          //printf("\ni= %d, vol=%6.12f, radius = %6.12f, xyz = %f %f %f",id, cell_area,r,x,y,z);
           frame_areas[id] = cell_area;
           areas[id] += cell_area;
           vor_frame_area += cell_area;
@@ -689,7 +692,7 @@ int gmx_voronoi(int argc,char *argv[])
   gmx_bool vorAA=TRUE;
   gmx_bool vor3d=TRUE;
   gmx_bool bRad=TRUE;
-  real tessRadius = 0.001;
+  real tessRadius = 1.0;
   t_pargs pa[] = {
     { "-normal",    FALSE, etSTR, {&axtitle},
       "Take the normal on the membrane in direction X, Y or Z." },
@@ -740,7 +743,11 @@ int gmx_voronoi(int argc,char *argv[])
 
   /* Calculate axis */
   axis = toupper(axtitle[0]) - 'X';
-  top = read_top(ftp2fn(efTPR,NFILE,fnm),&ePBC);     /* read topology file */
+  top = read_top(ftp2fn(efTPR,NFILE,fnm),&ePBC);
+  snew(ir, 1);
+  snew(state, 1);
+  snew(mtop, 1);
+  read_tpx_state(ftp2fn(efTPR,NFILE,fnm),ir,state,mtop);
   snew(grpname,ngrps);
   snew(index,ngrps);
   snew(grpsize,ngrps);
@@ -754,12 +761,6 @@ int gmx_voronoi(int argc,char *argv[])
 
   if (vor3d && bMol)
     gmx_fatal(FARGS,"Cannot use -3d and -mol together.\n");
-
-  // get the radii for a radical tesselation
-  snew(ir, 1);
-  snew(state, 1);
-  snew(mtop, 1);
-  read_tpx_state(ftp2fn(efTPR,NFILE,fnm),ir,state,mtop);
 
   // only need the C6 and C12 parameters, no need for a full forcerec
   // initialization

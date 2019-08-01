@@ -637,12 +637,12 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
                 {
                     int ii = top_global->moltype[molb->type].atoms.atom[mol_atom].type;
-                    double c6 = C6(fr->nbfp,fr->ntype,ii,ii);
-                    double c12 = C12(fr->nbfp,fr->ntype,ii,ii);
+                    double c6 = C6(fr->nbfp,fr->ntype,ii,ii)/6.0; // factor needed as the C6 is scaled by 6.0 for performance in the rest of the code
+                    double c12 = C12(fr->nbfp,fr->ntype,ii,ii)/12.0; //same as above. See src/gromacs/mdtypes/forcerec.h
 
                     double radius;
                     if (c6 > 0.0)
-                        radius = pow(0.5*c12/c6,1/6.0)/2.0; // The 0.5 factor inside the pow function is needed due to internal scaling of the C6 and C12 constants
+                        radius = (int)(1000000*pow(c12/c6,1/6.0)/2.0)/1000000.0; // keeping only 6 sig digits for radius to avoid problems with the tesselation
                     else
                         radius = 0.0;
 

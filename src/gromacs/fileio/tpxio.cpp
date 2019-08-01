@@ -146,7 +146,7 @@ static const int tpx_generation = 26;
 /* This number should be the most recent backwards incompatible version
  * I.e., if this number is 9, we cannot read tpx version 9 with this code.
  */
-static const int tpx_incompatible_version = 109;
+static const int tpx_incompatible_version = 9;
 
 
 
