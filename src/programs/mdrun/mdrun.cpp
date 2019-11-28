@@ -309,6 +309,7 @@ int gmx_mdrun(int argc, char *argv[])
     /* Local Stress parameters
      */
     real localsgridspacing=0.1;
+    real localsmindihangle=0.0;
     int nstlocals=0;
     int localsgridx=0;
     int localsgridy=0;
@@ -429,6 +430,8 @@ int gmx_mdrun(int argc, char *argv[])
           "Include contribution from dispersion correction." },
         { "-lspbc",  FALSE, etBOOL, {&localspbc},
           "Correct periodic boundary conditions in mdstress library." },
+        { "-lsmindihang",  FALSE, etREAL, {&localsmindihangle},
+          "Don't include dihedral local stress contributions if the sin(|phi|) is less than this factor. Use this flag if there is a dihedral potential (e.g. CHARMM36 lipid FF) that has been parametrized with a min/max that is not 0/Pi and the stress profiles show large noise that does not converge with additional frames. A -lsmindihang value of 0.0005 is typically sufficient to fix this problem." },
         { "-imdport",    FALSE, etINT, {&imdport},
           "HIDDENIMD listening port" },
         { "-imdwait",  FALSE, etBOOL, {&bIMDwait},
@@ -656,7 +659,7 @@ int gmx_mdrun(int argc, char *argv[])
                        nmultisim, repl_ex_nst, repl_ex_nex, repl_ex_seed,
                        pforce, cpt_period, max_hours, imdport, localsgridspacing,
                        nstlocals, localsgridx, localsgridy, localsgridz,
-                       localscontrib, localsfdecomp, localsspatialatom, localsdispcor, localspbc, Flags);
+                       localscontrib, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, Flags);
 
     /* Log file has to be closed in mdrunner if we are appending to it
        (fplog not set here) */

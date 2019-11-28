@@ -232,6 +232,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   int localsspatialatom,
                   gmx_bool localsdispcor,
                   gmx_bool localspbc,
+                  real localsmindihangle,
                   unsigned long Flags,
                   gmx_walltime_accounting_t walltime_accounting)
 {
@@ -553,7 +554,9 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     locals_grid.SetContribType(localscontrib);
     locals_grid.SetStressType(localsspatialatom);
     locals_grid.SetForceDecomposition(localsfdecomp);
+    locals_grid.SetMinDihAngle(localsmindihangle);
 
+    //printf("\n\nmindihangle = %8.6f\n\n",locals_grid.GetMinDihAngle());
     // setup periodic boundary conditions
     bool xper, yper, zper, periodic;
     periodic = (localspbc == TRUE);

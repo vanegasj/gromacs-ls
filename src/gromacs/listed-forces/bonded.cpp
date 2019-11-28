@@ -1717,7 +1717,9 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
         /* begin stress tensor */
         if (locals_grid != NULL)
         {
-            if (locals_grid->GetContribType() == mds_all || locals_grid->GetContribType() == locals_contrib)
+            real phi = std::abs(gmx_angle(m, n));
+            //printf("sin(phi) = %8.6f, mindihangle = %8.6f\n", std::sin(phi), locals_grid->GetMinDihAngle());
+            if ((locals_grid->GetContribType() == mds_all || locals_grid->GetContribType() == locals_contrib) && locals_grid->GetMinDihAngle() < std::sin(phi))
             {
                 rvec Ri, Rj, Rk, Rl, dx;
                 rvec Fj, Fk;
@@ -1797,7 +1799,9 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
         /* begin stress tensor */
         if (locals_grid != NULL)
         {
-            if (locals_grid->GetContribType() == mds_all || locals_grid->GetContribType() == locals_contrib)
+            real phi = std::abs(gmx_angle(m, n));
+            //printf("sin(phi) = %8.6f, mindihangle = %8.6f\n", std::sin(phi), locals_grid->GetMinDihAngle());
+            if ((locals_grid->GetContribType() == mds_all || locals_grid->GetContribType() == locals_contrib) && locals_grid->GetMinDihAngle() < std::sin(phi))
             {
                 rvec Ri, Rj, Rk, Rl, dx;
                 rvec Fj, Fk;
