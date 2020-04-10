@@ -124,6 +124,8 @@
 #include "corewrap.h"
 #endif
 
+extern mds::StressGrid locals_grid;
+
 using gmx::SimulationSignaller;
 
 /*! \brief Check whether bonded interactions are missing, if appropriate
@@ -298,10 +300,10 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     
     /* local stress begin */
 
-    mds::StressGrid locals_grid;
     real mass;
     rvec box_size;
     rvec x_rerun, v_rerun, v_update;
+    int cr_size;
 
     /* local stress end */
 
@@ -522,7 +524,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     /* local stress begin */
 
     
-    if (PAR(cr))
+    /*if (PAR(cr))
     {
         printf("This code cannot be run in parallel, it must be run serially.\n");
         printf("However, each frame in the trajectory is analyzed independently\n");
@@ -530,7 +532,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         printf("chunks and analyze each one separately.\n");
         printf("\n");
         exit(1);
-    }
+    }*/
 
     if(EEL_PME(ir->coulombtype)) 
     {
@@ -543,125 +545,131 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     }
 
     // initialization
-    locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
-    if (localsdispcor == FALSE)
-        locals_grid.DisableDispersionCorrection();
-    
-    for(i=0; (i<DIM); i++)
-        box_size[i]=state->box[i][i];
-    locals_grid.SetBox(state->box);
+    if (PAR(cr))
+        MPI_Barrier(MPI_COMM_WORLD);
+    if (MASTER(cr))
+    {
+        locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
+        if (localsdispcor == FALSE)
+            locals_grid.DisableDispersionCorrection();
+        
+        for(i=0; (i<DIM); i++)
+            box_size[i]=state_global->box[i][i];
+        locals_grid.SetBox(state_global->box);
 
-    locals_grid.SetContribType(localscontrib);
-    locals_grid.SetStressType(localsspatialatom);
-    locals_grid.SetForceDecomposition(localsfdecomp);
-    locals_grid.SetMinDihAngle(localsmindihangle);
+        locals_grid.SetContribType(localscontrib);
+        locals_grid.SetStressType(localsspatialatom);
+        locals_grid.SetForceDecomposition(localsfdecomp);
+        locals_grid.SetMinDihAngle(localsmindihangle);
 
-    //printf("\n\nmindihangle = %8.6f\n\n",locals_grid.GetMinDihAngle());
-    // setup periodic boundary conditions
-    bool xper, yper, zper, periodic;
-    periodic = (localspbc == TRUE);
-    if (ir->ePBC == epbcXYZ)
-    {
-        xper = yper = zper = true;
-    }
-    else
-    if (ir->ePBC == epbcXY)
-    {
-        xper = yper = true;
-        zper = false;
-    }
-    else
-    {
-        xper = yper = zper = false;
-    }
-    locals_grid.SetPeriodicBoundaries(xper,yper,zper,periodic);
-    
-    // setup spatial/atomic specific variables
-    if (localsspatialatom == mds_spat)
-    {
-        if(localsgridspacing<=0)
+        //printf("\n\nmindihangle = %8.6f\n\n",locals_grid.GetMinDihAngle());
+        // setup periodic boundary conditions
+        bool xper, yper, zper, periodic;
+        periodic = (localspbc == TRUE);
+        if (ir->ePBC == epbcXYZ)
         {
-            gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgrid) <= 0.0\n");
+            xper = yper = zper = true;
         }
-        
-        locals_grid.SetSpacing(localsgridspacing);
-        
-        if(localsgridx == 0)
-            locals_grid.SetNumberOfGridCellsX(box_size[XX]/localsgridspacing);
         else
-            locals_grid.SetNumberOfGridCellsX(localsgridx);
-        if(localsgridy == 0)
-            locals_grid.SetNumberOfGridCellsY(box_size[YY]/localsgridspacing);
-        else
-            locals_grid.SetNumberOfGridCellsY(localsgridy);
-        if(localsgridz == 0)
-            locals_grid.SetNumberOfGridCellsZ(box_size[ZZ]/localsgridspacing);
-        else
-            locals_grid.SetNumberOfGridCellsZ(localsgridz);
-        
-        int ngrid =
-            locals_grid.GetNumberOfGridCellsX()*
-            locals_grid.GetNumberOfGridCellsY()*
-            locals_grid.GetNumberOfGridCellsZ();
-        
-        printf("Spacing requested: %g    Using nx=%d ny=%d nz=%d, grid size %d \n",
-           localsgridspacing,
-           locals_grid.GetNumberOfGridCellsX(),
-           locals_grid.GetNumberOfGridCellsY(),
-           locals_grid.GetNumberOfGridCellsZ(),
-           ngrid);
-    
-        if(locals_grid.GetNumberOfGridCellsX()==0)
-            locals_grid.SetNumberOfGridCellsX(1);
-        if(locals_grid.GetNumberOfGridCellsY()==0)
-            locals_grid.SetNumberOfGridCellsY(1);
-        if(locals_grid.GetNumberOfGridCellsZ()==0)
-            locals_grid.SetNumberOfGridCellsZ(1);
-        
-        // this will initialize locals_grid.current_grid and locals_grid.sum_grid
-        locals_grid.Init();
-    }
-    else if(localsspatialatom == mds_atom)
-    {
-        // now set the number of atoms for mdstresslib
-        locals_grid.SetNumberOfAtoms(top_global->natoms);
-        
-        // this will initialize locals_grid.current_grid and locals_grid.sum_grid
-        locals_grid.Init();
-
-        // calculate the radii (once) and set them
-        int atom_index = 0;
-        for (int mb = 0; mb < top_global->nmolblock; ++mb)
+        if (ir->ePBC == epbcXY)
         {
-            gmx_molblock_t * molb = &top_global->molblock[mb];
-
-            for (int mol = 0; mol < molb->nmol; ++mol)
+            xper = yper = true;
+            zper = false;
+        }
+        else
+        {
+            xper = yper = zper = false;
+        }
+        locals_grid.SetPeriodicBoundaries(xper,yper,zper,periodic);
+        
+        // setup spatial/atomic specific variables
+        if (localsspatialatom == mds_spat)
+        {
+            if(localsgridspacing<=0)
             {
-                for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
+                gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgrid) <= 0.0\n");
+            }
+            
+            locals_grid.SetSpacing(localsgridspacing);
+            
+            if(localsgridx == 0)
+                locals_grid.SetNumberOfGridCellsX(box_size[XX]/localsgridspacing);
+            else
+                locals_grid.SetNumberOfGridCellsX(localsgridx);
+            if(localsgridy == 0)
+                locals_grid.SetNumberOfGridCellsY(box_size[YY]/localsgridspacing);
+            else
+                locals_grid.SetNumberOfGridCellsY(localsgridy);
+            if(localsgridz == 0)
+                locals_grid.SetNumberOfGridCellsZ(box_size[ZZ]/localsgridspacing);
+            else
+                locals_grid.SetNumberOfGridCellsZ(localsgridz);
+            
+            int ngrid =
+                locals_grid.GetNumberOfGridCellsX()*
+                locals_grid.GetNumberOfGridCellsY()*
+                locals_grid.GetNumberOfGridCellsZ();
+            
+            printf("Spacing requested: %g    Using nx=%d ny=%d nz=%d, grid size %d \n",
+               localsgridspacing,
+               locals_grid.GetNumberOfGridCellsX(),
+               locals_grid.GetNumberOfGridCellsY(),
+               locals_grid.GetNumberOfGridCellsZ(),
+               ngrid);
+        
+            if(locals_grid.GetNumberOfGridCellsX()==0)
+                locals_grid.SetNumberOfGridCellsX(1);
+            if(locals_grid.GetNumberOfGridCellsY()==0)
+                locals_grid.SetNumberOfGridCellsY(1);
+            if(locals_grid.GetNumberOfGridCellsZ()==0)
+                locals_grid.SetNumberOfGridCellsZ(1);
+            
+            // this will initialize locals_grid.current_grid and locals_grid.sum_grid
+            locals_grid.Init();
+        }
+        else if(localsspatialatom == mds_atom)
+        {
+            // now set the number of atoms for mdstresslib
+            locals_grid.SetNumberOfAtoms(top_global->natoms);
+            
+            // this will initialize locals_grid.current_grid and locals_grid.sum_grid
+            locals_grid.Init();
+
+            // calculate the radii (once) and set them
+            int atom_index = 0;
+            for (int mb = 0; mb < top_global->nmolblock; ++mb)
+            {
+                gmx_molblock_t * molb = &top_global->molblock[mb];
+
+                for (int mol = 0; mol < molb->nmol; ++mol)
                 {
-                    int ii = top_global->moltype[molb->type].atoms.atom[mol_atom].type;
-                    double c6 = C6(fr->nbfp,fr->ntype,ii,ii)/6.0; // factor needed as the C6 is scaled by 6.0 for performance in the rest of the code
-                    double c12 = C12(fr->nbfp,fr->ntype,ii,ii)/12.0; //same as above. See src/gromacs/mdtypes/forcerec.h
+                    for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
+                    {
+                        int ii = top_global->moltype[molb->type].atoms.atom[mol_atom].type;
+                        double c6 = C6(fr->nbfp,fr->ntype,ii,ii)/6.0; // factor needed as the C6 is scaled by 6.0 for performance in the rest of the code
+                        double c12 = C12(fr->nbfp,fr->ntype,ii,ii)/12.0; //same as above. See src/gromacs/mdtypes/forcerec.h
 
-                    double radius;
-                    if (c6 > 0.0)
-                        radius = (int)(1000000*pow(c12/c6,1/6.0)/2.0)/1000000.0; // keeping only 6 sig digits for radius to avoid problems with the tesselation
-                    else
-                        radius = 0.0;
+                        double radius;
+                        if (c6 > 0.0)
+                            radius = (int)(1000000*pow(c12/c6,1/6.0)/2.0)/1000000.0; // keeping only 6 sig digits for radius to avoid problems with the tesselation
+                        else
+                            radius = 0.0;
 
-                    locals_grid.SetVoronoiRadius(radius, atom_index);
+                        locals_grid.SetVoronoiRadius(radius, atom_index);
 
-                    //printf("atom: %i, c6: %12.5e, c12: %12.5e, r: %12.5e\n", atom_index, c6, c12, radius);
+                        //printf("atom: %i, c6: %12.5e, c12: %12.5e, r: %12.5e\n", atom_index, c6, c12, radius);
 
-                    atom_index += 1;
+                        atom_index += 1;
+                    }
                 }
             }
         }
+
+        //calc_recipbox(state->box,locals_grid.invbox); /**/// possibly call Update() here?
+        //locals_grid.ePBC = ir->ePBC; /**/// I don't see an equivalent for this.
     }
-
-    //calc_recipbox(state->box,locals_grid.invbox); /**/// possibly call Update() here?
-    //locals_grid.ePBC = ir->ePBC; /**/// I don't see an equivalent for this.
-
+    if (PAR(cr))
+        MPI_Barrier(MPI_COMM_WORLD);
     /* local stress end */
 
     if (repl_ex_nst > 0 && MASTER(cr))
@@ -1116,9 +1124,10 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             (step % stepout == 0 || bFirstStep || bLastStep || bRerunMD);
 
         /* local stress begin */
-
-        locals_grid.UpdateBoxSpacings(rerun_fr.box);
-
+        if (PAR(cr)) MPI_Barrier(MPI_COMM_WORLD);
+        if (MASTER(cr))
+            locals_grid.UpdateBoxSpacings(rerun_fr.box);
+        if (PAR(cr)) MPI_Barrier(MPI_COMM_WORLD);
         /* local stress end */
 
         if (bNS && !(bFirstStep && ir->bContinuation && !bRerunMD))
@@ -1613,12 +1622,12 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             {
                 /* erase F_EKIN and F_TEMP here? */
                 /* just compute the kinetic energy at the half step to perform a trotter step */
-                compute_globals(fplog, gstat, cr, ir, fr, ekind, state, mdatoms, nrnb, vcm,
+                /*compute_globals(fplog, gstat, cr, ir, fr, ekind, state, mdatoms, nrnb, vcm,
                                 wcycle, enerd, force_vir, shake_vir, total_vir, pres, mu_tot,
                                 constr, &nullSignaller, lastbox,
                                 NULL, &bSumEkinhOld,
                                 (bGStat ? CGLO_GSTAT : 0) | CGLO_TEMPERATURE, &locals_grid
-                                );
+                                );*/
                 wallcycle_start(wcycle, ewcUPDATE);
                 trotter_update(ir, step, ekind, enerd, state, total_vir, mdatoms, &MassQ, trotter_seq, ettTSEQ4);
                 /* now we know the scaling, we can compute the positions again again */
@@ -1728,6 +1737,86 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
 
         /* #############  END CALC EKIN AND PRESSURE ################# */
+        /* begin local stress */
+        rvec *xp = rerun_fr.x;
+        rvec *vp = rerun_fr.v;
+        int natoms = state->natoms;
+        // get the rank zero positions and velocities
+        if (PAR(cr))
+        {
+            natoms = cr->dd->nat_home;
+            gmx_bcast(sizeof(rerun_fr.x), &rerun_fr.x, cr);
+            gmx_bcast(sizeof(rerun_fr.v), &rerun_fr.v, cr);
+            //MPI_Barrier(MPI_COMM_WORLD);
+        }
+
+        for(i=0; i < natoms; i++)
+        {
+            int gatindex = i;
+            if (PAR(cr) )
+               gatindex  = cr->dd->gatindex[i];
+
+            mass = mdatoms->massT[i];
+            for(j=0;j<DIM;j++)
+            {
+                x_rerun[j] = rerun_fr.x[gatindex][j];
+                v_rerun[j] = rerun_fr.v[gatindex][j];
+                if (bVV)
+                  v_update[j] = rerun_fr.v[gatindex][j];
+                else
+                  v_update[j] = state->v[i][j];
+            }
+            
+            if ((locals_grid.GetContribType() == mds_all) || (locals_grid.GetContribType() == mds_kin))
+            {
+                locals_grid.DistributeKinetic(mass, x_rerun, v_rerun, v_update, gatindex);
+            }
+        }
+        
+        //if (PAR(cr))
+        //    MPI_Barrier(MPI_COMM_WORLD);
+
+        if (MASTER(cr))
+        {
+            // If using stress per atom, calculate the radical voronoi tesselation to obtain the particle volumes
+            if(localsspatialatom == mds_atom)
+            {
+                // initialize the voronoi portion of mdstresslib
+                rvec voro_pos;
+
+                int pid = 0;
+                for (int mb = 0; mb < top_global->nmolblock; ++mb)
+                {
+                    gmx_molblock_t * molb = &top_global->molblock[mb];
+                    for (int mid = 0; mid < molb->nmol; ++mid)
+                    {
+                        for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
+                        {
+                            // grab the atom positions and put it in the box
+                            voro_pos[XX] = rerun_fr.x[pid][XX];
+                            voro_pos[YY] = rerun_fr.x[pid][YY];
+                            voro_pos[ZZ] = rerun_fr.x[pid][ZZ];
+                            put_atoms_in_box(ir->ePBC, state->box, 1, &voro_pos);
+
+                            // add the particle to locals_grid
+                            locals_grid.AddVoronoiAtom(voro_pos[0], voro_pos[1], voro_pos[2], pid, mid);
+                            pid += 1;
+                        }
+                    }
+                }
+            }
+
+            locals_grid.SumGrid();
+            locals_grid.Write();
+        }
+
+        if (PAR(cr))
+        {
+            rerun_fr.x = xp; 
+            rerun_fr.v = vp; 
+            //MPI_Barrier(MPI_COMM_WORLD);
+        }
+        /* end local stress */
 
         /* Note: this is OK, but there are some numerical precision issues with using the convergence of
            the virial that should probably be addressed eventually. state->veta has better properies,
@@ -1755,56 +1844,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             bSumEkinhOld = TRUE;
         }
 
-        /* begin local stress */
-
-        for(i=0; i < mdatoms->homenr; i++)
-        {
-            mass = mdatoms->massT[i];
-            for(j=0;j<DIM;j++)
-            {
-                x_rerun[j] = rerun_fr.x[i][j];
-                v_rerun[j] = rerun_fr.v[i][j];
-                /* if using the leapfrog integrator we need v at both half steps*/
-                if (bVV)
-                  v_update[j] = rerun_fr.v[i][j];
-                else
-                  v_update[j] = state->v[i][j];
-            }
-            if ((locals_grid.GetContribType() == mds_all) || (locals_grid.GetContribType() == mds_kin))
-                locals_grid.DistributeKinetic(mass, x_rerun, v_rerun, v_update, i);
-        }
-
-        // If using stress per atom, calculate the radical voronoi tesselation to obtain the particle volumes
-        if(localsspatialatom == mds_atom)
-        {
-            // initialize the voronoi portion of mdstresslib
-            rvec voro_pos;
-
-            int pid = 0;
-            for (int mb = 0; mb < top_global->nmolblock; ++mb)
-            {
-                gmx_molblock_t * molb = &top_global->molblock[mb];
-                for (int mid = 0; mid < molb->nmol; ++mid)
-                {
-                    for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
-                    {
-                        // grab the atom positions and put it in the box
-                        voro_pos[XX] = rerun_fr.x[pid][XX];
-                        voro_pos[YY] = rerun_fr.x[pid][YY];
-                        voro_pos[ZZ] = rerun_fr.x[pid][ZZ];
-                        put_atoms_in_box(ir->ePBC, state->box, 1, &voro_pos);
-
-                        // add the particle to locals_grid
-                        locals_grid.AddVoronoiAtom(voro_pos[0], voro_pos[1], voro_pos[2], pid, mid);
-                        pid += 1;
-                    }
-                }
-            }
-        }
-        //copy the values from locals.current_grid to sum_grid, set current_grid to 0, and update frame counter
-        locals_grid.SumGrid();
-
-        /* end local stress */
 
         /* #########  BEGIN PREPARING EDR OUTPUT  ###########  */
 
@@ -2018,12 +2057,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
     }
     /* End of main MD loop */
-
-    /* local stress begin */
-
-    locals_grid.Write();
-
-    /* local stress end */
 
     /* Closing TNG files can include compressing data. Therefore it is good to do that
      * before stopping the time measurements. */

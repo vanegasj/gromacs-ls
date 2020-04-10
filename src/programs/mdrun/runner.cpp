@@ -215,7 +215,7 @@ static void mdrunner_start_fn(void *arg)
                       mc.nmultisim, mc.repl_ex_nst, mc.repl_ex_nex, mc.repl_ex_seed, mc.pforce,
                       mc.cpt_period, mc.max_hours, mc.imdport, mc.localsgridspacing, mc.nstlocals,
                       mc.localsgridx, mc.localsgridy, mc.localsgridz, mc.localscontrib,
-                      mc.localsfdecomp, mc.localsspatialatom, mc.localsdispcor, mc.localspbc, mc.localsmindihangle, mc.Flags);
+                      mc.localsfdecomp, mc.localsspatialatom, mc.localsdispcor, mc.localspbc, mc.localsmindihang, mc.Flags);
     }
     GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR;
 }
