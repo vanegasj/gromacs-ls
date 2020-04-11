@@ -1773,8 +1773,12 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             }
         }
         
-        //if (PAR(cr))
-        //    MPI_Barrier(MPI_COMM_WORLD);
+        if (PAR(cr))
+        {
+            rerun_fr.x = xp; 
+            rerun_fr.v = vp; 
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
 
         if (MASTER(cr))
         {
@@ -1810,12 +1814,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             locals_grid.Write();
         }
 
-        if (PAR(cr))
-        {
-            rerun_fr.x = xp; 
-            rerun_fr.v = vp; 
-            //MPI_Barrier(MPI_COMM_WORLD);
-        }
         /* end local stress */
 
         /* Note: this is OK, but there are some numerical precision issues with using the convergence of
