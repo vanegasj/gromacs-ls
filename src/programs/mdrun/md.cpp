@@ -549,6 +549,8 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         MPI_Barrier(MPI_COMM_WORLD);
     if (MASTER(cr))
     {
+        // set number of threads
+        locals_grid.SetMaxBatches(cr->nnodes);
         locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
         if (localsdispcor == FALSE)
             locals_grid.DisableDispersionCorrection();
