@@ -522,18 +522,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     }
     
     /* local stress begin */
-
-    
-    /*if (PAR(cr))
-    {
-        printf("This code cannot be run in parallel, it must be run serially.\n");
-        printf("However, each frame in the trajectory is analyzed independently\n");
-        printf("of every other frame, so you can split the trajectory into equal-sized\n");
-        printf("chunks and analyze each one separately.\n");
-        printf("\n");
-        exit(1);
-    }*/
-
     if(EEL_PME(ir->coulombtype)) 
     {
         printf("STOP!\n");
@@ -547,10 +535,12 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     // initialization
     if (PAR(cr))
         MPI_Barrier(MPI_COMM_WORLD);
+
+    // all threads call this to get thread ids
+    locals_grid.SetThreadIDs(cr->nodeid, cr->nnodes);
+
     if (MASTER(cr))
     {
-        // set number of threads
-        locals_grid.SetMaxBatches(cr->nnodes);
         locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
         if (localsdispcor == FALSE)
             locals_grid.DisableDispersionCorrection();
@@ -1126,10 +1116,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             (step % stepout == 0 || bFirstStep || bLastStep || bRerunMD);
 
         /* local stress begin */
-        if (PAR(cr)) MPI_Barrier(MPI_COMM_WORLD);
-        if (MASTER(cr))
-            locals_grid.UpdateBoxSpacings(rerun_fr.box);
-        if (PAR(cr)) MPI_Barrier(MPI_COMM_WORLD);
+        locals_grid.UpdateBoxSpacings(rerun_fr.box);
         /* local stress end */
 
         if (bNS && !(bFirstStep && ir->bContinuation && !bRerunMD))
@@ -1749,7 +1736,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             natoms = cr->dd->nat_home;
             gmx_bcast(sizeof(rerun_fr.x), &rerun_fr.x, cr);
             gmx_bcast(sizeof(rerun_fr.v), &rerun_fr.v, cr);
-            //MPI_Barrier(MPI_COMM_WORLD);
         }
 
         for(i=0; i < natoms; i++)
@@ -1779,13 +1765,12 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         {
             rerun_fr.x = xp; 
             rerun_fr.v = vp; 
-            MPI_Barrier(MPI_COMM_WORLD);
         }
 
-        if (MASTER(cr))
+        if(localsspatialatom == mds_atom)
         {
             // If using stress per atom, calculate the radical voronoi tesselation to obtain the particle volumes
-            if(localsspatialatom == mds_atom)
+            if (MASTER(cr))
             {
                 // initialize the voronoi portion of mdstresslib
                 rvec voro_pos;
@@ -1812,9 +1797,10 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 }
             }
 
-            locals_grid.SumGrid();
-            locals_grid.Write();
         }
+
+        locals_grid.SumGrid();
+        locals_grid.Write();
 
         /* end local stress */
 
