@@ -320,6 +320,7 @@ int gmx_mdrun(int argc, char *argv[])
     const char *localsfdenum = "ccfd";
     const char *localssanum  = "spat";
     gmx_bool localsdispcor = TRUE;
+    gmx_bool localscuda = FALSE;
     gmx_bool localspbc = FALSE;
 
     /* Non transparent initialization of a complex gmx_hw_opt_t struct.
@@ -434,6 +435,8 @@ int gmx_mdrun(int argc, char *argv[])
           "Correct periodic boundary conditions in mdstress library." },
         { "-lsmindihang",  FALSE, etREAL, {&localsmindihangle},
           "Don't include dihedral local stress contributions if the sin(|phi|) is less than this factor. Use this flag if there is a dihedral potential (e.g. CHARMM36 lipid FF) that has been parametrized with a min/max that is not 0/Pi and the stress profiles show large noise that does not converge with additional frames. A -lsmindihang value of 0.0005 is typically sufficient to fix this problem." },
+        { "-lscuda",  FALSE, etBOOL, {&localscuda},
+          "Enable CUDA operations when calculating local stress contributions" },
         { "-imdport",    FALSE, etINT, {&imdport},
           "HIDDENIMD listening port" },
         { "-imdwait",  FALSE, etBOOL, {&bIMDwait},
@@ -661,7 +664,7 @@ int gmx_mdrun(int argc, char *argv[])
                        nmultisim, repl_ex_nst, repl_ex_nex, repl_ex_seed,
                        pforce, cpt_period, max_hours, imdport, localsgridspacing,
                        nstlocals, localsgridx, localsgridy, localsgridz,
-                       localscontrib, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, Flags);
+                       localscontrib, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, localscuda, Flags);
 
     /* Log file has to be closed in mdrunner if we are appending to it
        (fplog not set here) */

@@ -176,6 +176,7 @@ struct mdrunner_arglist
     int                     localsdispcor;
     int                     localspbc;
     real                    localsmindihang;
+    int                     localscuda;
     unsigned long           Flags;
 };
 
@@ -215,7 +216,7 @@ static void mdrunner_start_fn(void *arg)
                       mc.nmultisim, mc.repl_ex_nst, mc.repl_ex_nex, mc.repl_ex_seed, mc.pforce,
                       mc.cpt_period, mc.max_hours, mc.imdport, mc.localsgridspacing, mc.nstlocals,
                       mc.localsgridx, mc.localsgridy, mc.localsgridz, mc.localscontrib,
-                      mc.localsfdecomp, mc.localsspatialatom, mc.localsdispcor, mc.localspbc, mc.localsmindihang, mc.Flags);
+                      mc.localsfdecomp, mc.localsspatialatom, mc.localsdispcor, mc.localspbc, mc.localsmindihang, mc.localscuda, mc.Flags);
     }
     GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR;
 }
@@ -710,7 +711,7 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
              int repl_ex_seed, real pforce, real cpt_period, real max_hours,
              int imdport, real localsgridspacing, int nstlocals, 
              int localsgridx, int localsgridy, int localsgridz, int localscontrib,
-             int localsfdecomp, int localsspatialatom, int localsdispcor, int localspbc, real localsmindihangle, unsigned long Flags)
+             int localsfdecomp, int localsspatialatom, int localsdispcor, int localspbc, real localsmindihangle, int localscuda, unsigned long Flags)
 {
     gmx_bool                  bForceUseGPU, bTryUseGPU, bRerunMD;
     t_inputrec               *inputrec;
@@ -1375,6 +1376,7 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
                                      localsdispcor,
                                      localspbc,
                                      localsmindihangle,
+                                     localscuda,
                                      Flags,
                                      walltime_accounting);
 
