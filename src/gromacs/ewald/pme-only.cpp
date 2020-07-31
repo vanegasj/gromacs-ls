@@ -145,6 +145,7 @@ int gmx_pmeonly(struct gmx_pme_t *pme,
                 real ewaldcoeff_q, real ewaldcoeff_lj,
                 t_inputrec *ir)
 {
+    printf("calling gmx_pmeonly!\n");
     int                npmedata;
     struct gmx_pme_t **pmedata;
     gmx_pme_pp_t       pme_pp;
@@ -230,12 +231,13 @@ int gmx_pmeonly(struct gmx_pme_t *pme,
         clear_mat(vir_q);
         clear_mat(vir_lj);
 
+        //local_stress: there is no local stress object to pass!
         gmx_pme_do(pme, 0, natoms, x_pp, f_pp,
                    chargeA, chargeB, c6A, c6B, sigmaA, sigmaB, box,
                    cr, maxshift_x, maxshift_y, mynrnb, wcycle,
                    vir_q, ewaldcoeff_q, vir_lj, ewaldcoeff_lj,
                    &energy_q, &energy_lj, lambda_q, lambda_lj, &dvdlambda_q, &dvdlambda_lj,
-                   pme_flags | GMX_PME_DO_ALL_F | (bEnerVir ? GMX_PME_CALC_ENER_VIR : 0));
+                   pme_flags | GMX_PME_DO_ALL_F | (bEnerVir ? GMX_PME_CALC_ENER_VIR : 0),NULL);
 
         cycles = wallcycle_stop(wcycle, ewcPMEMESH);
 

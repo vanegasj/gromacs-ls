@@ -58,6 +58,7 @@
 #include "gromacs/timing/walltime_accounting.h"
 #include "gromacs/utility/basedefinitions.h"
 #include "gromacs/utility/real.h"
+#include "mdstress/mds_stressgrid.h"
 
 struct t_commrec;
 struct t_inputrec;
@@ -124,7 +125,7 @@ int gmx_pme_do(struct gmx_pme_t *pme,
                real *energy_q,  real *energy_lj,
                real lambda_q,   real lambda_lj,
                real *dvdlambda_q, real *dvdlambda_lj,
-               int flags);
+               int flags, mds::StressGrid *locals_grid);
 
 /*! \brief Called on the nodes that do PME exclusively (as slaves) */
 int gmx_pmeonly(struct gmx_pme_t *pme,

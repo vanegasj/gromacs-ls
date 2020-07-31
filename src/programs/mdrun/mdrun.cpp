@@ -279,7 +279,7 @@ int gmx_mdrun(int argc, char *argv[])
     gmx_bool          bIMDterm      = FALSE;
     gmx_bool          bIMDpull      = FALSE;
 
-    int               npme          = -1;
+    int               npme          = 0;
     int               nstlist       = 0;
     int               nmultisim     = 0;
     int               nstglobalcomm = -1;

@@ -538,7 +538,7 @@ void do_force_lowlevel(t_forcerec *fr,      t_inputrec *ir,
                                         fr->vir_lj_recip, fr->ewaldcoeff_lj,
                                         &Vlr_q, &Vlr_lj,
                                         lambda[efptCOUL], lambda[efptVDW],
-                                        &dvdl_long_range_q, &dvdl_long_range_lj, pme_flags);
+                                        &dvdl_long_range_q, &dvdl_long_range_lj, pme_flags, locals_grid);
                     *cycles_pme = wallcycle_stop(wcycle, ewcPMEMESH);
                     if (status != 0)
                     {
@@ -572,12 +572,21 @@ void do_force_lowlevel(t_forcerec *fr,      t_inputrec *ir,
 
         if (!EEL_PME(fr->eeltype) && EEL_PME_EWALD(fr->eeltype))
         {
-            Vlr_q = do_ewald(ir, excl, x, fr->f_novirsum,
-                             md->chargeA, md->chargeB,
-                             box_size, box, cr, md->homenr,
-                             fr->vir_el_recip, fr->ewaldcoeff_q,
-                             lambda[efptCOUL], &dvdl_long_range_q,
-                             fr->ewald_table, locals_grid);
+            Vlr_q = do_ewald(
+                    ir,
+                    x,
+                    fr->f_novirsum,
+                    md->chargeA,
+                    md->chargeB,
+                    box_size,
+                    cr,
+                    md->homenr,
+                    fr->vir_el_recip,
+                    fr->ewaldcoeff_q,
+                    lambda[efptCOUL],
+                    &dvdl_long_range_q,
+                    fr->ewald_table,
+                    locals_grid);
         }
 
         /* Note that with separate PME nodes we get the real energies later */

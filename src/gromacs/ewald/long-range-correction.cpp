@@ -79,7 +79,6 @@ void ewald_LRcorrection(int numAtomsLocal,
                         real *dvdlambda_q, real *dvdlambda_lj,
                         mds::StressGrid *locals_grid)
 {
-    printf("\ncalling the ewal_LRcorrection function\n");
     int numAtomsToBeCorrected;
     if (calc_excl_corr)
     {
@@ -112,6 +111,12 @@ void ewald_LRcorrection(int numAtomsLocal,
     gmx_bool    bMolPBC      = fr->bMolPBC;
     gmx_bool    bDoingLBRule = (fr->ljpme_combination_rule == eljpmeLB);
     gmx_bool    bNeedLongRangeCorrection;
+
+    //local_stress
+    rvec fi_temp;
+    rvec fk_temp;
+    rvec lpR[2], lpF[2];
+    int  lpatIDs[2];
 
     /* This routine can be made faster by using tables instead of analytical interactions
      * However, that requires a thorough verification that they are correct in all cases.
@@ -175,10 +180,8 @@ void ewald_LRcorrection(int numAtomsLocal,
                 mutot[0][XX], mutot[0][YY], mutot[0][ZZ]);
     }
     bNeedLongRangeCorrection = (calc_excl_corr || dipole_coeff != 0);
-    printf("\nchecking if long range correction is needed\n");
     if (bNeedLongRangeCorrection && !bHaveChargeOrTypePerturbed)
     {
-        printf("\nneed long range correction evaluated true\n");
         for (i = start; (i < end); i++)
         {
             /* Initiate local variables (for this i-particle) to 0 */
@@ -277,6 +280,31 @@ void ewald_LRcorrection(int numAtomsLocal,
                                     svmul(fscal, dx, df);
                                     rvec_inc(f[k], df);
                                     rvec_dec(f[i], df);
+
+                                    /* begin stress tensor */
+                                    if (locals_grid != NULL)
+                                    {
+                                        if ((locals_grid->GetContribType() == mds_all) || (locals_grid->GetContribType() == mds_cou))
+                                        {
+                                            lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2];
+                                            lpR[1][0] = x[i][0]-dx[0]; lpR[1][1] = x[i][1]-dx[1]; lpR[1][2] = x[i][2]-dx[2];
+                                            lpatIDs[0] = i; lpatIDs[1] = k;
+                                            lpF[0][0] = -df[0];  lpF[0][1] = -df[1];  lpF[0][2] = -df[2];
+                                            lpF[1][0] = df[0]; lpF[1][1] = df[1]; lpF[1][2] = df[2];
+                                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                        }
+                                    }
+                                    /* end stress tensor */
+
+                                    /*local_stress
+                                    fk_temp[XX] = df[XX];
+                                    fk_temp[YY] = df[YY];
+                                    fk_temp[ZZ] = df[ZZ];
+                                    fi_temp[XX] = -df[XX];
+                                    fi_temp[YY] = -df[YY];
+                                    fi_temp[ZZ] = -df[ZZ];
+                                    locals_grid->DistributeEwald(x[i], fi_temp, i);
+                                    locals_grid->DistributeEwald(x[k], fk_temp, k);*/
                                     for (iv = 0; (iv < DIM); iv++)
                                     {
                                         for (jv = 0; (jv < DIM); jv++)
@@ -309,6 +337,31 @@ void ewald_LRcorrection(int numAtomsLocal,
                                     svmul(fscal, dx, df);
                                     rvec_inc(f[k], df);
                                     rvec_dec(f[i], df);
+
+                                    /* begin stress tensor */
+                                    if (locals_grid != NULL)
+                                    {
+                                        if ((locals_grid->GetContribType() == mds_all) || (locals_grid->GetContribType() == mds_vdw))
+                                        {
+                                            lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2];
+                                            lpR[1][0] = x[i][0]-dx[0]; lpR[1][1] = x[i][1]-dx[1]; lpR[1][2] = x[i][2]-dx[2];
+                                            lpatIDs[0] = i; lpatIDs[1] = k;
+                                            lpF[0][0] = -df[0];  lpF[0][1] = -df[1];  lpF[0][2] = -df[2];
+                                            lpF[1][0] = df[0]; lpF[1][1] = df[1]; lpF[1][2] = df[2];
+                                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                        }
+                                    }
+                                    /* end stress tensor */
+
+                                    /*local_stress
+                                    fk_temp[XX] = df[XX];
+                                    fk_temp[YY] = df[YY];
+                                    fk_temp[ZZ] = df[ZZ];
+                                    fi_temp[XX] = -df[XX];
+                                    fi_temp[YY] = -df[YY];
+                                    fi_temp[ZZ] = -df[ZZ];
+                                    locals_grid->DistributeEwald(x[i], fi_temp, i);
+                                    locals_grid->DistributeEwald(x[k], fk_temp, k);*/
                                     for (iv = 0; (iv < DIM); iv++)
                                     {
                                         for (jv = 0; (jv < DIM); jv++)
@@ -317,38 +370,6 @@ void ewald_LRcorrection(int numAtomsLocal,
                                         }
                                     }
                                 }
-
-                                /* begin stress tensor */
-                                /* removed this since we are doing all the work in ewald.cpp
-                                 * if (locals_grid != NULL)
-                                {
-                                    printf("\nlocals_grid is not null\n");
-                                    rvec lpR[2], lpF[2];
-                                    int  lpatIDs[2];
-
-                                    if ((locals_grid->GetContribType() == mds_all)
-                                            || (locals_grid->GetContribType() == mds_ewal))
-                                    {
-                                        printf("\nadding contribution\n");
-                                        // positions of x_i unmodified
-                                        lpR[0][0] = x[i][0];
-                                        lpR[0][1] = x[i][1];
-                                        lpR[0][2] = x[i][2]; 
-                                        
-                                        // enforcing periodic boundary conditions in x_j
-                                        lpR[1][0] = x[i][0]-dx[0];
-                                        lpR[1][1] = x[i][1]-dx[1];
-                                        lpR[1][2] = x[i][2]-dx[2]; 
-
-                                        // since x is an rvec, these are the particle labels
-                                        lpatIDs[0] = i; lpatIDs[1] = k;
-
-                                        lpF[0][0] = df[0];  lpF[0][1] = df[1];  lpF[0][2] = df[2];
-                                        lpF[1][0] = -df[0]; lpF[1][1] = -df[1]; lpF[1][2] = -df[2];
-                                        locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
-                                    }
-                                }*/
-                                /* end stress tensor */
                             }
                             else
                             {
@@ -364,8 +385,11 @@ void ewald_LRcorrection(int numAtomsLocal,
             {
                 for (j = 0; (j < DIM); j++)
                 {
-                    f[i][j] -= dipcorrA[j]*chargeA[i];
+                    //local_stress
+                    fi_temp[j] = -dipcorrA[j]*chargeA[i];
+                    f[i][j] += fi_temp[j];
                 }
+                locals_grid->DistributeEwald(x[i], fi_temp, i);
             }
         }
     }
@@ -458,6 +482,31 @@ void ewald_LRcorrection(int numAtomsLocal,
                                     svmul(fscal, dx, df);
                                     rvec_inc(f[k], df);
                                     rvec_dec(f[i], df);
+
+                                    /* begin stress tensor */
+                                    if (locals_grid != NULL)
+                                    {
+                                        if ((locals_grid->GetContribType() == mds_all) || (locals_grid->GetContribType() == mds_cou))
+                                        {
+                                            lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2];
+                                            lpR[1][0] = x[i][0]-dx[0]; lpR[1][1] = x[i][1]-dx[1]; lpR[1][2] = x[i][2]-dx[2];
+                                            lpatIDs[0] = i; lpatIDs[1] = k;
+                                            lpF[0][0] = -df[0];  lpF[0][1] = -df[1];  lpF[0][2] = -df[2];
+                                            lpF[1][0] = df[0]; lpF[1][1] = df[1]; lpF[1][2] = df[2];
+                                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                        }
+                                    }
+                                    /* end stress tensor */
+
+                                    /*local_stress
+                                    fk_temp[XX] = df[XX];
+                                    fk_temp[YY] = df[YY];
+                                    fk_temp[ZZ] = df[ZZ];
+                                    fi_temp[XX] = -df[XX];
+                                    fi_temp[YY] = -df[YY];
+                                    fi_temp[ZZ] = -df[ZZ];
+                                    locals_grid->DistributeEwald(x[i], fi_temp, i);
+                                    locals_grid->DistributeEwald(x[k], fk_temp, k);*/
                                     for (iv = 0; (iv < DIM); iv++)
                                     {
                                         for (jv = 0; (jv < DIM); jv++)
@@ -486,6 +535,31 @@ void ewald_LRcorrection(int numAtomsLocal,
                                     svmul(fscal, dx, df);
                                     rvec_inc(f[k], df);
                                     rvec_dec(f[i], df);
+
+                                    /* begin stress tensor */
+                                    if (locals_grid != NULL)
+                                    {
+                                        if ((locals_grid->GetContribType() == mds_all) || (locals_grid->GetContribType() == mds_vdw))
+                                        {
+                                            lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2];
+                                            lpR[1][0] = x[i][0]-dx[0]; lpR[1][1] = x[i][1]-dx[1]; lpR[1][2] = x[i][2]-dx[2];
+                                            lpatIDs[0] = i; lpatIDs[1] = k;
+                                            lpF[0][0] = -df[0];  lpF[0][1] = -df[1];  lpF[0][2] = -df[2];
+                                            lpF[1][0] = df[0]; lpF[1][1] = df[1]; lpF[1][2] = df[2];
+                                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                        }
+                                    }
+                                    /* end stress tensor */
+
+                                    /*local_stress
+                                    fk_temp[XX] = df[XX];
+                                    fk_temp[YY] = df[YY];
+                                    fk_temp[ZZ] = df[ZZ];
+                                    fi_temp[XX] = -df[XX];
+                                    fi_temp[YY] = -df[YY];
+                                    fi_temp[ZZ] = -df[ZZ];
+                                    locals_grid->DistributeEwald(x[i], fi_temp, i);
+                                    locals_grid->DistributeEwald(x[k], fk_temp, k);*/
                                     for (iv = 0; (iv < DIM); iv++)
                                     {
                                         for (jv = 0; (jv < DIM); jv++)
@@ -511,9 +585,11 @@ void ewald_LRcorrection(int numAtomsLocal,
             {
                 for (j = 0; (j < DIM); j++)
                 {
-                    f[i][j] -= L1_q*dipcorrA[j]*chargeA[i]
-                        + lambda_q*dipcorrB[j]*chargeB[i];
+                    fi_temp[j] = -L1_q*dipcorrA[j]*chargeA[i]
+                        - lambda_q*dipcorrB[j]*chargeB[i];
+                    f[i][j] += fi_temp[j];
                 }
+                locals_grid->DistributeEwald(x[i], fi_temp, i);
             }
         }
     }

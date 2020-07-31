@@ -906,7 +906,7 @@ int gmx_pme_do(struct gmx_pme_t *pme,
                real *energy_q,  real *energy_lj,
                real lambda_q,   real lambda_lj,
                real *dvdlambda_q, real *dvdlambda_lj,
-               int flags)
+               int flags, mds::StressGrid * locals_grid)
 {
     int                  d, i, j, npme, grid_index, max_grid_index;
     int                  n_d;
@@ -1211,7 +1211,7 @@ int gmx_pme_do(struct gmx_pme_t *pme,
                 {
                     gather_f_bsplines(pme, grid, bClearF, atc,
                                       &atc->spline[thread],
-                                      pme->bFEP ? (grid_index % 2 == 0 ? 1.0-lambda : lambda) : 1.0);
+                                      pme->bFEP ? (grid_index % 2 == 0 ? 1.0-lambda : lambda) : 1.0, locals_grid);
                 }
                 GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR;
             }
@@ -1494,7 +1494,7 @@ int gmx_pme_do(struct gmx_pme_t *pme,
                             {
                                 gather_f_bsplines(pme, grid, bClearF, &pme->atc[0],
                                                   &pme->atc[0].spline[thread],
-                                                  scale);
+                                                  scale, locals_grid);
                             }
                             GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR;
                         }

@@ -36,6 +36,7 @@
 #define GMX_EWALD_PME_GATHER_H
 
 #include "gromacs/utility/real.h"
+#include "mdstress/mds_stressgrid.h"
 
 #include "pme-internal.h"
 
@@ -43,7 +44,7 @@ void
 gather_f_bsplines(struct gmx_pme_t *pme, real *grid,
                   gmx_bool bClearF, pme_atomcomm_t *atc,
                   splinedata_t *spline,
-                  real scale);
+                  real scale, mds::StressGrid * locals_stress);
 
 real
 gather_energy_bsplines(struct gmx_pme_t *pme, real *grid,

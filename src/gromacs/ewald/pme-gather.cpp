@@ -45,6 +45,7 @@
 #include "pme-internal.h"
 #include "pme-simd.h"
 #include "pme-spline-work.h"
+#include "pme-gather.h"
 
 using namespace gmx; // TODO: Remove when this file is moved into gmx namespace
 
@@ -78,7 +79,7 @@ using namespace gmx; // TODO: Remove when this file is moved into gmx namespace
 void gather_f_bsplines(struct gmx_pme_t *pme, real *grid,
                        gmx_bool bClearF, pme_atomcomm_t *atc,
                        splinedata_t *spline,
-                       real scale)
+                       real scale, mds::StressGrid * locals_grid)
 {
     /* sum forces for local particles */
     int    nn, n, ithx, ithy, ithz, i0, j0, k0;
@@ -92,6 +93,8 @@ void gather_f_bsplines(struct gmx_pme_t *pme, real *grid,
     int    norder;
     real   rxx, ryx, ryy, rzx, rzy, rzz;
     int    order;
+    //locals_grid
+    rvec f_temp;
 
 #ifdef PME_SIMD4_SPREAD_GATHER
     // cppcheck-suppress unreadVariable cppcheck seems not to analyze code from pme-simd4.h
@@ -176,9 +179,14 @@ void gather_f_bsplines(struct gmx_pme_t *pme, real *grid,
                     break;
             }
 
-            atc->f[n][XX] += -coefficient*( fx*nx*rxx );
-            atc->f[n][YY] += -coefficient*( fx*nx*ryx + fy*ny*ryy );
-            atc->f[n][ZZ] += -coefficient*( fx*nx*rzx + fy*ny*rzy + fz*nz*rzz );
+            f_temp[XX] = -coefficient*( fx*nx*rxx );
+            f_temp[YY] = -coefficient*( fx*nx*ryx + fy*ny*ryy );
+            f_temp[ZZ] = -coefficient*( fx*nx*rzx + fy*ny*rzy + fz*nz*rzz );
+            atc->f[n][XX] += f_temp[XX];
+            atc->f[n][YY] += f_temp[YY];
+            atc->f[n][ZZ] += f_temp[ZZ];
+            if (locals_grid != NULL)
+                locals_grid->DistributeEwald(atc->x[n], f_temp, n);
         }
     }
     /* Since the energy and not forces are interpolated
