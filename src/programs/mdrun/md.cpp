@@ -1803,7 +1803,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
 
         locals_grid.SumGrid();
-        locals_grid.Write();
 
         /* end local stress */
 
@@ -2046,6 +2045,12 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
     }
     /* End of main MD loop */
+    
+    /* local stress begin */
+
+    locals_grid.Write();
+    
+    /* local stress end */
 
     /* Closing TNG files can include compressing data. Therefore it is good to do that
      * before stopping the time measurements. */
