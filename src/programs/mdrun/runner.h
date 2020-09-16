@@ -102,8 +102,10 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
              gmx_int64_t nsteps_cmdline, int nstepout, int resetstep,
              int nmultisim, int repl_ex_nst, int repl_ex_nex,
              int repl_ex_seed, real pforce, real cpt_period, real max_hours,
-             int imdport, real localsgridspacing, int nstlocals, int localsgridx,
-             int localsgridy, int localsgridz, int localscontrib, int localsfdecomp,
+             int imdport, int nstlocals,
+             real localsgridspacing, int localsgridx, int localsgridy, int localsgridz,
+             real localsgridspacingc, int localsgridxc, int localsgridyc, int localsgridzc,
+             int localscontrib, int localsfdecomp,
              int localsspatialatom, gmx_bool localsdispcor, gmx_bool localspbc, real localsmindihangle, gmx_bool localscuda, unsigned long Flags);
 
 

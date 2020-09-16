@@ -310,12 +310,16 @@ int gmx_mdrun(int argc, char *argv[])
     
     /* Local Stress parameters
      */
-    real localsgridspacing=0.1;
     real localsmindihangle=0.0;
     int nstlocals=0;
+    real localsgridspacing=0.1;
     int localsgridx=0;
     int localsgridy=0;
     int localsgridz=0;
+    real localsgridspacingc=0.1;
+    int localsgridxc=0;
+    int localsgridyc=0;
+    int localsgridzc=0;
     const char *localsenum   = "all";
     const char *localsfdenum = "ccfd";
     const char *localssanum  = "spat";
@@ -415,6 +419,8 @@ int gmx_mdrun(int argc, char *argv[])
           "Seed for replica exchange, -1 is generate a seed" },
         { "-localsgrid",  FALSE, etREAL, {&localsgridspacing},
           "Spacing for local stress grid (default = 0.1 nm)" },
+        { "-localsgridc",  FALSE, etREAL, {&localsgridspacingc},
+          "Spacing for local stress charge grid (default = 0.1 nm)" },
         { "-nstlp",  FALSE, etINT, {&nstlocals},
           "HIDDENFrequency of writing local stress grid to file (default = 0)" },
         { "-lsgridx", FALSE, etINT, {&localsgridx},
@@ -423,6 +429,12 @@ int gmx_mdrun(int argc, char *argv[])
           "Set the local stress grid size in the y direction (default use box[YY][YY]/localsgrid)"},
         { "-lsgridz", FALSE, etINT, {&localsgridz},
           "Set the local stress grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
+        { "-lsgridxc", FALSE, etINT, {&localsgridxc},
+          "Set the local stress charge grid size in the x direction (default use box[XX][XX]/localsgrid)"},
+        { "-lsgridyc", FALSE, etINT, {&localsgridyc},
+          "Set the local stress charge grid size in the y direction (default use box[YY][YY]/localsgrid)"},
+        { "-lsgridzc", FALSE, etINT, {&localsgridzc},
+          "Set the local stress charge grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
         { "-lscont", FALSE, etSTR, {&localsenum},
           "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel"},
         { "-lsfd", FALSE, etSTR, {&localsfdenum},
@@ -662,8 +674,9 @@ int gmx_mdrun(int argc, char *argv[])
                        nbpu_opt[0], nstlist,
                        nsteps, nstepout, resetstep,
                        nmultisim, repl_ex_nst, repl_ex_nex, repl_ex_seed,
-                       pforce, cpt_period, max_hours, imdport, localsgridspacing,
-                       nstlocals, localsgridx, localsgridy, localsgridz,
+                       pforce, cpt_period, max_hours, imdport, nstlocals,
+                       localsgridspacing, localsgridx, localsgridy, localsgridz,
+                       localsgridspacingc, localsgridxc, localsgridyc, localsgridzc,
                        localscontrib, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, localscuda, Flags);
 
     /* Log file has to be closed in mdrunner if we are appending to it

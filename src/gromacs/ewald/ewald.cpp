@@ -268,7 +268,7 @@ real do_ewald(t_inputrec *ir,
                         f_temp[ZZ] = tmp*mz*2*scaleRecip;
 
                         //local_stress
-                        locals_grid->DistributeEwald(x[n], f_temp, n);
+                        //locals_grid->DistributeEwald(x[n], f_temp, n);
 
                         f[n][XX] += f_temp[XX];
                         f[n][YY] += f_temp[YY];

@@ -389,7 +389,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                     fi_temp[j] = -dipcorrA[j]*chargeA[i];
                     f[i][j] += fi_temp[j];
                 }
-                locals_grid->DistributeEwald(x[i], fi_temp, i);
+                //locals_grid->DistributeEwald(x[i], fi_temp, i);
             }
         }
     }
@@ -589,7 +589,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                         - lambda_q*dipcorrB[j]*chargeB[i];
                     f[i][j] += fi_temp[j];
                 }
-                locals_grid->DistributeEwald(x[i], fi_temp, i);
+                //locals_grid->DistributeEwald(x[i], fi_temp, i);
             }
         }
     }

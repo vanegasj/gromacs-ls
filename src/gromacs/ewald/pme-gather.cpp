@@ -185,8 +185,8 @@ void gather_f_bsplines(struct gmx_pme_t *pme, real *grid,
             atc->f[n][XX] += f_temp[XX];
             atc->f[n][YY] += f_temp[YY];
             atc->f[n][ZZ] += f_temp[ZZ];
-            if (locals_grid != NULL)
-                locals_grid->DistributeEwald(atc->x[n], f_temp, n);
+            //if (locals_grid != NULL)
+            //    locals_grid->DistributeEwald(atc->x[n], f_temp, n);
         }
     }
     /* Since the energy and not forces are interpolated

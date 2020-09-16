@@ -224,11 +224,15 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   gmx_membed_t *membed,
                   real cpt_period, real max_hours,
                   int imdport,
-                  real localsgridspacing,
                   int nstlocals,
+                  real localsgridspacing,
                   int localsgridx,
                   int localsgridy,
                   int localsgridz,
+                  real localsgridspacingc,
+                  int localsgridxc,
+                  int localsgridyc,
+                  int localsgridzc,
                   int localscontrib,
                   int localsfdecomp,
                   int localsspatialatom,
@@ -584,8 +588,13 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             {
                 gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgrid) <= 0.0\n");
             }
+            if(localsgridspacingc<=0)
+            {
+                gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgridc) <= 0.0\n");
+            }
             
             locals_grid.SetSpacing(localsgridspacing);
+            locals_grid.SetSpacingc(localsgridspacingc);
             
             if(localsgridx == 0)
                 locals_grid.SetNumberOfGridCellsX(box_size[XX]/localsgridspacing);
@@ -600,6 +609,19 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             else
                 locals_grid.SetNumberOfGridCellsZ(localsgridz);
             
+            if(localsgridxc == 0)
+                locals_grid.SetNumberOfGridCellsXC(box_size[XX]/localsgridspacingc);
+            else
+                locals_grid.SetNumberOfGridCellsXC(localsgridxc);
+            if(localsgridyc == 0)
+                locals_grid.SetNumberOfGridCellsYC(box_size[YY]/localsgridspacingc);
+            else
+                locals_grid.SetNumberOfGridCellsYC(localsgridyc);
+            if(localsgridzc == 0)
+                locals_grid.SetNumberOfGridCellsZC(box_size[ZZ]/localsgridspacingc);
+            else
+                locals_grid.SetNumberOfGridCellsZC(localsgridzc);
+            
             int ngrid =
                 locals_grid.GetNumberOfGridCellsX()*
                 locals_grid.GetNumberOfGridCellsY()*
@@ -611,6 +633,18 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                locals_grid.GetNumberOfGridCellsY(),
                locals_grid.GetNumberOfGridCellsZ(),
                ngrid);
+            
+            int ngridc =
+                locals_grid.GetNumberOfGridCellsXC()*
+                locals_grid.GetNumberOfGridCellsYC()*
+                locals_grid.GetNumberOfGridCellsZC();
+
+            printf("Charge spacing requested: %g    Using nxc=%d nyc=%d nzc=%d, charge grid size %d \n",
+               localsgridspacingc,
+               locals_grid.GetNumberOfGridCellsXC(),
+               locals_grid.GetNumberOfGridCellsYC(),
+               locals_grid.GetNumberOfGridCellsZC(),
+               ngridc);
         
             if(locals_grid.GetNumberOfGridCellsX()==0)
                 locals_grid.SetNumberOfGridCellsX(1);
@@ -618,6 +652,13 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 locals_grid.SetNumberOfGridCellsY(1);
             if(locals_grid.GetNumberOfGridCellsZ()==0)
                 locals_grid.SetNumberOfGridCellsZ(1);
+            
+            if(locals_grid.GetNumberOfGridCellsXC()==0)
+                locals_grid.SetNumberOfGridCellsXC(1);
+            if(locals_grid.GetNumberOfGridCellsYC()==0)
+                locals_grid.SetNumberOfGridCellsYC(1);
+            if(locals_grid.GetNumberOfGridCellsZC()==0)
+                locals_grid.SetNumberOfGridCellsZC(1);
             
             // this will initialize locals_grid.current_grid and locals_grid.sum_grid
             locals_grid.Init();
@@ -1758,9 +1799,13 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   v_update[j] = state->v[i][j];
             }
             
-            if ((locals_grid.GetContribType() == mds_all) || (locals_grid.GetContribType() == mds_kin))
+            if ((localscontrib == mds_all || localscontrib == mds_kin))
             {
                 locals_grid.DistributeKinetic(mass, x_rerun, v_rerun, v_update, gatindex);
+            }
+            if (mdatoms->chargeA[i] != 0.0 && (localscontrib == mds_all || localscontrib == mds_cou))
+            {
+                locals_grid.DistributeCharge(x_rerun, mdatoms->chargeA[i]);
             }
         }
         
