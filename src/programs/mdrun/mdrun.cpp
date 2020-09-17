@@ -320,9 +320,9 @@ int gmx_mdrun(int argc, char *argv[])
     int localsgridxc=0;
     int localsgridyc=0;
     int localsgridzc=0;
-    const char *localsenum   = "all";
-    const char *localsfdenum = "ccfd";
-    const char *localssanum  = "spat";
+    const char * localsenum = "all";
+    const char * localsfdenum = "ccfd";
+    const char * localssanum  = "spat";
     gmx_bool localsdispcor = TRUE;
     gmx_bool localscuda = FALSE;
     gmx_bool localspbc = FALSE;
@@ -436,7 +436,7 @@ int gmx_mdrun(int argc, char *argv[])
         { "-lsgridzc", FALSE, etINT, {&localsgridzc},
           "Set the local stress charge grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
         { "-lscont", FALSE, etSTR, {&localsenum},
-          "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel"},
+          "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel, crg"},
         { "-lsfd", FALSE, etSTR, {&localsfdenum},
           "Select the type of force decomposition to be used: ccfd (covariant central force decomposition, default), ncfd (non-covariant central force decomposition), or gld (Goetz-Lipowsky decomposition)"},
         { "-lssa", FALSE, etSTR, {&localssanum},
@@ -512,10 +512,10 @@ int gmx_mdrun(int argc, char *argv[])
     dd_rank_order = nenum(ddrank_opt);
     hw_opt.thread_affinity = nenum(thread_aff_opt);
 
-    if (strncmp(localssanum,"spat",4) == 0) {
+    if (strcmp(localssanum,"spat") == 0) {
       localsspatialatom = mds_spat;
       printf("\nSelected spatial stress tensor\n");
-    }else if (strncmp(localssanum,"atom",4) == 0) {
+    }else if (strcmp(localssanum,"atom") == 0) {
       localsspatialatom = mds_atom;
       printf("\nSelected stress tensor by atom. Will not use force decomposition flag.\n");
     }else{
@@ -523,13 +523,13 @@ int gmx_mdrun(int argc, char *argv[])
       localsspatialatom = mds_spat;
     }
     
-    if (strncmp(localsfdenum,"ccfd",4) == 0) {
+    if (strcmp(localsfdenum,"ccfd") == 0) {
       localsfdecomp = mds_ccfd;
       printf("\nSelected force decomposition: %s\n", localsfdenum);
-    }else if (strncmp(localsfdenum,"ncfd",4) == 0) {
+    }else if (strcmp(localsfdenum,"ncfd") == 0) {
       localsfdecomp = mds_ncfd;
       printf("\nSelected force decomposition: %s\n", localsfdenum);
-    }else if(strncmp(localsfdenum,"gld",4) == 0){
+    }else if(strcmp(localsfdenum,"gld") == 0){
       localsfdecomp = mds_gld;
       printf("\nSelected force decomposition: %s\n", localsfdenum);
     }else{
@@ -538,49 +538,49 @@ int gmx_mdrun(int argc, char *argv[])
     }
 
     printf("\nSelected contribution: %s\n",localsenum);
-    if (strncmp(localsenum,"all",5) == 0) {
+    if (strcmp(localsenum,"all") == 0) {
       printf("\nWill write all contributions to the local stress\n");
       localscontrib = mds_all;
-    }else if(strncmp(localsenum,"vdw",5) == 0){
+    }else if(strcmp(localsenum,"vdw") == 0){
       printf("\nWill only write vdw contributions to the local stress\n");
       localscontrib = mds_vdw;
-    }else if(strncmp(localsenum,"coul",5) == 0){
+    }else if(strcmp(localsenum,"coul") == 0){
       printf("\nWill only write coulomb contributions to the local stress\n");
       localscontrib = mds_cou;
-    }else if(strncmp(localsenum,"angles",5) == 0){
+    }else if(strcmp(localsenum,"angles") == 0){
       printf("\nWill only write angle contributions to the local stress\n");
       localscontrib = mds_ang;
-    }else if(strncmp(localsenum,"bonds",5) == 0){
+    }else if(strcmp(localsenum,"bonds") == 0){
       printf("\nWill only write bonding contributions to the local stress\n");
       localscontrib = mds_bnd;
-    }else if(strncmp(localsenum,"dihp",5) == 0){
+    }else if(strcmp(localsenum,"dihp") == 0){
       printf("\nWill only write proper dihedral contributions to the local stress\n");
       localscontrib = mds_dip;
-    }else if(strncmp(localsenum,"dihi",5) == 0){
+    }else if(strcmp(localsenum,"dihi") == 0){
       printf("\nWill only write inproper dihedral contributions to the local stress\n");
       localscontrib = mds_dii;
-    }else if(strncmp(localsenum,"diho",5) == 0){
+    }else if(strcmp(localsenum,"diho") == 0){
       printf("\nWill only write other dihedral contributions to the local stress\n");
       localscontrib = mds_dio;
-    }else if(strncmp(localsenum,"dihrb",5) == 0){
+    }else if(strcmp(localsenum,"dihrb") == 0){
       printf("\nWill only write RB dihedral contributions to the local stress\n");
       localscontrib = mds_drb;
-    }else if(strncmp(localsenum,"lincs",5) == 0){
+    }else if(strcmp(localsenum,"lincs") == 0){
       printf("\nWill only write LINCS constraints contributions to the local stress\n");
       localscontrib = mds_lin;
-    }else if(strncmp(localsenum,"settle",5) == 0){
+    }else if(strcmp(localsenum,"settle") == 0){
       printf("\nWill only write SETTLE water constraints contributions to the local stress\n");
       localscontrib = mds_set;
-    }else if(strncmp(localsenum,"shake",5) == 0){
+    }else if(strcmp(localsenum,"shake") == 0){
       printf("\nWill only write SHAKE constraints contributions to the local stress\n");
       localscontrib = mds_sha;
-    }else if(strncmp(localsenum,"vel",5) == 0){
+    }else if(strcmp(localsenum,"vel") == 0){
       printf("\nWill only write velocity contributions to the local stress\n");
       localscontrib = mds_kin;
-    }else if(strncmp(localsenum,"cmap",5) == 0){
+    }else if(strcmp(localsenum,"cmap") == 0){
       printf("\nWill only write CMAP contributions to the local stress\n");
       localscontrib = mds_cmp;
-    }else if(strncmp(localsenum,"crg",5) == 0){
+    }else if(strcmp(localsenum,"crg") == 0){
       printf("\nWill only write charge grid contributions to the local stress\n");
       localscontrib = mds_crg;
     }else{
