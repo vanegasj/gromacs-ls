@@ -661,7 +661,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 locals_grid.SetNumberOfGridCellsZC(1);
 
             // set the cutoff used
-            locals_grid.SetChargeCutoff(fr->rcoulomb);
+            locals_grid.SetChargeParams(fr->epsfac, fr->rcoulomb);
             
             // this will initialize locals_grid.current_grid and locals_grid.sum_grid
             locals_grid.Init();
