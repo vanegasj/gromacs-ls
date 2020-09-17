@@ -580,6 +580,9 @@ int gmx_mdrun(int argc, char *argv[])
     }else if(strncmp(localsenum,"cmap",5) == 0){
       printf("\nWill only write CMAP contributions to the local stress\n");
       localscontrib = mds_cmp;
+    }else if(strncmp(localsenum,"crg",5) == 0){
+      printf("\nWill only write charge grid contributions to the local stress\n");
+      localscontrib = mds_crg;
     }else{
       printf("\nOption not recognized, will write all contributions to the local stress\n");
       localscontrib = mds_all;

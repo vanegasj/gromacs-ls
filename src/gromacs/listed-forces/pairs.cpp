@@ -364,6 +364,9 @@ do_pairs_general(int ftype, int nbonds,
     
     rvec lpR[2], lpF[2];
     int  lpatIDs[2];
+    int  lctype;
+    if (locals_grid != NULL)
+        lctype = locals_grid->GetContribType();
 
     switch (ftype)
     {
@@ -465,11 +468,11 @@ do_pairs_general(int ftype, int nbonds,
         c12 *= 12.0;
 
         /* Zero coulomb or vdw interactions depending on what local stress we are studying */
-        if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid != NULL && lctype == mds_vdw)
         {
             qq = 0.0;
         }
-        if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+        if (locals_grid != NULL && lctype == mds_cou)
         {
             c6 = 0.0;
             c12 = 0.0;
@@ -528,9 +531,9 @@ do_pairs_general(int ftype, int nbonds,
         /* begin stress tensor */
         if (locals_grid != NULL)
         {
-            if ((locals_grid->GetContribType() == mds_all) ||
-                (locals_grid->GetContribType() == mds_vdw) ||
-                (locals_grid->GetContribType() == mds_cou))
+            if ((lctype == mds_all) ||
+                (lctype == mds_vdw) ||
+                (lctype == mds_cou))
             {
                 lpR[0][0] = x[aj][0] + dx2[0]; lpR[0][1] = x[aj][1] + dx2[1]; lpR[0][2] = x[aj][2] + dx2[2]; 
                 lpR[1][0] = x[aj][0]; lpR[1][1] = x[aj][1]; lpR[1][2] = x[aj][2]; 
