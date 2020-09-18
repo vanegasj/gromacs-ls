@@ -234,6 +234,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   int localsgridyc,
                   int localsgridzc,
                   int localscontrib,
+                  int localscontribc,
                   int localsfdecomp,
                   int localsspatialatom,
                   gmx_bool localsdispcor,
@@ -661,7 +662,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 locals_grid.SetNumberOfGridCellsZC(1);
 
             // set the cutoff used
-            locals_grid.SetChargeParams(fr->epsfac, fr->rcoulomb);
+            locals_grid.SetChargeParams(localscontribc, fr->epsfac, fr->rcoulomb);
             
             // this will initialize locals_grid.current_grid and locals_grid.sum_grid
             locals_grid.Init();
@@ -1806,7 +1807,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             {
                 locals_grid.DistributeKinetic(mass, x_rerun, v_rerun, v_update, gatindex);
             }
-            if (mdatoms->chargeA[i] != 0.0 && (localscontrib == mds_crg))
+            if (mdatoms->chargeA[i] != 0.0 && (localscontribc != mds_gridc_off))
             {
                 locals_grid.DistributeCharge(x_rerun, mdatoms->chargeA[i]);
             }

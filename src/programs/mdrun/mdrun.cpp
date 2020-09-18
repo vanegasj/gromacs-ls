@@ -323,6 +323,7 @@ int gmx_mdrun(int argc, char *argv[])
     const char * localsenum = "all";
     const char * localsfdenum = "ccfd";
     const char * localssanum  = "spat";
+    const char * localsenumc = "off";
     gmx_bool localsdispcor = TRUE;
     gmx_bool localscuda = FALSE;
     gmx_bool localspbc = FALSE;
@@ -436,7 +437,9 @@ int gmx_mdrun(int argc, char *argv[])
         { "-lsgridzc", FALSE, etINT, {&localsgridzc},
           "Set the local stress charge grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
         { "-lscont", FALSE, etSTR, {&localsenum},
-          "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel, crg"},
+          "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel, none"},
+        { "-lsgridc", FALSE, etSTR, {&localsenumc},
+          "Select the type of gridc (default = off): off, near, far, full"},
         { "-lsfd", FALSE, etSTR, {&localsfdenum},
           "Select the type of force decomposition to be used: ccfd (covariant central force decomposition, default), ncfd (non-covariant central force decomposition), or gld (Goetz-Lipowsky decomposition)"},
         { "-lssa", FALSE, etSTR, {&localssanum},
@@ -472,6 +475,7 @@ int gmx_mdrun(int argc, char *argv[])
     ivec            ddxyz;
     int             dd_rank_order;
     int             localscontrib;
+    int             localscontribc;
     int             localsfdecomp;
     int             localsspatialatom;
     gmx_bool        bDoAppendFiles, bStartFromCpt;
@@ -580,12 +584,30 @@ int gmx_mdrun(int argc, char *argv[])
     }else if(strcmp(localsenum,"cmap") == 0){
       printf("\nWill only write CMAP contributions to the local stress\n");
       localscontrib = mds_cmp;
-    }else if(strcmp(localsenum,"crg") == 0){
-      printf("\nWill only write charge grid contributions to the local stress\n");
-      localscontrib = mds_crg;
+    }else if(strcmp(localsenum,"none") == 0){
+      printf("\nWill not write any contributions to the local stress\n");
+      localscontrib = mds_none;
     }else{
       printf("\nOption not recognized, will write all contributions to the local stress\n");
       localscontrib = mds_all;
+    }
+    
+    printf("\nSelected gridc type: %s\n",localsenumc);
+    if (strcmp(localsenumc,"off") == 0) {
+      printf("\nWill disable the coulomb contribution from the charge grid\n");
+      localscontribc = mds_gridc_off;
+    }else if(strcmp(localsenumc,"near") == 0){
+      printf("\nWill enable near coulomb contributions from the charge grid\n");
+      localscontribc = mds_gridc_near;
+    }else if(strcmp(localsenumc,"far") == 0){
+      printf("\nWill enable far coulomb contribution from the charge grid\n");
+      localscontribc = mds_gridc_far;
+    }else if(strcmp(localsenumc,"full") == 0){
+      printf("\nWill enable full coulomb contribution from the charge grid\n");
+      localscontribc = mds_gridc_full;
+    }else{
+      printf("\nOption not recognized, will disable the coulomb contribution from the charge grid\n");
+      localscontribc = mds_gridc_off;
     }
 
     /* now check the -multi and -multidir option */
@@ -680,7 +702,7 @@ int gmx_mdrun(int argc, char *argv[])
                        pforce, cpt_period, max_hours, imdport, nstlocals,
                        localsgridspacing, localsgridx, localsgridy, localsgridz,
                        localsgridspacingc, localsgridxc, localsgridyc, localsgridzc,
-                       localscontrib, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, localscuda, Flags);
+                       localscontrib, localscontribc, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, localscuda, Flags);
 
     /* Log file has to be closed in mdrunner if we are appending to it
        (fplog not set here) */
