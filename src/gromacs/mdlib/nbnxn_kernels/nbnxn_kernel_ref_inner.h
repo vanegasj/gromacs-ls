@@ -396,6 +396,10 @@
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
+                double phi_lj, kappa_lj;
+                phi_lj = -c12*rinvsix*rinvsix*rinv + c6*rinvsix*rinv;
+                kappa_lj = 13*c12*rinvsix*rinvsix*rinvsq - 7*c6*rinvsix*rinvsq;
+
                 int  lpatIDs[2];
                 lpatIDs[0] = xi_id[i]; lpatIDs[1] = x_id[aj];
                 
@@ -418,6 +422,9 @@
                         lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
 
                         locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                        locals_grid->DistributePairElast(lpR, phi_lj, kappa_lj);
+                        //locals_grid->DistributePairElast(lpR[0], lpR[1], phi_lj, kappa_lj);
+                        
                     }
                 }
             }
