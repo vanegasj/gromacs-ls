@@ -180,6 +180,97 @@ void locals_angles_distribute_stress(
             lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
             lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
             locals_grid->DistributeInteraction(3, lpR, lpF, lpatIDs);
+            /*
+            // For a 3 body potential with particles i, j, and k, there are 3 pairs: ij, ik, and jk. The corresponding "pairs of pairs" are
+            //
+            // ijij ikij jkij
+            // ijik ikik jkik
+            // ijjk ikjk jkjk
+            //
+            // Note that by symmetry, the kappa values for swapping pairs stay constant, i.e., k[ij][ik] = k[ik][ij], but the resulting Born terms are different for the pairs of pairs ijik vs ikij.
+            // This means that there are only 6 unique values of kappa that need to be determined, but the full 3x3 matrix should be filled in for convenience
+
+            int ij = 0;
+            int ik = 1;
+            int jk = 2;
+
+            // For this case, one would call DistributePairElast 9 times:
+
+            DistributePairElast(Ri, Rj, Ri, Rj, phi[ij], k[ij][ij])
+            DistributePairElast(Ri, Rj, Ri, Rk, phi[ij], k[ij][ik])
+            DistributePairElast(Ri, Rj, Rj, Rk, phi[ij], k[ij][jk])
+
+            DistributePairElast(Ri, Rk, Ri, Rj, phi[ik], k[ik][ij])
+            DistributePairElast(Ri, Rk, Ri, Rk, phi[ik], k[ik][ik])
+            DistributePairElast(Ri, Rk, Rj, Rk, phi[ik], k[ik][jk])
+
+            DistributePairElast(Rj, Rk, Ri, Rj, phi[jk], k[jk][ij])
+            DistributePairElast(Rj, Rk, Ri, Rk, phi[jk], k[jk][ik])
+            DistributePairElast(Rj, Rk, Rj, Rk, phi[jk], k[jk][jk])
+
+            // For a 4 body potential with particles a, b, and c, and d, there are 6 pairs: ij, ik, il, jk, jl, and kl. The corresponding "pairs of pairs" are
+            //
+            // ijij ikij ilij jkij jlij klij
+            // ijik ikik ilik jkik jlik klik
+            // ijil ikil ilil jkil jlil klil
+            // ijjk ikjk iljk jkjk jljk kljk
+            // ijjl ikjl iljl jkjl jljl kljl
+            // ijkl ikkl ilkl jkkl jlkl klkl
+            //
+            // Note that by symmetry, the kappa values for swapping pairs stay constant, i.e., k[ij][ik] = k[ik][ij], but the resulting Born terms are different for the pairs of pairs ijik vs ikij.
+            // This means that there are only 21 unique values of kappa that need to be determined, but the full 6x6 matrix should be filled in for convenience
+
+            int ij = 0;
+            int ik = 1;
+            int il = 2;
+            int jk = 3;
+            int jl = 4;
+            int kl = 5;
+
+            // For this case, one would call DistributePairElast 36 times:
+
+            DistributePairElast(Ri, Rj, Ri, Rj, phi[ij], k[ij][ij])
+            DistributePairElast(Ri, Rj, Ri, Rk, phi[ij], k[ij][ik])
+            DistributePairElast(Ri, Rj, Ri, Rl, phi[ij], k[ij][il])
+            DistributePairElast(Ri, Rj, Rj, Rk, phi[ij], k[ij][jk])
+            DistributePairElast(Ri, Rj, Rj, Rl, phi[ij], k[ij][jl])
+            DistributePairElast(Ri, Rj, Rk, Rl, phi[ij], k[ij][kl])
+
+            DistributePairElast(Ri, Rk, Ri, Rj, phi[ik], k[ik][ij])
+            DistributePairElast(Ri, Rk, Ri, Rk, phi[ik], k[ik][ik])
+            DistributePairElast(Ri, Rk, Ri, Rl, phi[ik], k[ik][il])
+            DistributePairElast(Ri, Rk, Rj, Rk, phi[ik], k[ik][jk])
+            DistributePairElast(Ri, Rk, Rj, Rl, phi[ik], k[ik][jl])
+            DistributePairElast(Ri, Rk, Rk, Rl, phi[ik], k[ik][kl])
+
+            DistributePairElast(Ri, Rl, Ri, Rj, phi[il], k[il][ij])
+            DistributePairElast(Ri, Rl, Ri, Rk, phi[il], k[il][ik])
+            DistributePairElast(Ri, Rl, Ri, Rl, phi[il], k[il][il])
+            DistributePairElast(Ri, Rl, Rj, Rk, phi[il], k[il][jk])
+            DistributePairElast(Ri, Rl, Rj, Rl, phi[il], k[il][jl])
+            DistributePairElast(Ri, Rl, Rk, Rl, phi[il], k[il][kl])
+
+            DistributePairElast(Rj, Rk, Ri, Rj, phi[jk], k[jk][ij])
+            DistributePairElast(Rj, Rk, Ri, Rk, phi[jk], k[jk][ik])
+            DistributePairElast(Rj, Rk, Ri, Rl, phi[jk], k[jk][il])
+            DistributePairElast(Rj, Rk, Rj, Rk, phi[jk], k[jk][jk])
+            DistributePairElast(Rj, Rk, Rj, Rl, phi[jk], k[jk][jl])
+            DistributePairElast(Rj, Rk, Rk, Rl, phi[jk], k[jk][kl])
+
+            DistributePairElast(Rj, Rl, Ri, Rj, phi[jl], k[jl][ij])
+            DistributePairElast(Rj, Rl, Ri, Rk, phi[jl], k[jl][ik])
+            DistributePairElast(Rj, Rl, Ri, Rl, phi[jl], k[jl][il])
+            DistributePairElast(Rj, Rl, Rj, Rk, phi[jl], k[jl][jk])
+            DistributePairElast(Rj, Rl, Rj, Rl, phi[jl], k[jl][jl])
+            DistributePairElast(Rj, Rl, Rk, Rl, phi[jl], k[jl][kl])
+
+            DistributePairElast(Rk, Rl, Ri, Rj, phi[kl], k[kl][ij])
+            DistributePairElast(Rk, Rl, Ri, Rk, phi[kl], k[kl][ik])
+            DistributePairElast(Rk, Rl, Ri, Rl, phi[kl], k[kl][il])
+            DistributePairElast(Rk, Rl, Rj, Rk, phi[kl], k[kl][jk])
+            DistributePairElast(Rk, Rl, Rj, Rl, phi[kl], k[kl][jl])
+            DistributePairElast(Rk, Rl, Rk, Rl, phi[kl], k[kl][kl])
+            */
         }
     }
 }
