@@ -116,7 +116,7 @@ static int pbc_rvec_sub(const t_pbc *pbc, const rvec xi, const rvec xj, rvec dx)
 /*! \brief Compute local stress for bonds.
  *
  * Consolidates the seemingly invariant locals_grid code for this file
- */
+*/
 void locals_bonds_distribute_stress(
         const int ai,
         const int aj,
@@ -141,11 +141,41 @@ void locals_bonds_distribute_stress(
         }
     }
 }
+void locals_bonds_distribute_stress_born(
+        const int ai,
+        const int aj,
+        const real fbond,
+        const rvec x[],
+        const rvec dx,
+        mds::StressGrid *locals_grid,
+		const int bondtype,
+		double phi,
+		double kappa)
+{
+    rvec R[2], F[2];
+    int atIDs[2];
+
+    if (locals_grid != NULL)
+    {
+        if ((locals_grid->GetContribType() == mds_all) || (locals_grid->GetContribType() == mds_bnd))
+        {
+            R[0][0] = x[ai][0]; R[0][1] = x[ai][1]; R[0][2] = x[ai][2]; 
+            R[1][0] = x[ai][0]-dx[0]; R[1][1] = x[ai][1]-dx[1]; R[1][2] = x[ai][2]-dx[2]; 
+            atIDs[0] = ai; atIDs[1] = aj;
+            F[0][0] = fbond*dx[0];  F[0][1] = fbond*dx[1]; F[0][2] = fbond*dx[2];
+            F[1][0] = -fbond*dx[0]; F[1][1] = -fbond*dx[1]; F[1][2] = -fbond*dx[2];
+            locals_grid->DistributeInteraction(2, R, F, atIDs);
+            locals_grid->DistributePairElast(R[0], R[1], R[0], R[1], phi, kappa);
+        }
+    }
+}
 
 /*! \brief Compute local stress for angles.
  *
  * Consolidates the seemingly invariant locals_grid code for this file
+ * modified to pass additional values for bondtype
  */
+
 void locals_angles_distribute_stress(
         const int ai,
         const int aj,
@@ -180,6 +210,49 @@ void locals_angles_distribute_stress(
             lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
             lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
             locals_grid->DistributeInteraction(3, lpR, lpF, lpatIDs);
+		}
+	}
+}
+
+void locals_angles_distribute_stress_born(
+        const int ai,
+        const int aj,
+        const int ak,
+        const rvec f_i,
+        const rvec f_j,
+        const rvec f_k,
+        const rvec x[],
+        const t_pbc * pbc,
+        mds::StressGrid *locals_grid,
+		//Added to deal with born term calculation. must modify all other implimentations
+		const int bondtype,
+		mds::darray phi,
+		mds::dmatrix kappa)
+{
+    /* begin stress tensor */
+    rvec Ri, Rj, Rk, dx;
+    rvec lpR[3], lpF[3];
+    int  lpatIDs[3];
+
+    if (locals_grid != NULL)
+    {
+        copy_rvec(x[ai], Ri);
+        pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+        rvec_add(x[ai], dx, Rj);
+        pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+        rvec_add(x[ai], dx, Rk);
+
+        if ((locals_grid->GetContribType() == mds_all) || (locals_grid->GetContribType() == mds_ang))
+        {
+            lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2];
+            lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2];
+            lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2];
+            lpatIDs[0] = ai; lpatIDs[1] = aj; lpatIDs[2] = ak;
+            lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
+            lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
+            lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
+            locals_grid->DistributeInteraction(3, lpR, lpF, lpatIDs);
+
             /*
             // For a 3 body potential with particles i, j, and k, there are 3 pairs: ij, ik, and jk. The corresponding "pairs of pairs" are
             //
@@ -189,24 +262,24 @@ void locals_angles_distribute_stress(
             //
             // Note that by symmetry, the kappa values for swapping pairs stay constant, i.e., k[ij][ik] = k[ik][ij], but the resulting Born terms are different for the pairs of pairs ijik vs ikij.
             // This means that there are only 6 unique values of kappa that need to be determined, but the full 3x3 matrix should be filled in for convenience
+            // For this case, one would call DistributePairElast 9 times:
+            */
 
             int ij = 0;
             int ik = 1;
             int jk = 2;
 
-            // For this case, one would call DistributePairElast 9 times:
+            locals_grid->DistributePairElast(Ri, Rj, Ri, Rj, phi[ij], kappa[ij][ij]);
+            locals_grid->DistributePairElast(Ri, Rj, Ri, Rk, phi[ij], kappa[ij][ik]);
+            locals_grid->DistributePairElast(Ri, Rj, Rj, Rk, phi[ij], kappa[ij][jk]);
 
-            DistributePairElast(Ri, Rj, Ri, Rj, phi[ij], k[ij][ij])
-            DistributePairElast(Ri, Rj, Ri, Rk, phi[ij], k[ij][ik])
-            DistributePairElast(Ri, Rj, Rj, Rk, phi[ij], k[ij][jk])
+            locals_grid->DistributePairElast(Ri, Rk, Ri, Rj, phi[ik], kappa[ik][ij]);
+            locals_grid->DistributePairElast(Ri, Rk, Ri, Rk, phi[ik], kappa[ik][ik]);
+            locals_grid->DistributePairElast(Ri, Rk, Rj, Rk, phi[ik], kappa[ik][jk]);
 
-            DistributePairElast(Ri, Rk, Ri, Rj, phi[ik], k[ik][ij])
-            DistributePairElast(Ri, Rk, Ri, Rk, phi[ik], k[ik][ik])
-            DistributePairElast(Ri, Rk, Rj, Rk, phi[ik], k[ik][jk])
-
-            DistributePairElast(Rj, Rk, Ri, Rj, phi[jk], k[jk][ij])
-            DistributePairElast(Rj, Rk, Ri, Rk, phi[jk], k[jk][ik])
-            DistributePairElast(Rj, Rk, Rj, Rk, phi[jk], k[jk][jk])
+            locals_grid->DistributePairElast(Rj, Rk, Ri, Rj, phi[jk], kappa[jk][ij]);
+            locals_grid->DistributePairElast(Rj, Rk, Ri, Rk, phi[jk], kappa[jk][ik]);
+            locals_grid->DistributePairElast(Rj, Rk, Rj, Rk, phi[jk], kappa[jk][jk]);
 
             // For a 4 body potential with particles a, b, and c, and d, there are 6 pairs: ij, ik, il, jk, jl, and kl. The corresponding "pairs of pairs" are
             //
@@ -219,7 +292,7 @@ void locals_angles_distribute_stress(
             //
             // Note that by symmetry, the kappa values for swapping pairs stay constant, i.e., k[ij][ik] = k[ik][ij], but the resulting Born terms are different for the pairs of pairs ijik vs ikij.
             // This means that there are only 21 unique values of kappa that need to be determined, but the full 6x6 matrix should be filled in for convenience
-
+            /*
             int ij = 0;
             int ik = 1;
             int il = 2;
@@ -359,6 +432,7 @@ real morse_bonds(int nbonds,
 
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
     }                                         /*  83 TOTAL    */
     return vtot;
@@ -426,6 +500,7 @@ real cubic_bonds(int nbonds,
 
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
     }                                         /*  54 TOTAL    */
     return vtot;
@@ -499,6 +574,7 @@ real FENE_bonds(int nbonds,
 
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
     }                                         /*  58 TOTAL    */
     return vtot;
@@ -592,6 +668,7 @@ real bonds(int nbonds,
 
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
     }               /* 59 TOTAL	*/
     return vtot;
@@ -696,6 +773,7 @@ real restraint_bonds(int nbonds,
         }
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
     }                   /* 59 TOTAL	*/
 
@@ -757,6 +835,7 @@ real polarize(int nbonds,
         
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
     }               /* 59 TOTAL	*/
     return vtot;
@@ -826,6 +905,7 @@ real anharm_polarize(int nbonds,
 
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
     }               /* 72 TOTAL	*/
     return vtot;
@@ -1142,6 +1222,7 @@ real angles(int nbonds,
             }
             /* begin stress tensor */
             locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+			//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
             /* end stress tensor */
             if (g != NULL)
             {
@@ -1364,6 +1445,7 @@ real linear_angles(int nbonds,
 
         /* begin stress tensor */
         locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
         if (g)
@@ -1461,6 +1543,7 @@ real urey_bradley(int nbonds,
 
             /* begin stress tensor */
             locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+			//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
             /* end stress tensor */
 
             if (g)
@@ -1501,6 +1584,7 @@ real urey_bradley(int nbonds,
         
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, r_ik, locals_grid);
+		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
     }
     return vtot;
@@ -1583,6 +1667,7 @@ real quartic_angles(int nbonds,
 
             /* begin stress tensor */
             locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+			//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
             /* end stress tensor */
 
             if (g)
@@ -2770,6 +2855,7 @@ real restrangles(int nbonds,
 
         /* begin stress tensor */
         locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
         /*   Computation of potential energy   */
@@ -3764,6 +3850,7 @@ real g96bonds(int nbonds,
         
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
     }               /* 44 TOTAL	*/
     return vtot;
@@ -3841,6 +3928,7 @@ real g96angles(int nbonds,
 
         /* begin stress tensor */
         locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
         if (g)
@@ -3918,6 +4006,7 @@ real cross_bond_bond(int nbonds,
         
         /* begin stress tensor */
         locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
         /* Virial stuff */
@@ -4006,6 +4095,7 @@ real cross_bond_angle(int nbonds,
         
         /* begin stress tensor */
         locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
         /* Virial stuff */
@@ -4129,6 +4219,7 @@ real tab_bonds(int nbonds,
         
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
     }               /* 62 TOTAL	*/
     return vtot;
@@ -4204,6 +4295,7 @@ real tab_angles(int nbonds,
             
             /* begin stress tensor */
             locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+			//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
             /* end stress tensor */
 
             if (g)

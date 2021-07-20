@@ -71,6 +71,9 @@
             real            c6, c12;
             real            FrLJ6 = 0, FrLJ12 = 0, frLJ = 0;
             real            VLJ gmx_unused;
+            // Locals constants needed to compute the elasticity tensor from vdw and coul interactions
+            real            phi_coul = 0, kappa_coul = 0, phi_lj = 0, kappa_lj = 0;
+            bool            bCoulEwald = EEL_FULL(ic->eeltype); // Locals need to know whether we are using plain coul or Ewald for elasticity calculations
 #if defined LJ_FORCE_SWITCH || defined LJ_POT_SWITCH
             real            r, rsw;
 #endif
@@ -168,6 +171,10 @@
                 FrLJ12  = c12*rinvsix*rinvsix;
                 frLJ    = FrLJ12 - FrLJ6;
                 /* 7 flops for r^-2 + LJ force */
+
+                // Locals compute the kappa and phi values needed to ompute elasticity for plain LJ interactions
+                phi_lj = -c12*rinvsix*rinvsix*rinv + c6*rinvsix*rinv;
+                kappa_lj = 13*c12*rinvsix*rinvsix*rinvsq - 7*c6*rinvsix*rinvsq;
 #if defined CALC_ENERGIES || defined LJ_POT_SWITCH
                 VLJ     = (FrLJ12 + c12*ic->repulsion_shift.cpot)/12 -
                     (FrLJ6 + c6*ic->dispersion_shift.cpot)/6;
@@ -324,10 +331,26 @@
                     qq = 0.0;
                 }
             }
-
+#ifndef CALC_COUL_RF
+            // Locals Calculate Elasticity Constants for plain and Ewald coulomb potential
+            if (bCoulEwald)
+            {
+                phi_coul = -qq*rinvsq; //placeholders
+                kappa_coul = 2*qq*rinvsq*rinv; //placeholders
+            }
+            else
+            {
+                phi_coul = -qq*rinvsq*interact;
+			    kappa_coul = 2*qq*rinvsq*rinv*interact;
+            }
+#endif
 #ifdef CALC_COUL_RF
             fcoul  = qq*(interact*rinv*rinvsq - k_rf2);
             /* 4 flops for RF force */
+
+            // Locals Calculate Elasticity Constants for reaction-field coulomb potential
+            phi_coul = qq*interact*(-rinvsq + k_rf2/rinv);
+            kappa_coul = qq*interact*(2*rinvsq*rinv + k_rf2);
 #ifdef CALC_ENERGIES
             vcoul  = qq*(interact*rinv + k_rf*rsq - c_rf);
             /* 4 flops for RF energy */
@@ -396,13 +419,9 @@
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                double phi_lj, kappa_lj;
-                phi_lj = -c12*rinvsix*rinvsix*rinv + c6*rinvsix*rinv;
-                kappa_lj = 13*c12*rinvsix*rinvsix*rinvsq - 7*c6*rinvsix*rinvsq;
-
                 int  lpatIDs[2];
                 lpatIDs[0] = xi_id[i]; lpatIDs[1] = x_id[aj];
-                
+
                 // remove the 'far away' particles
                 if (lpatIDs[0] != -1 && lpatIDs[1] != -1 && skipmask > 0)
                 {
@@ -416,13 +435,16 @@
                         real iz = xi[i*XI_STRIDE+ZZ]; real jz = x[aj*X_STRIDE+ZZ];
 
                         rvec lpR[2], lpF[2];
-                        lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
-                        lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
+                        lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz;
+                        lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz;
                         lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
                         lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
 
                         locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
                         locals_grid->DistributePairElast(lpR[0], lpR[1], lpR[0], lpR[1], phi_lj, kappa_lj);
+#ifdef CALC_COULOMB
+                        locals_grid->DistributePairElast(lpR[0], lpR[1], lpR[0], lpR[1], phi_coul,kappa_coul);
+#endif
                     }
                 }
             }

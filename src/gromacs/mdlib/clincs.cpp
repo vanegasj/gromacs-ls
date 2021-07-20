@@ -1159,6 +1159,8 @@ static void do_lincs(rvec *x, rvec *xp, matrix box, t_pbc *pbc,
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
+				real phi, kappa;
+				real rmag, rsq;
                 i = bla[2*b];
                 j = bla[2*b+1];
                 
@@ -1178,6 +1180,14 @@ static void do_lincs(rvec *x, rvec *xp, matrix box, t_pbc *pbc,
                 fx = r[b][XX]*ccc;
                 fy = r[b][YY]*ccc;
                 fz = r[b][ZZ]*ccc;
+				
+				//Calculate distance between particles
+				rsq  = iprod(dx, dx);
+				rmag   = rsq*gmx::invsqrt(rsq);
+				
+				//Claculate bond stiffness and scalar force
+				phi = ccc*rmag;
+				kappa = ccc; 
                 
                 if ((locals_grid->GetContribType() == mds_all)
                         || (locals_grid->GetContribType() == mds_lin))
@@ -1188,6 +1198,8 @@ static void do_lincs(rvec *x, rvec *xp, matrix box, t_pbc *pbc,
                     lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
                     lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
                     locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+					//DistributePairElast(darray xi, darray xj, darray xk, darray xl, double phi, double kappa)
+					locals_grid->DistributePairElast(lpR[0], lpR[1], lpR[0], lpR[1], phi, kappa);
                 }
             }
             /* end stress tensor */
