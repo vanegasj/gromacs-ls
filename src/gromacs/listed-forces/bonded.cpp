@@ -148,7 +148,6 @@ void locals_bonds_distribute_stress_born(
         const rvec x[],
         const rvec dx,
         mds::StressGrid *locals_grid,
-		const int bondtype,
 		double phi,
 		double kappa)
 {
@@ -224,8 +223,6 @@ void locals_angles_distribute_stress_born(
         const rvec x[],
         const t_pbc * pbc,
         mds::StressGrid *locals_grid,
-		//Added to deal with born term calculation. must modify all other implimentations
-		const int bondtype,
 		mds::darray phi,
 		mds::dmatrix kappa)
 {
@@ -430,9 +427,14 @@ real morse_bonds(int nbonds,
             fshift[CENTRAL][m] -= fij;
         }
 
+		// Calculate Phi and Kappa
+		double phi = 0; 
+		double kappa = 0; 
+		
+		locals_grid->MorsePhiKappa(temp, be, cb, phi, kappa);
         /* begin stress tensor */
-        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
+        //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
     }                                         /*  83 TOTAL    */
     return vtot;
@@ -498,9 +500,15 @@ real cubic_bonds(int nbonds,
             fshift[CENTRAL][m] -= fij;
         }
 
+        // Calculate Phi and Kappa
+		double dr = dr2*gmx::invsqrt(dr2);
+		double phi = 0; 
+		double kappa = 0; 
+		
+		locals_grid->CubicBondPhiKappa(dist,kb, kcub, phi, kappa);
         /* begin stress tensor */
-        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
+        //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
     }                                         /*  54 TOTAL    */
     return vtot;
@@ -572,9 +580,15 @@ real FENE_bonds(int nbonds,
             fshift[CENTRAL][m] -= fij;
         }
 
+		// Calculate Phi and Kappa
+		double dr = dr2*gmx::invsqrt(dr2);
+		double phi = 0; 
+		double kappa = 0; 
+		
+		locals_grid->FENEPhiKappa(dr,kb,omdr2obm2,phi,kappa);
         /* begin stress tensor */
-        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
+        //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
     }                                         /*  58 TOTAL    */
     return vtot;
@@ -665,10 +679,17 @@ real bonds(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
+		
+		//Calculate Phi and Kappa
+		double deltaR = dr - forceparams[type].harmonic.rA;
+		double spk = forceparams[type].harmonic.krA;
+		double phi = 0;
+		double kappa = 0; 
+		locals_grid->HarmonicPhiKappa(deltaR, spk, phi, kappa);
 
         /* begin stress tensor */
-        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
+        //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
     }               /* 59 TOTAL	*/
     return vtot;
@@ -1220,9 +1241,22 @@ real angles(int nbonds,
                 f[aj][m] += f_j[m];
                 f[ak][m] += f_k[m];
             }
+			
+			//Calculate Phi and Kappa
+			double distij = nrij2*nrij_1;
+			double distjk = nrkj2*nrkj_1;
+			real nrik2 = nrij2 + nrkj2 - 2*distij*distjk*cos_theta;
+			double distik = nrik2*gmx::invsqrt(nrik2);
+			double delTheta = theta - forceparams[type].harmonic.rA*DEG2RAD;
+			double spk = forceparams[type].harmonic.krA;
+			mds::darray phi;
+			mds::dmatrix kappa;
+			mds::zeroarray(phi);
+			mds::zeromatrix(kappa);
+			
+			//locals_grid->HarmonicAnglePhiKappa(distij, distjk, distik, delTheta, spk, phi, kappa);
             /* begin stress tensor */
             locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-			//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
             /* end stress tensor */
             if (g != NULL)
             {
@@ -1664,10 +1698,25 @@ real quartic_angles(int nbonds,
                 f[aj][m] += f_j[m];
                 f[ak][m] += f_k[m];
             }
+			
+			//Calculate Phi and Kappa
+			double distij = nrij2*gmx::invsqrt(nrij2);
+			double distjk = nrkj2*gmx::invsqrt(nrkj2);
+			real nrik2 = nrij2 + nrkj2 - 2*distij*distjk*cos_theta;
+			double distik = nrik2*gmx::invsqrt(nrik2);
+			double coeff[5] = {0,0,0,0,0};
+			for(int i = 0; i < 5; i++){
+				coeff[i] = forceparams[type].qangle.c[i];
+			}
+			mds::darray phi;
+			mds::dmatrix kappa;
+			mds::zeroarray(phi);
+			mds::zeromatrix(kappa);
+			locals_grid->QuarticAnglePhiKappa(distij, distjk, distik, dt, coeff, phi, kappa);
 
             /* begin stress tensor */
-            locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-			//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+            //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+			locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
             /* end stress tensor */
 
             if (g)
@@ -3848,9 +3897,19 @@ real g96bonds(int nbonds,
             fshift[CENTRAL][m] -= fij;
         }
         
+		
+		//Calculate Phi and Kappa
+		real dr02 = forceparams[type].harmonic.rA;
+		double dr = dr2*gmx::invsqrt(dr2);
+		double dr0 = dr02*gmx::invsqrt(dr02);
+		double spk = forceparams[type].harmonic.krA;
+		double phi = 0;
+		double kappa = 0; 
+		locals_grid->FourthPowerPhiKappa(spk, dr, dr0, phi, kappa);
+
         /* begin stress tensor */
-        locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
+        //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
+		locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
     }               /* 44 TOTAL	*/
     return vtot;
