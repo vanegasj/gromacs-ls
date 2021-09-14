@@ -665,7 +665,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             locals_grid.SetChargeParams(localscontribc, fr->epsfac, fr->rcoulomb, fr->ewaldcoeff_q);
             
             // set the temperature based on the ref_T value of the first group (we are assumming that the temperature is the same for all groups)
-            printf("Setting the value of T to %g K", ir->opts.ref_t[0]);
+            printf("T = %g K for the kinetic elasticity calculations\n", ir->opts.ref_t[0]);
             locals_grid.SetTemperature(ir->opts.ref_t[0]);
             
             // this will initialize locals_grid.current_grid and locals_grid.sum_grid

@@ -192,6 +192,12 @@
                 frLJ   +=
                     -c6*(ic->dispersion_shift.c2 + ic->dispersion_shift.c3*rsw)*rsw*rsw*r
                     + c12*(ic->repulsion_shift.c2 + ic->repulsion_shift.c3*rsw)*rsw*rsw*r;
+                // locals adjustments to phi_lj and kappa_lj
+				phi_lj += c6*(ic->dispersion_shift.c2 + ic->dispersion_shift.c3*rsw)*rsw*rsw 
+						 - c12*(ic->repulsion_shift.c2 + ic->repulsion_shift.c3*rsw)*rsw*rsw;
+				kappa_lj += c6*(2.0*ic->dispersion_shift.c2 + 3.0*ic->dispersion_shift.c3*rsw)*rsw*rsw 
+						 - c12*(2.0*ic->repulsion_shift.c2 + 3.0*ic->repulsion_shift.c3*rsw)*rsw*rsw;
+					
 #if defined CALC_ENERGIES
                 VLJ    +=
                     -c6*(-ic->dispersion_shift.c2/3 - ic->dispersion_shift.c3/4*rsw)*rsw*rsw*rsw
@@ -214,8 +220,19 @@
                     sw    = 1.0 + (swV3 + (swV4+ swV5*rsw)*rsw)*rsw*rsw*rsw;
                     dsw   = (swF2 + (swF3 + swF4*rsw)*rsw)*rsw*rsw;
 
+					// locals adjustments to phi_lj and kappa_lj
+					//Code for phi and kappa for switching
+					real ddsw =  (6*swV3 + (12*swV4 + 20*swV5*rsw)*rsw)*rsw;
+					real phi_lj0 = phi_lj;
+					real kappa_lj0 = kappa_lj;
+
+					phi_lj = phi_lj0*sw + dsw*VLJ;
+					kappa_lj = kappa_lj0*sw + 2.0*phi_lj0*dsw + ddsw*VLJ;
+					//end phi and kappa section
+
                     frLJ  = frLJ*sw - r*VLJ*dsw;
                     VLJ  *= sw;
+                    
                 }
 #endif
 
