@@ -582,9 +582,9 @@ real FENE_bonds(int nbonds,
 
 		// Calculate Phi and Kappa
 		//double dr = dr2*gmx::invsqrt(dr2);
-		double phi = kb * sqrt(dr2)/omdr2obm2; 
-		double kappa = kb * (1+dr2/bm2)/omdr2obm2; 
-		
+		double phi = kb * sqrt(dr2)/omdr2obm2;
+		double kappa = kb * (1+dr2/bm2)/omdr2obm2;
+
 		//locals_grid->FENEPhiKappa(dr,kb,omdr2obm2,phi,kappa);
         /* begin stress tensor */
         //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
@@ -679,7 +679,7 @@ real bonds(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
-		
+
 		//Calculate Phi and Kappa
 		double deltaR = dr - forceparams[type].harmonic.rA;
 		double spk = forceparams[type].harmonic.krA;
@@ -1702,7 +1702,7 @@ real quartic_angles(int nbonds,
                 f[aj][m] += f_j[m];
                 f[ak][m] += f_k[m];
             }
-			
+
 			//Calculate Phi and Kappa
 			double distij = nrij2*gmx::invsqrt(nrij2);
 			double distjk = nrkj2*gmx::invsqrt(nrkj2);

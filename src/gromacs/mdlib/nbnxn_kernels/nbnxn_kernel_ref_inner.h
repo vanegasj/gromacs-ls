@@ -193,11 +193,11 @@
                     -c6*(ic->dispersion_shift.c2 + ic->dispersion_shift.c3*rsw)*rsw*rsw*r
                     + c12*(ic->repulsion_shift.c2 + ic->repulsion_shift.c3*rsw)*rsw*rsw*r;
                 // locals adjustments to phi_lj and kappa_lj
-				phi_lj += c6*(ic->dispersion_shift.c2 + ic->dispersion_shift.c3*rsw)*rsw*rsw 
+				phi_lj += c6*(ic->dispersion_shift.c2 + ic->dispersion_shift.c3*rsw)*rsw*rsw
 						 - c12*(ic->repulsion_shift.c2 + ic->repulsion_shift.c3*rsw)*rsw*rsw;
-				kappa_lj += c6*(2.0*ic->dispersion_shift.c2 + 3.0*ic->dispersion_shift.c3*rsw)*rsw*rsw 
+				kappa_lj += c6*(2.0*ic->dispersion_shift.c2 + 3.0*ic->dispersion_shift.c3*rsw)*rsw*rsw
 						 - c12*(2.0*ic->repulsion_shift.c2 + 3.0*ic->repulsion_shift.c3*rsw)*rsw*rsw;
-					
+
 #if defined CALC_ENERGIES
                 VLJ    +=
                     -c6*(-ic->dispersion_shift.c2/3 - ic->dispersion_shift.c3/4*rsw)*rsw*rsw*rsw
@@ -232,7 +232,7 @@
 
                     frLJ  = frLJ*sw - r*VLJ*dsw;
                     VLJ  *= sw;
-                    
+
                 }
 #endif
 
@@ -366,8 +366,9 @@
             /* 4 flops for RF force */
 
             // Locals Calculate Elasticity Constants for reaction-field coulomb potential
-            phi_coul = qq*interact*(-rinvsq + k_rf2/rinv);
-            kappa_coul = qq*interact*(2*rinvsq*rinv + k_rf2);
+            //printf("Interact = %d", interact);
+            phi_coul = qq*(-rinvsq*interact + k_rf2/rinv);
+            kappa_coul = qq*(2*rinvsq*rinv*interact + k_rf2);
 #ifdef CALC_ENERGIES
             vcoul  = qq*(interact*rinv + k_rf*rsq - c_rf);
             /* 4 flops for RF energy */
