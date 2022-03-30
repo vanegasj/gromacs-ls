@@ -266,6 +266,7 @@ void locals_angles_distribute_stress_born(
             int ik = 1;
             int jk = 2;
 
+
             locals_grid->DistributePairElast(Ri, Rj, Ri, Rj, phi[ij], kappa[ij][ij]);
             locals_grid->DistributePairElast(Ri, Rj, Ri, Rk, phi[ij], kappa[ij][ik]);
             locals_grid->DistributePairElast(Ri, Rj, Rj, Rk, phi[ij], kappa[ij][jk]);
@@ -277,6 +278,19 @@ void locals_angles_distribute_stress_born(
             locals_grid->DistributePairElast(Rj, Rk, Ri, Rj, phi[jk], kappa[jk][ij]);
             locals_grid->DistributePairElast(Rj, Rk, Ri, Rk, phi[jk], kappa[jk][ik]);
             locals_grid->DistributePairElast(Rj, Rk, Rj, Rk, phi[jk], kappa[jk][jk]);
+/*
+            locals_grid->DistributePairElast(Ri, Rj, Ri, Rj, phi[ij], kappa[ij][ij]);
+            locals_grid->DistributePairElast(Ri, Rj, Ri, Rk, 0      , kappa[ij][ik]/3.0);
+            locals_grid->DistributePairElast(Ri, Rj, Rj, Rk, 0      , kappa[ij][jk]/3.0);
+
+            locals_grid->DistributePairElast(Ri, Rk, Ri, Rj, 0      , kappa[ik][ij]/3.0);
+            locals_grid->DistributePairElast(Ri, Rk, Ri, Rk, phi[ik], kappa[ik][ik]);
+            locals_grid->DistributePairElast(Ri, Rk, Rj, Rk, 0      , kappa[ik][jk]/3.0);
+
+            locals_grid->DistributePairElast(Rj, Rk, Ri, Rj, 0      , kappa[jk][ij]/3.0);
+            locals_grid->DistributePairElast(Rj, Rk, Ri, Rk, 0      , kappa[jk][ik]/3.0);
+            locals_grid->DistributePairElast(Rj, Rk, Rj, Rk, phi[jk], kappa[jk][jk]);
+*?
 
             // For a 4 body potential with particles a, b, and c, and d, there are 6 pairs: ij, ik, il, jk, jl, and kl. The corresponding "pairs of pairs" are
             //
