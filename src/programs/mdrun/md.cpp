@@ -555,7 +555,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         
         for(i=0; (i<DIM); i++)
             box_size[i]=state_global->box[i][i];
-        locals_grid.SetBox(state_global->box);
+        locals_grid.SetBox(state_global->box, ir->epc);
 
         locals_grid.SetContribType(localscontrib);
         locals_grid.SetStressType(localsspatialatom);
