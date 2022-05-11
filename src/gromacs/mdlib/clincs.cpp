@@ -1186,8 +1186,8 @@ static void do_lincs(rvec *x, rvec *xp, matrix box, t_pbc *pbc,
 				rmag   = rsq*gmx::invsqrt(rsq);
 
 				//Calculate bond stiffness and scalar force
-				phi = ccc*rmag;
-				kappa = 0.0; //ccc;
+				phi = -ccc*rmag;
+				kappa = -ccc; //ccc;
 
                 if ((locals_grid->GetContribType() == mds_all)
                         || (locals_grid->GetContribType() == mds_lin))
