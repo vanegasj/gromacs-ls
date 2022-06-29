@@ -164,7 +164,7 @@ void locals_bonds_distribute_stress_born(
             F[0][0] = fbond*dx[0];  F[0][1] = fbond*dx[1]; F[0][2] = fbond*dx[2];
             F[1][0] = -fbond*dx[0]; F[1][1] = -fbond*dx[1]; F[1][2] = -fbond*dx[2];
             locals_grid->DistributeInteraction(2, R, F, atIDs);
-            locals_grid->DistributePairElast(R[0], R[1], R[0], R[1], phi, kappa);
+            locals_grid->DistributeElasticity(R[0], R[1], R[0], R[1], phi, kappa);
         }
     }
 }
@@ -223,8 +223,8 @@ void locals_angles_distribute_stress_born(
         const rvec x[],
         const t_pbc * pbc,
         mds::StressGrid *locals_grid,
-		mds::darray phi,
-		mds::dmatrix kappa)
+        mds::array3_ext phi,
+        mds::matrix3_ext kappa)
 {
     /* begin stress tensor */
     rvec Ri, Rj, Rk, dx;
@@ -249,6 +249,25 @@ void locals_angles_distribute_stress_born(
             lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
             lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
             locals_grid->DistributeInteraction(3, lpR, lpF, lpatIDs);
+            /*rvec dij, dik, djk;
+            double mij, mik, mjk;
+            pbc_rvec_sub(pbc, x[aj], x[ai], dij);
+            pbc_rvec_sub(pbc, x[ak], x[ai], dik);
+            pbc_rvec_sub(pbc, x[ak], x[aj], djk);
+            mij = std::sqrt(iprod(dij,dij));
+            mik = std::sqrt(iprod(dik,dik));
+            mjk = std::sqrt(iprod(djk,djk));
+            svmul(1.0/mij, dij, dij);
+            svmul(1.0/mik, dik, dik);
+            svmul(1.0/mjk, djk, djk);
+
+            int ij = 0;
+            int jk = 1;
+            int ik = 2;
+
+            printf("\nf_ix = %e, f_iy = %e, f_iz = %e \n", f_i[0], f_i[1], f_i[2]);
+            printf("phi_ix = %e, phi_iy = %e, phi_iz = %e \n", phi[ij]*dij[XX]+phi[ik]*dik[XX], phi[ij]*dij[YY]+phi[ik]*dik[YY], phi[ij]*dij[ZZ]+phi[ik]*dik[ZZ]);
+            printf("phi_ij = %e, phi_ik = %e, phi_jk = %e, ai = %d, aj = %d, ak = %d \n", phi[ij], phi[ik], phi[jk], ai, aj, ak);*/
 
             /*
             // For a 3 body potential with particles i, j, and k, there are 3 pairs: ij, ik, and jk. The corresponding "pairs of pairs" are
@@ -259,24 +278,24 @@ void locals_angles_distribute_stress_born(
             //
             // Note that by symmetry, the kappa values for swapping pairs stay constant, i.e., k[ij][ik] = k[ik][ij], but the resulting Born terms are different for the pairs of pairs ijik vs ikij.
             // This means that there are only 6 unique values of kappa that need to be determined, but the full 3x3 matrix should be filled in for convenience
-            // For this case, one would call DistributePairElast 9 times:
+            // For this case, one would call DistributeElasticity 9 times:
             */
 
             int ij = 0;
             int ik = 1;
             int jk = 2;
 
-            locals_grid->DistributePairElast(Ri, Rj, Ri, Rj, phi[ij], kappa[ij][ij]);
-            locals_grid->DistributePairElast(Ri, Rj, Ri, Rk, phi[ij], kappa[ij][ik]);
-            locals_grid->DistributePairElast(Ri, Rj, Rj, Rk, phi[ij], kappa[ij][jk]);
+            locals_grid->DistributeElasticity(Ri, Rj, Ri, Rj, phi[ij], kappa[ij][ij]);
+            locals_grid->DistributeElasticity(Ri, Rj, Ri, Rk,       0, kappa[ij][ik]);
+            locals_grid->DistributeElasticity(Ri, Rj, Rj, Rk,       0, kappa[ij][jk]);
 
-            locals_grid->DistributePairElast(Ri, Rk, Ri, Rj, phi[ik], kappa[ik][ij]);
-            locals_grid->DistributePairElast(Ri, Rk, Ri, Rk, phi[ik], kappa[ik][ik]);
-            locals_grid->DistributePairElast(Ri, Rk, Rj, Rk, phi[ik], kappa[ik][jk]);
+            locals_grid->DistributeElasticity(Ri, Rk, Ri, Rj,       0, kappa[ik][ij]);
+            locals_grid->DistributeElasticity(Ri, Rk, Ri, Rk, phi[ik], kappa[ik][ik]);
+            locals_grid->DistributeElasticity(Ri, Rk, Rj, Rk,       0, kappa[ik][jk]);
 
-            locals_grid->DistributePairElast(Rj, Rk, Ri, Rj, phi[jk], kappa[jk][ij]);
-            locals_grid->DistributePairElast(Rj, Rk, Ri, Rk, phi[jk], kappa[jk][ik]);
-            locals_grid->DistributePairElast(Rj, Rk, Rj, Rk, phi[jk], kappa[jk][jk]);
+            locals_grid->DistributeElasticity(Rj, Rk, Ri, Rj,       0, kappa[jk][ij]);
+            locals_grid->DistributeElasticity(Rj, Rk, Ri, Rk,       0, kappa[jk][ik]);
+            locals_grid->DistributeElasticity(Rj, Rk, Rj, Rk, phi[jk], kappa[jk][jk]);
 
             // For a 4 body potential with particles a, b, and c, and d, there are 6 pairs: ij, ik, il, jk, jl, and kl. The corresponding "pairs of pairs" are
             //
@@ -297,49 +316,50 @@ void locals_angles_distribute_stress_born(
             int jl = 4;
             int kl = 5;
 
-            // For this case, one would call DistributePairElast 36 times:
+            // For this case, one would call DistributeElasticity 36 times:
 
-            DistributePairElast(Ri, Rj, Ri, Rj, phi[ij], k[ij][ij])
-            DistributePairElast(Ri, Rj, Ri, Rk, phi[ij], k[ij][ik])
-            DistributePairElast(Ri, Rj, Ri, Rl, phi[ij], k[ij][il])
-            DistributePairElast(Ri, Rj, Rj, Rk, phi[ij], k[ij][jk])
-            DistributePairElast(Ri, Rj, Rj, Rl, phi[ij], k[ij][jl])
-            DistributePairElast(Ri, Rj, Rk, Rl, phi[ij], k[ij][kl])
+            DistributeElasticity(Ri, Rj, Ri, Rj, phi[ij], k[ij][ij])
+            DistributeElasticity(Ri, Rj, Ri, Rk, 0      , k[ij][ik])
+            DistributeElasticity(Ri, Rj, Ri, Rl, 0      , k[ij][il])
+            DistributeElasticity(Ri, Rj, Rj, Rk, 0      , k[ij][jk])
+            DistributeElasticity(Ri, Rj, Rj, Rl, 0      , k[ij][jl])
+            DistributeElasticity(Ri, Rj, Rk, Rl, 0      , k[ij][kl])
+ 
+            DistributeElasticity(Ri, Rk, Ri, Rj, 0      , k[ik][ij])
+            DistributeElasticity(Ri, Rk, Ri, Rk, phi[ik], k[ik][ik])
+            DistributeElasticity(Ri, Rk, Ri, Rl, 0      , k[ik][il])
+            DistributeElasticity(Ri, Rk, Rj, Rk, 0      , k[ik][jk])
+            DistributeElasticity(Ri, Rk, Rj, Rl, 0      , k[ik][jl])
+            DistributeElasticity(Ri, Rk, Rk, Rl, 0      , k[ik][kl])
+ 
+            DistributeElasticity(Ri, Rl, Ri, Rj, 0      , k[il][ij])
+            DistributeElasticity(Ri, Rl, Ri, Rk, 0      , k[il][ik])
+            DistributeElasticity(Ri, Rl, Ri, Rl, phi[il], k[il][il])
+            DistributeElasticity(Ri, Rl, Rj, Rk, 0      , k[il][jk])
+            DistributeElasticity(Ri, Rl, Rj, Rl, 0      , k[il][jl])
+            DistributeElasticity(Ri, Rl, Rk, Rl, 0      , k[il][kl])
+ 
+            DistributeElasticity(Rj, Rk, Ri, Rj, 0      , k[jk][ij])
+            DistributeElasticity(Rj, Rk, Ri, Rk, 0      , k[jk][ik])
+            DistributeElasticity(Rj, Rk, Ri, Rl, 0      , k[jk][il])
+            DistributeElasticity(Rj, Rk, Rj, Rk, phi[jk], k[jk][jk])
+            DistributeElasticity(Rj, Rk, Rj, Rl, 0      , k[jk][jl])
+            DistributeElasticity(Rj, Rk, Rk, Rl, 0      , k[jk][kl])
+ 
+            DistributeElasticity(Rj, Rl, Ri, Rj, 0      , k[jl][ij])
+            DistributeElasticity(Rj, Rl, Ri, Rk, 0      , k[jl][ik])
+            DistributeElasticity(Rj, Rl, Ri, Rl, 0      , k[jl][il])
+            DistributeElasticity(Rj, Rl, Rj, Rk, 0      , k[jl][jk])
+            DistributeElasticity(Rj, Rl, Rj, Rl, phi[jl], k[jl][jl])
+            DistributeElasticity(Rj, Rl, Rk, Rl, 0      , k[jl][kl])
+ 
+            DistributeElasticity(Rk, Rl, Ri, Rj, 0      , k[kl][ij])
+            DistributeElasticity(Rk, Rl, Ri, Rk, 0      , k[kl][ik])
+            DistributeElasticity(Rk, Rl, Ri, Rl, 0      , k[kl][il])
+            DistributeElasticity(Rk, Rl, Rj, Rk, 0      , k[kl][jk])
+            DistributeElasticity(Rk, Rl, Rj, Rl, 0      , k[kl][jl])
+            DistributeElasticity(Rk, Rl, Rk, Rl, phi[kl], k[kl][kl])
 
-            DistributePairElast(Ri, Rk, Ri, Rj, phi[ik], k[ik][ij])
-            DistributePairElast(Ri, Rk, Ri, Rk, phi[ik], k[ik][ik])
-            DistributePairElast(Ri, Rk, Ri, Rl, phi[ik], k[ik][il])
-            DistributePairElast(Ri, Rk, Rj, Rk, phi[ik], k[ik][jk])
-            DistributePairElast(Ri, Rk, Rj, Rl, phi[ik], k[ik][jl])
-            DistributePairElast(Ri, Rk, Rk, Rl, phi[ik], k[ik][kl])
-
-            DistributePairElast(Ri, Rl, Ri, Rj, phi[il], k[il][ij])
-            DistributePairElast(Ri, Rl, Ri, Rk, phi[il], k[il][ik])
-            DistributePairElast(Ri, Rl, Ri, Rl, phi[il], k[il][il])
-            DistributePairElast(Ri, Rl, Rj, Rk, phi[il], k[il][jk])
-            DistributePairElast(Ri, Rl, Rj, Rl, phi[il], k[il][jl])
-            DistributePairElast(Ri, Rl, Rk, Rl, phi[il], k[il][kl])
-
-            DistributePairElast(Rj, Rk, Ri, Rj, phi[jk], k[jk][ij])
-            DistributePairElast(Rj, Rk, Ri, Rk, phi[jk], k[jk][ik])
-            DistributePairElast(Rj, Rk, Ri, Rl, phi[jk], k[jk][il])
-            DistributePairElast(Rj, Rk, Rj, Rk, phi[jk], k[jk][jk])
-            DistributePairElast(Rj, Rk, Rj, Rl, phi[jk], k[jk][jl])
-            DistributePairElast(Rj, Rk, Rk, Rl, phi[jk], k[jk][kl])
-
-            DistributePairElast(Rj, Rl, Ri, Rj, phi[jl], k[jl][ij])
-            DistributePairElast(Rj, Rl, Ri, Rk, phi[jl], k[jl][ik])
-            DistributePairElast(Rj, Rl, Ri, Rl, phi[jl], k[jl][il])
-            DistributePairElast(Rj, Rl, Rj, Rk, phi[jl], k[jl][jk])
-            DistributePairElast(Rj, Rl, Rj, Rl, phi[jl], k[jl][jl])
-            DistributePairElast(Rj, Rl, Rk, Rl, phi[jl], k[jl][kl])
-
-            DistributePairElast(Rk, Rl, Ri, Rj, phi[kl], k[kl][ij])
-            DistributePairElast(Rk, Rl, Ri, Rk, phi[kl], k[kl][ik])
-            DistributePairElast(Rk, Rl, Ri, Rl, phi[kl], k[kl][il])
-            DistributePairElast(Rk, Rl, Rj, Rk, phi[kl], k[kl][jk])
-            DistributePairElast(Rk, Rl, Rj, Rl, phi[kl], k[kl][jl])
-            DistributePairElast(Rk, Rl, Rk, Rl, phi[kl], k[kl][kl])
             */
         }
     }
@@ -501,14 +521,14 @@ real cubic_bonds(int nbonds,
         }
 
         // Calculate Phi and Kappa
-		//double dr = dr2*gmx::invsqrt(dr2);
-		double phi = 2*kdist + 3*kcub*kdist2;
-		double kappa = 2*kb + 6 *kcub*kdist;
+        //double dr = dr2*gmx::invsqrt(dr2);
+        double phi = 2*kdist + 3*kcub*kdist2;
+        double kappa = 2*kb + 6*kcub*kdist;
 
-		//locals_grid->CubicBondPhiKappa(dist,kb, kcub, phi, kappa);
+        //locals_grid->CubicBondPhiKappa(dist,kb, kcub, phi, kappa);
         /* begin stress tensor */
         //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
+        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
     }                                         /*  54 TOTAL    */
     return vtot;
@@ -680,16 +700,15 @@ real bonds(int nbonds,
             fshift[CENTRAL][m] -= fij;
         }
 
-		//Calculate Phi and Kappa
-		double deltaR = dr - forceparams[type].harmonic.rA;
-		double spk = forceparams[type].harmonic.krA;
-		double phi = spk*(deltaR);
-		double kappa = spk;
-		//locals_grid->HarmonicPhiKappa(deltaR, spk, phi, kappa);
-
         /* begin stress tensor */
+        //Calculate Phi and Kappa
+        double deltaR = dr - forceparams[type].harmonic.rA;
+        double spk = forceparams[type].harmonic.krA;
+        double phi = spk*(deltaR);
+        double kappa = spk;
+        //printf("fbond = %e, phi = %e\n", fbond, phi/dr);
         //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
+        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
     }               /* 59 TOTAL	*/
     return vtot;
@@ -1242,24 +1261,22 @@ real angles(int nbonds,
                 f[ak][m] += f_k[m];
             }
 
-			//Calculate Phi and Kappa
-			double distij = nrij2*nrij_1;
-			double distjk = nrkj2*nrkj_1;
-			rvec r_ik;
-			pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
-			real nrik2 = iprod(r_ik, r_ik);
-			//real nrik2 = nrij2 + nrkj2 - 2*distij*distjk*cos_theta;
-			double distik = nrik2*gmx::invsqrt(nrik2);
-			double delTheta = theta - forceparams[type].harmonic.rA*DEG2RAD;
-			double spk = forceparams[type].harmonic.krA;
-			mds::darray phi;
-			mds::dmatrix kappa;
-			mds::zeroarray(phi);
-			mds::zeromatrix(kappa);
-            //PASS COS_THETA
-			locals_grid->HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, spk, phi, kappa);
             /* begin stress tensor */
-			locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+            //Calculate Phi and Kappa
+            double distij = nrij2*nrij_1;
+            double distjk = nrkj2*nrkj_1;
+            rvec r_ik;
+            pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
+            real nrik2 = iprod(r_ik, r_ik);
+            double distik = nrik2*gmx::invsqrt(nrik2);
+            double delTheta = theta - forceparams[type].harmonic.rA*DEG2RAD;
+            double spk = forceparams[type].harmonic.krA;
+            mds::array3_ext phi;
+            mds::matrix3_ext kappa;
+            mds::zeroarray3(phi);
+            mds::zeromatrix3(kappa);
+            locals_grid->HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, spk, phi, kappa);
+            locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
             //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
             /* end stress tensor */
             if (g != NULL)
@@ -1565,6 +1582,7 @@ real urey_bradley(int nbonds,
             nrkj2 = iprod(r_kj, r_kj);  /*   5		*/
             nrij2 = iprod(r_ij, r_ij);
 
+
             cik = st*gmx::invsqrt(nrkj2*nrij2); /*  12		*/
             cii = sth/nrij2;                    /*  10		*/
             ckk = sth/nrkj2;                    /*  10		*/
@@ -1580,8 +1598,21 @@ real urey_bradley(int nbonds,
             }
 
             /* begin stress tensor */
-            locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-			//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+            //Calculate Phi and Kappa and pass them to distribute function to compute both stress and elasticity
+            double distij = nrij2*gmx::invsqrt(nrij2);
+            double distjk = nrkj2*gmx::invsqrt(nrkj2);
+            rvec r_ik;
+            pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
+            real nrik2 = iprod(r_ik, r_ik);
+            double distik = nrik2*gmx::invsqrt(nrik2);
+            double delTheta = theta - th0A;
+            mds::array3_ext phi;
+            mds::matrix3_ext kappa;
+            mds::zeroarray3(phi);
+            mds::zeromatrix3(kappa);
+            locals_grid->HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, kthA, phi, kappa);
+            locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+            //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
             /* end stress tensor */
 
             if (g)
@@ -1621,8 +1652,13 @@ real urey_bradley(int nbonds,
         }
         
         /* begin stress tensor */
-        locals_bonds_distribute_stress(ai, aj, fbond, x, r_ik, locals_grid);
-		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
+        //Calculate Phi and Kappa
+        double deltaR = dr - r13A;
+        double phi = kUBA*(deltaR);
+        double kappa = kUBA;
+        //printf("fbond = %e, phi = %e\n", fbond, phi/dr);
+        locals_bonds_distribute_stress_born(ai, aj, fbond, x, r_ik, locals_grid, phi, kappa);
+        //locals_bonds_distribute_stress(ai, aj, fbond, x, r_ik, locals_grid);
         /* end stress tensor */
     }
     return vtot;
@@ -1704,21 +1740,21 @@ real quartic_angles(int nbonds,
             }
 
 			//Calculate Phi and Kappa
-			double distij = nrij2*gmx::invsqrt(nrij2);
-			double distjk = nrkj2*gmx::invsqrt(nrkj2);
+                        real distij = nrij2*gmx::invsqrt(nrij2);
+                        real distjk = nrkj2*gmx::invsqrt(nrkj2);
 			rvec r_ik;
 			pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
 			real nrik2 = iprod(r_ik, r_ik);
 			//real nrik2 = nrij2 + nrkj2 - 2*distij*distjk*cos_theta;
-			double distik = nrik2*gmx::invsqrt(nrik2);
-			double coeff[5] = {0,0,0,0,0};
+                        real distik = nrik2*gmx::invsqrt(nrik2);
+                        real coeff[5] = {0,0,0,0,0};
 			for(int i = 0; i < 5; i++){
 				coeff[i] = forceparams[type].qangle.c[i];
 			}
-			mds::darray phi;
-			mds::dmatrix kappa;
-			mds::zeroarray(phi);
-			mds::zeromatrix(kappa);
+			mds::array3_ext phi;
+			mds::matrix3_ext kappa;
+			mds::zeroarray3(phi);
+			mds::zeromatrix3(kappa);
 			locals_grid->QuarticAnglePhiKappa(distij, distjk, distik, cos_theta, dt, coeff, phi, kappa);
 
             /* begin stress tensor */
@@ -3992,27 +4028,26 @@ real g96angles(int nbonds,
             f[ak][m] += f_k[m];
         }
 		
-		//Calculate Phi and Kappa
-		double r_ij2 = iprod(r_ij,r_ij);
-		double r_kj2 = iprod(r_kj, r_kj);
-		double distij = r_ij2*rij_1;
-		double distkj = r_kj2*rkj_1;
-		rvec r_ik;
-		pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
-		double r_ik2 = iprod(r_ik, r_ik);
-		double distik = r_ik2*gmx::invsqrt(r_ik2);
-		double deltacos = cos_theta - forceparams[type].harmonic.rA;
-		double spk = forceparams[type].harmonic.krA;
-		mds::darray phi;
-		mds::dmatrix kappa;
-		mds::zeroarray(phi);
-		mds::zeromatrix(kappa);
-		locals_grid->HarmonicCosPhiKappa(distij, distkj, distik, deltacos, spk, phi, kappa);
-        
         /* begin stress tensor */
-		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
-        locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+        //Calculate Phi and Kappa
+        real r_ij2 = iprod(r_ij,r_ij);
+        real r_kj2 = iprod(r_kj, r_kj);
+        real distij = r_ij2*rij_1;
+        real distkj = r_kj2*rkj_1;
+        rvec r_ik;
+        pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
+        real r_ik2 = iprod(r_ik, r_ik);
+        real distik = r_ik2*gmx::invsqrt(r_ik2);
+        real deltacos = cos_theta - forceparams[type].harmonic.rA;
+        real spk = forceparams[type].harmonic.krA;
+        mds::array3_ext phi;
+        mds::matrix3_ext kappa;
+        mds::zeroarray3(phi);
+        mds::zeromatrix3(kappa);
+        locals_grid->HarmonicCosPhiKappa(distij, distkj, distik, deltacos, spk, phi, kappa);
+        locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+        //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+        //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
         if (g)
@@ -4089,10 +4124,10 @@ real cross_bond_bond(int nbonds,
         }
 		
 		//Calculate Phi and Kappa
-		mds::darray phi;
-		mds::dmatrix kappa;
-		mds::zeroarray(phi);
-		mds::zeromatrix(kappa);
+		mds::array3_ext phi;
+		mds::matrix3_ext kappa;
+		mds::zeroarray3(phi);
+		mds::zeromatrix3(kappa);
 		locals_grid->BondBondCrossPhiKappa(krr, s1, s2, phi, kappa);
         
         /* begin stress tensor */
@@ -4186,10 +4221,10 @@ real cross_bond_angle(int nbonds,
         }
         
 		//Calculate Phi and Kappa
-		mds::darray phi;
-		mds::dmatrix kappa;
-		mds::zeroarray(phi);
-		mds::zeromatrix(kappa);
+		mds::array3_ext phi;
+		mds::matrix3_ext kappa;
+		mds::zeroarray3(phi);
+		mds::zeromatrix3(kappa);
 		locals_grid->BondAngleCrossPhiKappa(krt, s1, s2, s3, phi, kappa);
         
         /* begin stress tensor */

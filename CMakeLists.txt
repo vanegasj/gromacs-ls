@@ -32,11 +32,11 @@
 # To help us fund GROMACS development, we humbly ask that you cite
 # the research papers on the package. Check out http://www.gromacs.org.
 
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.8)
 # When we require cmake >= 2.8.12, it will provide
 # CMAKE_MINIMUM_REQUIRED_VERSION automatically, but in the meantime we
 # need to set a variable, and it must have a different name.
-set(GMX_CMAKE_MINIMUM_REQUIRED_VERSION "2.8.8")
+set(GMX_CMAKE_MINIMUM_REQUIRED_VERSION "3.8")
 
 # CMake modules/macros are in a subdirectory to keep this file cleaner
 # This needs to be set before project() in order to pick up toolchain files
@@ -881,6 +881,14 @@ endif()
 #COPYING file: Only necessary for binary distributions.
 #Simpler to always install.
 install(FILES COPYING DESTINATION ${DATA_INSTALL_DIR} COMPONENT data)
+
+if(MODULEFILES_PATH)
+    # modify the file and copy it to build dir
+    configure_file(gromacs-ls-2016.3.in gromacs-ls-2016.3 @ONLY)
+
+    # install it in the specified modulesfiles dir
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gromacs-ls-2016.3 DESTINATION ${MODULEFILES_PATH} PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+endif(MODULEFILES_PATH)
 
 if (GMX_BUILD_FOR_COVERAGE)
     # Code heavy with asserts makes conditional coverage close to useless metric,

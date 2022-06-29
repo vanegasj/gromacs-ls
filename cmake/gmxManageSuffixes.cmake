@@ -59,10 +59,11 @@ if (GMX_DEFAULT_SUFFIX)
         set(GMX_BINARY_SUFFIX "_mpi")
         set(GMX_LIBS_SUFFIX "_mpi")
     endif()
-    if (GMX_DOUBLE)
-        set(GMX_BINARY_SUFFIX "${GMX_BINARY_SUFFIX}_LS")
-        set(GMX_LIBS_SUFFIX "${GMX_LIBS_SUFFIX}_LS")
-    endif()
+
+    # removed dependence on double precision for the _LS suffix
+    set(GMX_BINARY_SUFFIX "${GMX_BINARY_SUFFIX}_LS")
+    set(GMX_LIBS_SUFFIX "${GMX_LIBS_SUFFIX}_LS")
+
     if (SUFFIXES_CHANGED)
         message(STATUS "Using default binary suffix: \"${GMX_BINARY_SUFFIX}\"")
         message(STATUS "Using default library suffix: \"${GMX_LIBS_SUFFIX}\"")

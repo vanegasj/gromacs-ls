@@ -459,9 +459,9 @@
                         lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
 
                         locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
-                        locals_grid->DistributePairElast(lpR[0], lpR[1], lpR[0], lpR[1], phi_lj, kappa_lj);
+                        locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi_lj, kappa_lj);
 #ifdef CALC_COULOMB
-                        locals_grid->DistributePairElast(lpR[0], lpR[1], lpR[0], lpR[1], phi_coul,kappa_coul);
+                        locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi_coul,kappa_coul);
 #endif
                     }
                 }

@@ -555,7 +555,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         
         for(i=0; (i<DIM); i++)
             box_size[i]=state_global->box[i][i];
-        locals_grid.SetBox(state_global->box);
+        locals_grid.SetBox(state_global->box, ir->epc);
 
         locals_grid.SetContribType(localscontrib);
         locals_grid.SetStressType(localsspatialatom);
@@ -1779,15 +1779,29 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         /* #############  END CALC EKIN AND PRESSURE ################# */
         /* begin local stress */
-        rvec *xp = rerun_fr.x;
-        rvec *vp = rerun_fr.v;
+        rvec *xp = state->x;
+        rvec *vp = state->v;
+        if (bRerunMD)
+        {
+            xp = rerun_fr.x;
+            vp = rerun_fr.v;
+        }
+
         int natoms = state->natoms;
         // get the rank zero positions and velocities
         if (PAR(cr))
         {
             natoms = cr->dd->nat_home;
-            gmx_bcast(sizeof(rerun_fr.x), &rerun_fr.x, cr);
-            gmx_bcast(sizeof(rerun_fr.v), &rerun_fr.v, cr);
+            if (bRerunMD)
+            {
+                gmx_bcast(sizeof(rerun_fr.x), &rerun_fr.x, cr);
+                gmx_bcast(sizeof(rerun_fr.v), &rerun_fr.v, cr);
+            }
+            else
+            {
+                gmx_bcast(sizeof(state->x), &state->x, cr);
+                gmx_bcast(sizeof(state->v), &state->v, cr);
+            }
         }
 
         for(i=0; i < natoms; i++)
@@ -1799,10 +1813,23 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             mass = mdatoms->massT[i];
             for(j=0;j<DIM;j++)
             {
-                x_rerun[j] = rerun_fr.x[gatindex][j];
-                v_rerun[j] = rerun_fr.v[gatindex][j];
+                if (bRerunMD)
+                {
+                    x_rerun[j] = rerun_fr.x[gatindex][j];
+                    v_rerun[j] = rerun_fr.v[gatindex][j];
+                }
+                else
+                {
+                    x_rerun[j] = state->x[gatindex][j];
+                    v_rerun[j] = state->v[gatindex][j];
+                }
                 if (bVV)
-                  v_update[j] = rerun_fr.v[gatindex][j];
+                {
+                    if (bRerunMD)
+                        v_update[j] = rerun_fr.v[gatindex][j];
+                    else
+                        v_update[j] = state->v[gatindex][j];
+                }
                 else
                   v_update[j] = state->v[i][j];
             }
@@ -1820,8 +1847,16 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         
         if (PAR(cr))
         {
-            rerun_fr.x = xp; 
-            rerun_fr.v = vp; 
+            if (bRerunMD)
+            {
+                rerun_fr.x = xp; 
+                rerun_fr.v = vp; 
+            }
+            else
+            {
+                state->x = xp; 
+                state->v = vp; 
+            }
         }
 
         if(localsspatialatom == mds_atom)
@@ -1841,9 +1876,18 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                         for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
                         {
                             // grab the atom positions and put it in the box
-                            voro_pos[XX] = rerun_fr.x[pid][XX];
-                            voro_pos[YY] = rerun_fr.x[pid][YY];
-                            voro_pos[ZZ] = rerun_fr.x[pid][ZZ];
+                            if (bRerunMD)
+                            {
+                                voro_pos[XX] = rerun_fr.x[pid][XX];
+                                voro_pos[YY] = rerun_fr.x[pid][YY];
+                                voro_pos[ZZ] = rerun_fr.x[pid][ZZ];
+                            }
+                            else
+                            {
+                                voro_pos[XX] = state->x[pid][XX];
+                                voro_pos[YY] = state->x[pid][YY];
+                                voro_pos[ZZ] = state->x[pid][ZZ];
+                            }
                             put_atoms_in_box(ir->ePBC, state->box, 1, &voro_pos);
 
                             // add the particle to locals_grid
