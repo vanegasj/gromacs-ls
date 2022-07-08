@@ -249,7 +249,8 @@ void locals_angles_distribute_stress_born(
             lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
             lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
             locals_grid->DistributeInteraction(3, lpR, lpF, lpatIDs);
-            /*rvec dij, dik, djk;
+            /*
+            rvec dij, dik, djk;
             double mij, mik, mjk;
             pbc_rvec_sub(pbc, x[aj], x[ai], dij);
             pbc_rvec_sub(pbc, x[ak], x[ai], dik);
@@ -267,8 +268,8 @@ void locals_angles_distribute_stress_born(
 
             printf("\nf_ix = %e, f_iy = %e, f_iz = %e \n", f_i[0], f_i[1], f_i[2]);
             printf("phi_ix = %e, phi_iy = %e, phi_iz = %e \n", phi[ij]*dij[XX]+phi[ik]*dik[XX], phi[ij]*dij[YY]+phi[ik]*dik[YY], phi[ij]*dij[ZZ]+phi[ik]*dik[ZZ]);
-            printf("phi_ij = %e, phi_ik = %e, phi_jk = %e, ai = %d, aj = %d, ak = %d \n", phi[ij], phi[ik], phi[jk], ai, aj, ak);*/
-
+            printf("phi_ij = %e, phi_ik = %e, phi_jk = %e, ai = %d, aj = %d, ak = %d \n", phi[ij], phi[ik], phi[jk], ai, aj, ak);
+            */
             /*
             // For a 3 body potential with particles i, j, and k, there are 3 pairs: ij, ik, and jk. The corresponding "pairs of pairs" are
             //
@@ -281,9 +282,10 @@ void locals_angles_distribute_stress_born(
             // For this case, one would call DistributeElasticity 9 times:
             */
 
+            // The order of the indices below is essential!! Otherwise the forces and components of phi do not match. The order matches with the auxiliary functions in mds_stressgrid.cpp
             int ij = 0;
-            int ik = 1;
-            int jk = 2;
+            int jk = 1;
+            int ik = 2;
 
             locals_grid->DistributeElasticity(Ri, Rj, Ri, Rj, phi[ij], kappa[ij][ij]);
             locals_grid->DistributeElasticity(Ri, Rj, Ri, Rk,       0, kappa[ij][ik]);
@@ -1740,14 +1742,14 @@ real quartic_angles(int nbonds,
             }
 
 			//Calculate Phi and Kappa
-                        real distij = nrij2*gmx::invsqrt(nrij2);
-                        real distjk = nrkj2*gmx::invsqrt(nrkj2);
+            real distij = nrij2*gmx::invsqrt(nrij2);
+            real distjk = nrkj2*gmx::invsqrt(nrkj2);
 			rvec r_ik;
 			pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
 			real nrik2 = iprod(r_ik, r_ik);
 			//real nrik2 = nrij2 + nrkj2 - 2*distij*distjk*cos_theta;
-                        real distik = nrik2*gmx::invsqrt(nrik2);
-                        real coeff[5] = {0,0,0,0,0};
+            real distik = nrik2*gmx::invsqrt(nrik2);
+            real coeff[5] = {0,0,0,0,0};
 			for(int i = 0; i < 5; i++){
 				coeff[i] = forceparams[type].qangle.c[i];
 			}
