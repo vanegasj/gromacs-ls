@@ -241,6 +241,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   gmx_bool localspbc,
                   real localsmindihangle,
                   gmx_bool localscuda,
+                  int localsskip,
                   unsigned long Flags,
                   gmx_walltime_accounting_t walltime_accounting)
 {
@@ -303,12 +304,12 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
     /* Interactive MD */
     gmx_bool          bIMDstep = FALSE;
-    
+
     /* local stress begin */
 
     real mass;
     rvec box_size;
-    rvec x_rerun, v_rerun, v_update;
+    rvec *x_full, *v_half;
     int cr_size;
 
     /* local stress end */
@@ -526,9 +527,9 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     {
         set_constraints(constr, top, ir, mdatoms, cr);
     }
-    
+
     /* local stress begin */
-    /*if(EEL_PME(ir->coulombtype)) 
+    /*if(EEL_PME(ir->coulombtype))
     {
         printf("STOP!\n");
         printf("The contributions from PME cannot currently be added to the stress tensor.\n");
@@ -552,7 +553,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             locals_grid.DisableDispersionCorrection();
         if (localscuda == TRUE)
             locals_grid.EnableCuda();
-        
+
         for(i=0; (i<DIM); i++)
             box_size[i]=state_global->box[i][i];
         locals_grid.SetBox(state_global->box, ir->epc);
@@ -581,7 +582,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             xper = yper = zper = false;
         }
         locals_grid.SetPeriodicBoundaries(xper,yper,zper,periodic);
-        
+
         // setup spatial/atomic specific variables
         if (localsspatialatom == mds_spat)
         {
@@ -593,10 +594,10 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             {
                 gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgridc) <= 0.0\n");
             }
-            
+
             locals_grid.SetSpacing(localsgridspacing);
             locals_grid.SetSpacingc(localsgridspacingc);
-            
+
             if(localsgridx == 0)
                 locals_grid.SetNumberOfGridCellsX(box_size[XX]/localsgridspacing);
             else
@@ -609,7 +610,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 locals_grid.SetNumberOfGridCellsZ(box_size[ZZ]/localsgridspacing);
             else
                 locals_grid.SetNumberOfGridCellsZ(localsgridz);
-            
+
             if(localsgridxc == 0)
                 locals_grid.SetNumberOfGridCellsXC(box_size[XX]/localsgridspacingc);
             else
@@ -622,19 +623,19 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 locals_grid.SetNumberOfGridCellsZC(box_size[ZZ]/localsgridspacingc);
             else
                 locals_grid.SetNumberOfGridCellsZC(localsgridzc);
-            
+
             int ngrid =
                 locals_grid.GetNumberOfGridCellsX()*
                 locals_grid.GetNumberOfGridCellsY()*
                 locals_grid.GetNumberOfGridCellsZ();
-            
+
             printf("Spacing requested: %g    Using nx=%d ny=%d nz=%d, grid size %d \n",
                localsgridspacing,
                locals_grid.GetNumberOfGridCellsX(),
                locals_grid.GetNumberOfGridCellsY(),
                locals_grid.GetNumberOfGridCellsZ(),
                ngrid);
-            
+
             int ngridc =
                 locals_grid.GetNumberOfGridCellsXC()*
                 locals_grid.GetNumberOfGridCellsYC()*
@@ -646,14 +647,14 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                locals_grid.GetNumberOfGridCellsYC(),
                locals_grid.GetNumberOfGridCellsZC(),
                ngridc);
-        
+
             if(locals_grid.GetNumberOfGridCellsX()==0)
                 locals_grid.SetNumberOfGridCellsX(1);
             if(locals_grid.GetNumberOfGridCellsY()==0)
                 locals_grid.SetNumberOfGridCellsY(1);
             if(locals_grid.GetNumberOfGridCellsZ()==0)
                 locals_grid.SetNumberOfGridCellsZ(1);
-            
+
             if(locals_grid.GetNumberOfGridCellsXC()==0)
                 locals_grid.SetNumberOfGridCellsXC(1);
             if(locals_grid.GetNumberOfGridCellsYC()==0)
@@ -663,19 +664,20 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
             // set the cutoff used
             locals_grid.SetChargeParams(localscontribc, fr->epsfac, fr->rcoulomb, fr->ewaldcoeff_q);
-            
+
             // set the temperature based on the ref_T value of the first group (we are assumming that the temperature is the same for all groups)
-            printf("T = %g K for the kinetic elasticity calculations\n", ir->opts.ref_t[0]);
+            printf("The temperature value used for the elasticity calculations is T = %g K.\n", ir->opts.ref_t[0]);
             locals_grid.SetTemperature(ir->opts.ref_t[0]);
-            
+
             // this will initialize locals_grid.current_grid and locals_grid.sum_grid
             locals_grid.Init();
+            locals_grid.UpdateBoxSpacings(state_global->box);
         }
         else if(localsspatialatom == mds_atom)
         {
             // now set the number of atoms for mdstresslib
             locals_grid.SetNumberOfAtoms(top_global->natoms);
-            
+
             // this will initialize locals_grid.current_grid and locals_grid.sum_grid
             locals_grid.Init();
 
@@ -708,10 +710,13 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 }
             }
         }
-
+        //snew(x_full, state_global->natoms);
+        //snew(v_half, state_global->natoms);
         //calc_recipbox(state->box,locals_grid.invbox); /**/// possibly call Update() here?
         //locals_grid.ePBC = ir->ePBC; /**/// I don't see an equivalent for this.
     }
+    snew(x_full, state->natoms);
+    snew(v_half, state->natoms);
     if (PAR(cr))
         MPI_Barrier(MPI_COMM_WORLD);
     /* local stress end */
@@ -1105,6 +1110,10 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             copy_mat(rerun_fr.box, state_global->box);
             copy_mat(state_global->box, state->box);
 
+            /* begin local stress */
+            //locals_grid.UpdateBoxSpacings(state->box);
+            /* end local stress */
+
             if (vsite && (Flags & MD_RERUN_VSITE))
             {
                 if (DOMAINDECOMP(cr))
@@ -1128,6 +1137,21 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 }
             }
         }
+
+        /* begin local stress */
+        if (MASTER(cr))
+        {
+            if ((step % localsskip == 0) && (locals_grid.CheckInit() == true))
+            {
+                locals_grid.Enable();
+                locals_grid.UpdateBoxSpacings(state_global->box);
+            }
+            else
+            {
+                locals_grid.Disable();
+            }
+        }
+        /* end local stress */
 
         /* Stop Center of Mass motion */
         bStopCM = (ir->comm_mode != ecmNO && do_per_step(step, ir->nstcomm));
@@ -1167,9 +1191,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         do_verbose = bVerbose &&
             (step % stepout == 0 || bFirstStep || bLastStep || bRerunMD);
 
-        /* local stress begin */
-        locals_grid.UpdateBoxSpacings(rerun_fr.box);
-        /* local stress end */
 
         if (bNS && !(bFirstStep && ir->bContinuation && !bRerunMD))
         {
@@ -1280,6 +1301,25 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             bCalcEner = TRUE;
         }
 
+        /* begin locals */
+        /* store the half step velocities and previous full step positions for the kinetic calculation of the local stress */
+        /*if (MASTER(cr))
+        {
+            for (i = 0; i < state_global->natoms; i++)
+            {
+                copy_rvec(state_global->v[i], v_half[i]);
+                copy_rvec(state_global->x[i], x_full[i]);
+            }
+        }*/
+
+        for (i = 0; i < state->natoms; i++)
+        {
+            copy_rvec(state->v[i], v_half[i]);
+            copy_rvec(state->x[i], x_full[i]);
+        }
+        /* end locals */
+
+
         /* Do we need global communication ? */
         bGStat = (bCalcVir || bCalcEner || bStopCM ||
                   do_per_step(step, nstglobalcomm) ||
@@ -1364,6 +1404,8 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                    called in the previous step */
                 unshift_self(graph, state->box, state->x);
             }
+
+
             /* if VV, compute the pressure and constraints */
             /* For VV2, we strictly only need this if using pressure
              * control, but we really would like to have accurate pressures
@@ -1473,6 +1515,26 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 sum_dhdl(enerd, state->lambda, ir->fepvals);
             }
         }
+
+        /* begin locals */
+        /* store the full step velocities and positions for the kinetic calculation of the local stress for md-VV */
+        /*if (MASTER(cr) && bVV)
+        {
+            for (i = 0; i < state_global->natoms; i++)
+            {
+                copy_rvec(state_global->v[i], v_half[i]);
+                copy_rvec(state_global->x[i], x_full[i]);
+            }
+        }*/
+        if (bVV)
+        {
+            for (i = 0; i < state->natoms; i++)
+            {
+                copy_rvec(state->v[i], v_half[i]);
+                copy_rvec(state->x[i], x_full[i]);
+            }
+        }
+        /* end locals */
 
         /* ########  END FIRST UPDATE STEP  ############## */
         /* ########  If doing VV, we now have v(dt) ###### */
@@ -1778,8 +1840,44 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
 
         /* #############  END CALC EKIN AND PRESSURE ################# */
+
         /* begin local stress */
-        rvec *xp = state->x;
+        /* Distribute the kinetic contributions of the stress */
+        //if (MASTER(cr))
+        //{
+
+            for (i=0; i < state->natoms; i++)
+            {
+                mass = mdatoms->massT[i];
+                if ((localscontrib == mds_all || localscontrib == mds_kin))
+                {
+                    if (!bRerunMD && !bVV)
+                    {
+                        locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], state->v[i], i);
+                        locals_grid.DistributeKineticElast(mass, x_full[i], v_half[i], state->v[i]);
+                    }
+                    else if (bVV && !bRerunMD)
+                    {
+                        locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], v_half[i], i);
+                        locals_grid.DistributeKineticElast(mass, x_full[i], v_half[i], v_half[i]);
+                    }
+                    else if (bRerunMD && !bVV)
+                    {
+                        locals_grid.DistributeKinetic(mass, rerun_fr.x[i], rerun_fr.v[i], state->v[i], i);
+                        locals_grid.DistributeKineticElast(mass, rerun_fr.x[i], rerun_fr.v[i], state->v[i]);
+                    }
+                    else if (bRerunMD && bVV)
+                    {
+                        locals_grid.DistributeKinetic(mass, rerun_fr.x[i], rerun_fr.v[i], rerun_fr.v[i], i);
+                        locals_grid.DistributeKineticElast(mass, rerun_fr.x[i], rerun_fr.v[i], rerun_fr.v[i]);
+                    }
+                }
+            }
+
+        //}
+        /* end local stress */
+
+        /*rvec *xp = state->x;
         rvec *vp = state->v;
         if (bRerunMD)
         {
@@ -1833,7 +1931,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 else
                   v_update[j] = state->v[i][j];
             }
-            
+
             if ((localscontrib == mds_all || localscontrib == mds_kin))
             {
                 locals_grid.DistributeKinetic(mass, x_rerun, v_rerun, v_update, gatindex);
@@ -1844,7 +1942,9 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 locals_grid.DistributeCharge(x_rerun, mdatoms->chargeA[i]);
             }
         }
+        */
         
+        /*
         if (PAR(cr))
         {
             if (bRerunMD)
@@ -1857,7 +1957,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 state->x = xp; 
                 state->v = vp; 
             }
-        }
+        }*/
 
         if(localsspatialatom == mds_atom)
         {

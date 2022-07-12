@@ -320,6 +320,7 @@ int gmx_mdrun(int argc, char *argv[])
     int localsgridxc=0;
     int localsgridyc=0;
     int localsgridzc=0;
+    int localsskip=1;
     const char * localsenum = "all";
     const char * localsfdenum = "ccfd";
     const char * localssanum  = "spat";
@@ -432,15 +433,15 @@ int gmx_mdrun(int argc, char *argv[])
         { "-lsgridz", FALSE, etINT, {&localsgridz},
           "Set the local stress grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
         { "-lsgridxc", FALSE, etINT, {&localsgridxc},
-          "Set the local stress charge grid size in the x direction (default use box[XX][XX]/localsgrid)"},
+          "HIDDENSet the local stress charge grid size in the x direction (default use box[XX][XX]/localsgrid)"},
         { "-lsgridyc", FALSE, etINT, {&localsgridyc},
-          "Set the local stress charge grid size in the y direction (default use box[YY][YY]/localsgrid)"},
+          "HIDDENSet the local stress charge grid size in the y direction (default use box[YY][YY]/localsgrid)"},
         { "-lsgridzc", FALSE, etINT, {&localsgridzc},
-          "Set the local stress charge grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
+          "HIDDENSet the local stress charge grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
         { "-lscont", FALSE, etSTR, {&localsenum},
           "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel, none"},
         { "-lsgridc", FALSE, etSTR, {&localsenumc},
-          "Select the type of gridc (default = off): off, near, far, full"},
+          "HIDDENSelect the type of gridc (default = off): off, near, far, full"},
         { "-lsfd", FALSE, etSTR, {&localsfdenum},
           "Select the type of force decomposition to be used: ccfd (covariant central force decomposition, default), ncfd (non-covariant central force decomposition), or gld (Goetz-Lipowsky decomposition)"},
         { "-lssa", FALSE, etSTR, {&localssanum},
@@ -453,6 +454,8 @@ int gmx_mdrun(int argc, char *argv[])
           "Don't include dihedral local stress contributions if the sin(|phi|) is less than this factor. Use this flag if there is a dihedral potential (e.g. CHARMM36 lipid FF) that has been parametrized with a min/max that is not 0/Pi and the stress profiles show large noise that does not converge with additional frames. A -lsmindihang value of 0.0005 is typically sufficient to fix this problem." },
         { "-lsdisable",  FALSE, etBOOL, {&localsdisable},
           "Disable all MDStress related functions and output" },
+        { "-lsskip",  FALSE, etINT, {&localsskip},
+          "Only compute the local stress every nth frame" },
         { "-lscuda",  FALSE, etBOOL, {&localscuda},
           "Enable CUDA operations when calculating local stress contributions" },
         { "-imdport",    FALSE, etINT, {&imdport},
@@ -529,7 +532,7 @@ int gmx_mdrun(int argc, char *argv[])
       printf("\nOption not recognized, will use spatial stress tensor\n");
       localsspatialatom = mds_spat;
     }
-    
+
     if (strcmp(localsfdenum,"ccfd") == 0) {
       localsfdecomp = mds_ccfd;
       printf("\nSelected force decomposition: %s\n", localsfdenum);
@@ -594,8 +597,7 @@ int gmx_mdrun(int argc, char *argv[])
       printf("\nOption not recognized, will write all contributions to the local stress\n");
       localscontrib = mds_all;
     }
-    
-    printf("\nSelected gridc type: %s\n",localsenumc);
+    //printf("\nSelected gridc type: %s\n",localsenumc);
     if (strcmp(localsenumc,"off") == 0) {
       printf("\nWill disable the coulomb contribution from the charge grid\n");
       localscontribc = mds_gridc_off;
@@ -697,7 +699,7 @@ int gmx_mdrun(int argc, char *argv[])
     ddxyz[ZZ] = (int)(realddxyz[ZZ] + 0.5);
     /* Disable MDStress here (there is no enable)
      */
-    if (TRUE == localsdisable)
+    if (localsdisable == TRUE)
         locals_grid.Disable();
 
     rc = gmx::mdrunner(&hw_opt, fplog, cr, NFILE, fnm, oenv, bVerbose,
@@ -709,7 +711,7 @@ int gmx_mdrun(int argc, char *argv[])
                        pforce, cpt_period, max_hours, imdport, nstlocals,
                        localsgridspacing, localsgridx, localsgridy, localsgridz,
                        localsgridspacingc, localsgridxc, localsgridyc, localsgridzc,
-                       localscontrib, localscontribc, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, localscuda, Flags);
+                       localscontrib, localscontribc, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, localscuda, localsskip, Flags);
 
     /* Log file has to be closed in mdrunner if we are appending to it
        (fplog not set here) */

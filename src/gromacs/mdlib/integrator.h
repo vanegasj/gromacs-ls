@@ -128,6 +128,7 @@ typedef double integrator_t (FILE *fplog, t_commrec *cr,
                              int localspbc,
                              real localsmindihangle,
                              int localscuda,
+                             int localsskip,
                              unsigned long Flags,
                              gmx_walltime_accounting_t walltime_accounting);
 
