@@ -710,16 +710,13 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 }
             }
         }
-        //snew(x_full, state_global->natoms);
-        //snew(v_half, state_global->natoms);
         //calc_recipbox(state->box,locals_grid.invbox); /**/// possibly call Update() here?
         //locals_grid.ePBC = ir->ePBC; /**/// I don't see an equivalent for this.
     }
-    snew(x_full, state->natoms);
-    snew(v_half, state->natoms);
+    /* local stress end */
+
     if (PAR(cr))
         MPI_Barrier(MPI_COMM_WORLD);
-    /* local stress end */
 
     if (repl_ex_nst > 0 && MASTER(cr))
     {
@@ -1111,7 +1108,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             copy_mat(state_global->box, state->box);
 
             /* begin local stress */
-            //locals_grid.UpdateBoxSpacings(state->box);
+            locals_grid.UpdateBoxSpacings(state->box);
             /* end local stress */
 
             if (vsite && (Flags & MD_RERUN_VSITE))
@@ -1302,20 +1299,23 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
 
         /* begin locals */
-        /* store the half step velocities and previous full step positions for the kinetic calculation of the local stress */
-        /*if (MASTER(cr))
-        {
-            for (i = 0; i < state_global->natoms; i++)
-            {
-                copy_rvec(state_global->v[i], v_half[i]);
-                copy_rvec(state_global->x[i], x_full[i]);
-            }
-        }*/
 
-        for (i = 0; i < state->natoms; i++)
+        if (!bRerunMD)
         {
-            copy_rvec(state->v[i], v_half[i]);
-            copy_rvec(state->x[i], x_full[i]);
+            int natoms;
+            if (PAR(cr))
+                natoms = cr->dd->nat_home;
+            else
+                natoms = state->natoms;
+
+            snew(v_half, natoms);
+            snew(x_full, natoms);
+
+            for (i = 0; i < natoms; i++)
+            {
+                copy_rvec(state->v[i], v_half[i]);
+                copy_rvec(state->x[i], x_full[i]);
+            }
         }
         /* end locals */
 
@@ -1518,17 +1518,15 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         /* begin locals */
         /* store the full step velocities and positions for the kinetic calculation of the local stress for md-VV */
-        /*if (MASTER(cr) && bVV)
+        if (bVV && !bRerunMD)
         {
-            for (i = 0; i < state_global->natoms; i++)
-            {
-                copy_rvec(state_global->v[i], v_half[i]);
-                copy_rvec(state_global->x[i], x_full[i]);
-            }
-        }*/
-        if (bVV)
-        {
-            for (i = 0; i < state->natoms; i++)
+            int natoms;
+            if (PAR(cr))
+                natoms = cr->dd->nat_home;
+            else
+                natoms = state->natoms;
+
+            for (i = 0; i < natoms; i++)
             {
                 copy_rvec(state->v[i], v_half[i]);
                 copy_rvec(state->x[i], x_full[i]);
@@ -1842,122 +1840,52 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         /* #############  END CALC EKIN AND PRESSURE ################# */
 
         /* begin local stress */
-        /* Distribute the kinetic contributions of the stress */
-        //if (MASTER(cr))
-        //{
 
-            for (i=0; i < state->natoms; i++)
-            {
-                mass = mdatoms->massT[i];
-                if ((localscontrib == mds_all || localscontrib == mds_kin))
-                {
-                    if (!bRerunMD && !bVV)
-                    {
-                        locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], state->v[i], i);
-                        locals_grid.DistributeKineticElast(mass, x_full[i], v_half[i], state->v[i]);
-                    }
-                    else if (bVV && !bRerunMD)
-                    {
-                        locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], v_half[i], i);
-                        locals_grid.DistributeKineticElast(mass, x_full[i], v_half[i], v_half[i]);
-                    }
-                    else if (bRerunMD && !bVV)
-                    {
-                        locals_grid.DistributeKinetic(mass, rerun_fr.x[i], rerun_fr.v[i], state->v[i], i);
-                        locals_grid.DistributeKineticElast(mass, rerun_fr.x[i], rerun_fr.v[i], state->v[i]);
-                    }
-                    else if (bRerunMD && bVV)
-                    {
-                        locals_grid.DistributeKinetic(mass, rerun_fr.x[i], rerun_fr.v[i], rerun_fr.v[i], i);
-                        locals_grid.DistributeKineticElast(mass, rerun_fr.x[i], rerun_fr.v[i], rerun_fr.v[i]);
-                    }
-                }
-            }
+        int natoms;
 
-        //}
-        /* end local stress */
-
-        /*rvec *xp = state->x;
-        rvec *vp = state->v;
-        if (bRerunMD)
-        {
-            xp = rerun_fr.x;
-            vp = rerun_fr.v;
-        }
-
-        int natoms = state->natoms;
-        // get the rank zero positions and velocities
         if (PAR(cr))
         {
             natoms = cr->dd->nat_home;
-            if (bRerunMD)
-            {
-                gmx_bcast(sizeof(rerun_fr.x), &rerun_fr.x, cr);
-                gmx_bcast(sizeof(rerun_fr.v), &rerun_fr.v, cr);
-            }
-            else
-            {
-                gmx_bcast(sizeof(state->x), &state->x, cr);
-                gmx_bcast(sizeof(state->v), &state->v, cr);
-            }
+            gmx_bcast(sizeof(rerun_fr.x), &rerun_fr.x, cr);
+            gmx_bcast(sizeof(rerun_fr.v), &rerun_fr.v, cr);
+        }
+        else
+        {
+            natoms = state->natoms;
         }
 
-        for(i=0; i < natoms; i++)
+        for (i=0; i < natoms; i++)
         {
-            int gatindex = i;
-            if (PAR(cr) )
-               gatindex  = cr->dd->gatindex[i];
-
-            mass = mdatoms->massT[i];
-            for(j=0;j<DIM;j++)
+            int gi = i;
+            if (PAR(cr))
             {
-                if (bRerunMD)
-                {
-                    x_rerun[j] = rerun_fr.x[gatindex][j];
-                    v_rerun[j] = rerun_fr.v[gatindex][j];
-                }
-                else
-                {
-                    x_rerun[j] = state->x[gatindex][j];
-                    v_rerun[j] = state->v[gatindex][j];
-                }
-                if (bVV)
-                {
-                    if (bRerunMD)
-                        v_update[j] = rerun_fr.v[gatindex][j];
-                    else
-                        v_update[j] = state->v[gatindex][j];
-                }
-                else
-                  v_update[j] = state->v[i][j];
+                gi = cr->dd->gatindex[i];
             }
-
+            mass = mdatoms->massT[i];
             if ((localscontrib == mds_all || localscontrib == mds_kin))
             {
-                locals_grid.DistributeKinetic(mass, x_rerun, v_rerun, v_update, gatindex);
-                locals_grid.DistributeKineticElast(mass, x_rerun, v_rerun, v_update);
-            }
-            if (mdatoms->chargeA[i] != 0.0 && (localscontribc != mds_gridc_off))
-            {
-                locals_grid.DistributeCharge(x_rerun, mdatoms->chargeA[i]);
+                if (!bRerunMD && !bVV)
+                {
+                    locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], state->v[i], gi);
+                    locals_grid.DistributeKineticElast(mass, x_full[i], v_half[i], state->v[i]);
+                }
+                else if (!bRerunMD && bVV)
+                {
+                    locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], v_half[i], gi);
+                    locals_grid.DistributeKineticElast(mass, x_full[i], v_half[i], v_half[i]);
+                }
+                else if (bRerunMD && !bVV)
+                {
+                    locals_grid.DistributeKinetic(mass, rerun_fr.x[gi], rerun_fr.v[gi], state->v[i], gi);
+                    locals_grid.DistributeKineticElast(mass, rerun_fr.x[gi], rerun_fr.v[gi], state->v[i]);
+                }
+                else if (bRerunMD && bVV)
+                {
+                    locals_grid.DistributeKinetic(mass, rerun_fr.x[gi], rerun_fr.v[gi], rerun_fr.v[gi], gi);
+                    locals_grid.DistributeKineticElast(mass, rerun_fr.x[gi], rerun_fr.v[gi], rerun_fr.v[gi]);
+                }
             }
         }
-        */
-        
-        /*
-        if (PAR(cr))
-        {
-            if (bRerunMD)
-            {
-                rerun_fr.x = xp; 
-                rerun_fr.v = vp; 
-            }
-            else
-            {
-                state->x = xp; 
-                state->v = vp; 
-            }
-        }*/
 
         if(localsspatialatom == mds_atom)
         {

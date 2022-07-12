@@ -423,7 +423,7 @@ int gmx_mdrun(int argc, char *argv[])
         { "-localsgrid",  FALSE, etREAL, {&localsgridspacing},
           "Spacing for local stress grid (default = 0.1 nm)" },
         { "-localsgridc",  FALSE, etREAL, {&localsgridspacingc},
-          "Spacing for local stress charge grid (default = 0.1 nm)" },
+          "HIDDENSpacing for local stress charge grid (default = 0.1 nm)" },
         { "-nstlp",  FALSE, etINT, {&nstlocals},
           "HIDDENFrequency of writing local stress grid to file (default = 0)" },
         { "-lsgridx", FALSE, etINT, {&localsgridx},
@@ -597,7 +597,8 @@ int gmx_mdrun(int argc, char *argv[])
       printf("\nOption not recognized, will write all contributions to the local stress\n");
       localscontrib = mds_all;
     }
-    //printf("\nSelected gridc type: %s\n",localsenumc);
+    /*
+    printf("\nSelected gridc type: %s\n",localsenumc);
     if (strcmp(localsenumc,"off") == 0) {
       printf("\nWill disable the coulomb contribution from the charge grid\n");
       localscontribc = mds_gridc_off;
@@ -614,6 +615,7 @@ int gmx_mdrun(int argc, char *argv[])
       printf("\nOption not recognized, will disable the coulomb contribution from the charge grid\n");
       localscontribc = mds_gridc_off;
     }
+    */
 
     /* now check the -multi and -multidir option */
     if (opt2bSet("-multidir", NFILE, fnm))
