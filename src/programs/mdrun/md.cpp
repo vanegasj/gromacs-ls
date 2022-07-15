@@ -641,12 +641,12 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 locals_grid.GetNumberOfGridCellsYC()*
                 locals_grid.GetNumberOfGridCellsZC();
 
-            printf("Charge spacing requested: %g    Using nxc=%d nyc=%d nzc=%d, charge grid size %d \n",
+            /*printf("Charge spacing requested: %g    Using nxc=%d nyc=%d nzc=%d, charge grid size %d \n",
                localsgridspacingc,
                locals_grid.GetNumberOfGridCellsXC(),
                locals_grid.GetNumberOfGridCellsYC(),
                locals_grid.GetNumberOfGridCellsZC(),
-               ngridc);
+               ngridc);*/
 
             if(locals_grid.GetNumberOfGridCellsX()==0)
                 locals_grid.SetNumberOfGridCellsX(1);
@@ -671,7 +671,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
             // this will initialize locals_grid.current_grid and locals_grid.sum_grid
             locals_grid.Init();
-            locals_grid.UpdateBoxSpacings(state_global->box);
+            locals_grid.UpdateBoxSpacings(state->box);
         }
         else if(localsspatialatom == mds_atom)
         {
@@ -1136,18 +1136,23 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
 
         /* begin local stress */
-        if (MASTER(cr))
+        if (PAR(cr))
         {
-            if ((step % localsskip == 0) && (locals_grid.CheckInit() == true))
-            {
-                locals_grid.Enable();
-                locals_grid.UpdateBoxSpacings(state_global->box);
-            }
-            else
-            {
-                locals_grid.Disable();
-            }
+            gmx_bcast(sizeof(localsskip), &localsskip, cr);
         }
+
+        if ((step % localsskip == 0) && (locals_grid.CheckInit() == true))
+        {
+            //locals_grid.Enable();
+            locals_grid.SetContribType(localscontrib);
+            locals_grid.UpdateBoxSpacings(state->box);
+        }
+        else
+        {
+            //locals_grid.Disable();
+            locals_grid.SetContribType(mds_none);
+        }
+
         /* end local stress */
 
         /* Stop Center of Mass motion */
@@ -1848,22 +1853,24 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             natoms = cr->dd->nat_home;
             gmx_bcast(sizeof(rerun_fr.x), &rerun_fr.x, cr);
             gmx_bcast(sizeof(rerun_fr.v), &rerun_fr.v, cr);
+            //gmx_bcast(sizeof(localsskip), &localsskip, cr);
         }
         else
         {
             natoms = state->natoms;
         }
 
-        for (i=0; i < natoms; i++)
+        if ((locals_grid.GetContribType() == mds_all || locals_grid.GetContribType() == mds_kin) && (step % localsskip == 0))
         {
-            int gi = i;
-            if (PAR(cr))
+            for (i=0; i < natoms; i++)
             {
-                gi = cr->dd->gatindex[i];
-            }
-            mass = mdatoms->massT[i];
-            if ((localscontrib == mds_all || localscontrib == mds_kin))
-            {
+                int gi = i;
+                if (PAR(cr))
+                {
+                    gi = cr->dd->gatindex[i];
+                }
+                mass = mdatoms->massT[i];
+
                 if (!bRerunMD && !bVV)
                 {
                     locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], state->v[i], gi);
@@ -1928,7 +1935,10 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         }
 
-        locals_grid.SumGrid();
+        if (step % localsskip == 0)
+        {
+            locals_grid.SumGrid();
+        }
 
         /* end local stress */
 
