@@ -1305,7 +1305,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         /* begin locals */
 
-        if (!bRerunMD)
+        if (!bRerunMD && step % localsskip == 0)
         {
             int natoms;
             if (PAR(cr))
@@ -1523,7 +1523,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         /* begin locals */
         /* store the full step velocities and positions for the kinetic calculation of the local stress for md-VV */
-        if (bVV && !bRerunMD)
+        if (bVV && !bRerunMD && step % localsskip == 0)
         {
             int natoms;
             if (PAR(cr))
@@ -1937,6 +1937,8 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         if (step % localsskip == 0)
         {
+            sfree(x_full);
+            sfree(v_half);
             locals_grid.SumGrid();
         }
 
