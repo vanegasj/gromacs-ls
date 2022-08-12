@@ -71,7 +71,7 @@
 #include "mdrun_main.h"
 #include "runner.h"
 
-mds::StressGrid locals_grid;
+extern mds::StressGrid locals_grid;
 
 /*! \brief Return whether either of the command-line parameters that
  *  will trigger a multi-simulation is set */

@@ -85,6 +85,9 @@
 #define CPT_MAGIC2 171819
 #define CPTSTRLEN 1024
 
+// moved the extern to mdrun.cpp, declaring actual lib here now
+mds::StressGrid locals_grid;
+
 /* cpt_version should normally only be changed
  * when the header of footer format changes.
  * The state data format itself is backward and forward compatible.
@@ -1512,6 +1515,20 @@ void write_checkpoint(const char *fn, gmx_bool bNumberAndKeep,
                 gmx_step_str(step, buf), timebuf);
     }
 
+    /* local stress begin */
+    if (fplog)
+    {
+        fprintf(fplog, "mdstresslib: Writing checkpoint, step %s at %s\n\n",
+                gmx_step_str(step, buf), timebuf);
+    }
+    bool locals_saved = locals_grid.SaveCheckpoint(fn,fntemp);
+    if (fplog)
+    {
+        fprintf(fplog, "mdstresslib: Writing checkpoint, step %s at %s (%s)\n\n",
+                gmx_step_str(step, buf), timebuf, locals_saved ? "success" : "failed");
+    }
+    /* local stress end */
+
     /* Get offsets for open files */
     gmx_fio_get_output_file_positions(&outputfiles, &noutputfiles);
 
@@ -2278,6 +2295,23 @@ void load_checkpoint(const char *fn, FILE **fplog,
     }
     ir->init_step        = step;
     ir->simulation_part += 1;
+    
+    /* local stress begin */
+    char buf[STEPSTRSIZE];
+    char timebuf[STRLEN];
+    gmx_format_current_time(timebuf, STRLEN);
+    if (fplog && fplog[0])
+    {
+        fprintf(fplog[0], "mdstresslib: Loading checkpoint, step %s at %s\n\n",
+                gmx_step_str(step, buf), timebuf);
+    }
+    bool locals_loaded = locals_grid.LoadCheckpoint(fn);
+    if (fplog && fplog[0])
+    {
+        fprintf(fplog[0], "mdstresslib: Loading checkpoint, step %s at %s (%s)\n\n",
+                gmx_step_str(step, buf), timebuf, locals_loaded ? "success" : "failed");
+    }
+    /* local stress end */
 }
 
 void read_checkpoint_part_and_step(const char  *filename,
