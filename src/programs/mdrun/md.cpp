@@ -1935,7 +1935,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         }
 
-        if (step % localsskip == 0)
+        if (!bRerunMD && step % localsskip == 0)
         {
             sfree(x_full);
             sfree(v_half);
