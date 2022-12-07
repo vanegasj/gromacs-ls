@@ -52,6 +52,10 @@
 #ifdef ENERGY_GROUPS
     egp_cj = nbat->energrp[cj];
 #endif
+    // locals needs the values of rvdw and rcut for the impulse corrections
+    real rvdw = std::sqrt(rvdw2);
+    real rcut = std::sqrt(rcut2);
+    // end locals
     for (i = 0; i < UNROLLI; i++)
     {
         int ai;
@@ -72,8 +76,9 @@
             real            FrLJ6 = 0, FrLJ12 = 0, frLJ = 0;
             real            VLJ gmx_unused;
             // Locals constants needed to compute the elasticity tensor from vdw and coul interactions
-            real            phi_coul = 0, kappa_coul = 0, phi_lj = 0, kappa_lj = 0;
-            bool            bCoulEwald = EEL_FULL(ic->eeltype); // Locals need to know whether we are using plain coul or Ewald for elasticity calculations
+            real            phi_coul = 0, kappa_coul = 0, phi_lj = 0, kappa_lj = 0, phi_coul_ic = 0, kappa_coul_ic = 0, phi_lj_ic = 0, kappa_lj_ic = 0, skipmask_rvdw;
+            real            dfw = locals_grid->GetSpacingC(), dfwsq = dfw*dfw, deltavdw = 0, deltavdwsq = 0, deltacoul = 0, deltacoulsq = 0, rinvl = 0, rinvsql = 0, rinvsixl = 0;
+            bool            bCoulEwald = EEL_FULL(ic->eeltype); // Locals needs to know whether we are using plain coul or Ewald for elasticity calculations
 #if defined LJ_FORCE_SWITCH || defined LJ_POT_SWITCH
             real            r, rsw;
 #endif
@@ -140,6 +145,7 @@
 #endif
 
             rinv = gmx::invsqrt(rsq);
+            rinvl = rinv; // locals rinv
             /* 5 flops for invsqrt */
 
             /* Partially enforce the cut-off (and perhaps
@@ -172,9 +178,22 @@
                 frLJ    = FrLJ12 - FrLJ6;
                 /* 7 flops for r^-2 + LJ force */
 
-                // Locals compute the kappa and phi values needed to ompute elasticity for plain LJ interactions
+                // begin locals compute the kappa and phi values needed to compute elasticity for plain LJ interactions
                 phi_lj = -c12*rinvsix*rinvsix*rinv + c6*rinvsix*rinv;
                 kappa_lj = 13*c12*rinvsix*rinvsix*rinvsq - 7*c6*rinvsix*rinvsq;
+
+                // locals impulsive correction for particles near the cutoff
+                deltavdw = (rvdw-1.0/rinvl);
+                deltavdwsq = deltavdw*deltavdw;
+                if (deltavdwsq < dfwsq)
+                {
+                    rinvsql = rinvl*rinvl;
+                    rinvsixl = rinvsql*rinvsql*rinvsql;
+                    phi_lj_ic = (c12*rinvsixl*rinvsixl/12.0 - c6*rinvsixl/6.0)/dfw;
+                    kappa_lj_ic = (-c12*rinvsixl*rinvsixl*rinvl + c6*rinvsixl*rinvl)/dfw;
+                }
+                // end locals
+
 #if defined CALC_ENERGIES || defined LJ_POT_SWITCH
                 VLJ     = (FrLJ12 + c12*ic->repulsion_shift.cpot)/12 -
                     (FrLJ6 + c6*ic->dispersion_shift.cpot)/6;
@@ -192,11 +211,12 @@
                 frLJ   +=
                     -c6*(ic->dispersion_shift.c2 + ic->dispersion_shift.c3*rsw)*rsw*rsw*r
                     + c12*(ic->repulsion_shift.c2 + ic->repulsion_shift.c3*rsw)*rsw*rsw*r;
-                // locals adjustments to phi_lj and kappa_lj
-				phi_lj += c6*(ic->dispersion_shift.c2 + ic->dispersion_shift.c3*rsw)*rsw*rsw
-						 - c12*(ic->repulsion_shift.c2 + ic->repulsion_shift.c3*rsw)*rsw*rsw;
-				kappa_lj += c6*(2.0*ic->dispersion_shift.c2 + 3.0*ic->dispersion_shift.c3*rsw)*rsw*rsw
-						 - c12*(2.0*ic->repulsion_shift.c2 + 3.0*ic->repulsion_shift.c3*rsw)*rsw*rsw;
+                // begin locals adjustments to phi_lj and kappa_lj
+                phi_lj += c6*(ic->dispersion_shift.c2 + ic->dispersion_shift.c3*rsw)*rsw*rsw
+                 - c12*(ic->repulsion_shift.c2 + ic->repulsion_shift.c3*rsw)*rsw*rsw;
+                kappa_lj += c6*(2.0*ic->dispersion_shift.c2 + 3.0*ic->dispersion_shift.c3*rsw)*rsw*rsw
+                            - c12*(2.0*ic->repulsion_shift.c2 + 3.0*ic->repulsion_shift.c3*rsw)*rsw*rsw;
+                // end locals
 
 #if defined CALC_ENERGIES
                 VLJ    +=
@@ -220,15 +240,15 @@
                     sw    = 1.0 + (swV3 + (swV4+ swV5*rsw)*rsw)*rsw*rsw*rsw;
                     dsw   = (swF2 + (swF3 + swF4*rsw)*rsw)*rsw*rsw;
 
-					// locals adjustments to phi_lj and kappa_lj
-					//Code for phi and kappa for switching
-					real ddsw =  (6*swV3 + (12*swV4 + 20*swV5*rsw)*rsw)*rsw;
-					real phi_lj0 = phi_lj;
-					real kappa_lj0 = kappa_lj;
+                    // locals adjustments to phi_lj and kappa_lj
+                    //Code for phi and kappa for switching
+                    real ddsw =  (6*swV3 + (12*swV4 + 20*swV5*rsw)*rsw)*rsw;
+                    real phi_lj0 = phi_lj;
+                    real kappa_lj0 = kappa_lj;
 
-					phi_lj = phi_lj0*sw + dsw*VLJ;
-					kappa_lj = kappa_lj0*sw + 2.0*phi_lj0*dsw + ddsw*VLJ;
-					//end phi and kappa section
+                    phi_lj = phi_lj0*sw + dsw*VLJ;
+                    kappa_lj = kappa_lj0*sw + 2.0*phi_lj0*dsw + ddsw*VLJ;
+                    //end phi and kappa section
 
                     frLJ  = frLJ*sw - r*VLJ*dsw;
                     VLJ  *= sw;
@@ -303,10 +323,10 @@
 //#ifdef VDW_CUTOFF_CHECK
                 /* Mask for VdW cut-off shorter than Coulomb cut-off */
                 {
-                    real skipmask_rvdw;
-
                     skipmask_rvdw = (rsq < rvdw2);
                     frLJ         *= skipmask_rvdw;
+                    phi_lj       *= skipmask_rvdw;
+                    kappa_lj     *= skipmask_rvdw;
 #ifdef CALC_ENERGIES
                     VLJ *= skipmask_rvdw;
 #endif
@@ -348,7 +368,7 @@
                     qq = 0.0;
                 }
             }
-#ifndef CALC_COUL_RF
+#if !defined CALC_COUL_RF && !defined CALC_COUL_TAB
             // Locals Calculate Elasticity Constants for plain and Ewald coulomb potential
             if (bCoulEwald)
             {
@@ -358,7 +378,17 @@
             else
             {
                 phi_coul = -qq*rinvsq*interact;
-			    kappa_coul = 2*qq*rinvsq*rinv*interact;
+                kappa_coul = 2*qq*rinvsq*rinv*interact;
+                // locals impulsive correction for particles near the cutoff
+                deltacoul = (rcut-1.0/rinvl);
+                deltacoulsq = deltacoul*deltacoul;
+                if (deltacoulsq < dfwsq)
+                {
+                    rinvsql = rinvl*rinvl;
+                    phi_coul_ic = (qq*rinvl)/dfw;
+                    kappa_coul_ic = (-qq*rinvsql)/dfw;
+                }
+                // end locals
             }
 #endif
 #ifdef CALC_COUL_RF
@@ -441,12 +471,10 @@
                 lpatIDs[0] = xi_id[i]; lpatIDs[1] = x_id[aj];
 
                 // remove the 'far away' particles
-                if (lpatIDs[0] != -1 && lpatIDs[1] != -1 && skipmask > 0)
+                if (lpatIDs[0] != -1 && lpatIDs[1] != -1)
                 {
                     int cont_type = locals_grid->GetContribType();
-                    if (cont_type == mds_all ||
-                        cont_type == mds_vdw ||
-                        cont_type == mds_cou)
+                    if (cont_type == mds_all || cont_type == mds_vdw || cont_type == mds_cou)
                     {
                         real ix = xi[i*XI_STRIDE+XX]; real jx = x[aj*X_STRIDE+XX];
                         real iy = xi[i*XI_STRIDE+YY]; real jy = x[aj*X_STRIDE+YY];
@@ -457,12 +485,46 @@
                         lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz;
                         lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
                         lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
-
-                        locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
-                        locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi_lj, kappa_lj);
+                        if (skipmask > 0)
+                        {
+                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                            locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi_lj, kappa_lj);
 #ifdef CALC_COULOMB
-                        locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi_coul,kappa_coul);
+                            locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi_coul,kappa_coul);
 #endif
+                        }
+#ifdef LJ_CUT
+                        //if (deltavdwsq < dfwsq) // uncomment this line to include impulse correction from particles below and above the cutoff
+                        if (deltavdwsq < dfwsq && skipmask_rvdw > 0) // uncomment this line to include impulse correction only from particles below the cutoff
+                        {
+                            locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], -phi_lj_ic, -kappa_lj_ic);
+                            if (ic->vdwtype == evdwCUT && ic->vdw_modifier == eintmodNONE)
+                            {
+                                real lj_ic = phi_lj_ic*rinvl;
+                                lpF[0][0] = lj_ic*dx;  lpF[0][1] = lj_ic*dy;  lpF[0][2] = lj_ic*dz;
+                                lpF[1][0] = -lpF[0][0]; lpF[1][1] = -lpF[0][1]; lpF[1][2] = -lpF[0][2];
+                                locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                            }
+                        }
+#endif
+#if defined CALC_COULOMB && !defined CALC_COUL_RF && !defined CALC_COUL_TAB
+                        //if (deltacoulsq < dfwsq && !bCoulEwald) // uncomment this line to include impulse correction from particles below and above the cutoff
+                        if (deltacoulsq < dfwsq && !bCoulEwald && skipmask > 0) // uncomment this line to include impulse correction only from particles below the cutoff
+                        {
+                            locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], -phi_coul_ic, -kappa_coul_ic);
+                            if (ic->eeltype == eelCUT && ic->coulomb_modifier == eintmodNONE)
+                            {
+                                real coul_ic = phi_coul_ic*rinvl;
+                                lpF[0][0] = coul_ic*dx;  lpF[0][1] = coul_ic*dy;  lpF[0][2] = coul_ic*dz;
+                                lpF[1][0] = -lpF[0][0]; lpF[1][1] = -lpF[0][1]; lpF[1][2] = -lpF[0][2];
+                                locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                            }
+                        }
+#endif
+
+                        //if (ic->eeltype == eelCUT)
+                        //printf("ai = %d, aj = %d, fx = %e, fy = %e, fz = %e, px = %e, py = %e, pz = %e\n", xi_id[i], x_id[aj], fx, fy, fz, phi_lj*dx*rinv, phi_lj*dy*rinv, phi_lj*dz*rinv);
+                        //printf("r = %e, phi_ic = %e, kappa_ic = %e\n", 1/rinv, phi_lj_ic, kappa_lj_ic);
                     }
                 }
             }
