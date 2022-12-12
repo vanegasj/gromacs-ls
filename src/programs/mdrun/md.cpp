@@ -1939,6 +1939,10 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         {
             sfree(x_full);
             sfree(v_half);
+        }
+
+        if (step % localsskip == 0)
+        {
             locals_grid.SumGrid();
         }
 

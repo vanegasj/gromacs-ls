@@ -79,6 +79,7 @@
             real            phi_coul = 0, kappa_coul = 0, phi_lj = 0, kappa_lj = 0, phi_coul_ic = 0, kappa_coul_ic = 0, phi_lj_ic = 0, kappa_lj_ic = 0, skipmask_rvdw;
             real            dfw = locals_grid->GetSpacingC(), dfwsq = dfw*dfw, deltavdw = 0, deltavdwsq = 0, deltacoul = 0, deltacoulsq = 0, rinvl = 0, rinvsql = 0, rinvsixl = 0;
             bool            bCoulEwald = EEL_FULL(ic->eeltype); // Locals needs to know whether we are using plain coul or Ewald for elasticity calculations
+            bool            bCoulCut = (ic->eeltype == eelCUT);
 #if defined LJ_FORCE_SWITCH || defined LJ_POT_SWITCH
             real            r, rsw;
 #endif
@@ -361,6 +362,7 @@
              * to do this is to zero the charges in
              * advance. */
             qq = skipmask * qi[i] * q[aj];
+            // begin locals
             if (locals_grid != NULL)
             {
                 if (locals_grid->GetContribType() == mds_vdw)
@@ -368,14 +370,8 @@
                     qq = 0.0;
                 }
             }
-#if !defined CALC_COUL_RF && !defined CALC_COUL_TAB
-            // Locals Calculate Elasticity Constants for plain and Ewald coulomb potential
+            // Locals Calculate Elasticity Constants using a plain cutoff when using PME
             if (bCoulEwald)
-            {
-                phi_coul = -qq*rinvsq; //placeholders
-                kappa_coul = 2*qq*rinvsq*rinv; //placeholders
-            }
-            else
             {
                 phi_coul = -qq*rinvsq*interact;
                 kappa_coul = 2*qq*rinvsq*rinv*interact;
@@ -390,15 +386,31 @@
                 }
                 // end locals
             }
-#endif
 #ifdef CALC_COUL_RF
             fcoul  = qq*(interact*rinv*rinvsq - k_rf2);
             /* 4 flops for RF force */
-
-            // Locals Calculate Elasticity Constants for reaction-field coulomb potential
-            //printf("Interact = %d", interact);
-            phi_coul = qq*(-rinvsq*interact + k_rf2/rinv);
-            kappa_coul = qq*(2*rinvsq*rinv*interact + k_rf2);
+            // Locals Calculate Elasticity Constants for plain and Ewald coulomb potential
+            if ((ic->eeltype == eelRF) || (ic->eeltype == eelRF_ZERO))
+            {
+                // Locals Calculate Elasticity Constants for reaction-field coulomb potential
+                phi_coul = qq*(-rinvsq*interact + k_rf2/rinv);
+                kappa_coul = qq*(2*rinvsq*rinv*interact + k_rf2);
+            }
+            else //use plain cutoff electrostatitcs for everything else ....
+            {
+                phi_coul = -qq*rinvsq*interact;
+                kappa_coul = 2*qq*rinvsq*rinv*interact;
+                // locals impulsive correction for particles near the cutoff
+                deltacoul = (rcut-1.0/rinvl);
+                deltacoulsq = deltacoul*deltacoul;
+                if ((deltacoulsq < dfwsq) && bCoulCut)
+                {
+                    rinvsql = rinvl*rinvl;
+                    phi_coul_ic = (qq*rinvl)/dfw;
+                    kappa_coul_ic = (-qq*rinvsql)/dfw;
+                }
+                // end locals
+            }
 #ifdef CALC_ENERGIES
             vcoul  = qq*(interact*rinv + k_rf*rsq - c_rf);
             /* 4 flops for RF energy */
@@ -507,15 +519,16 @@
                             }
                         }
 #endif
-#if defined CALC_COULOMB && !defined CALC_COUL_RF && !defined CALC_COUL_TAB
-                        //if (deltacoulsq < dfwsq && !bCoulEwald) // uncomment this line to include impulse correction from particles below and above the cutoff
-                        if (deltacoulsq < dfwsq && !bCoulEwald && skipmask > 0) // uncomment this line to include impulse correction only from particles below the cutoff
+#ifdef CALC_COULOMB
+                        //if (deltacoulsq < dfwsq) // uncomment this line to include impulse correction from particles below and above the cutoff
+                        if (deltacoulsq < dfwsq && skipmask > 0) // uncomment this line to include impulse correction only from particles below the cutoff
                         {
                             locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], -phi_coul_ic, -kappa_coul_ic);
-                            if (ic->eeltype == eelCUT && ic->coulomb_modifier == eintmodNONE)
+                            if ((bCoulCut && ic->coulomb_modifier == eintmodNONE) || bCoulEwald)
                             {
                                 real coul_ic = phi_coul_ic*rinvl;
                                 lpF[0][0] = coul_ic*dx;  lpF[0][1] = coul_ic*dy;  lpF[0][2] = coul_ic*dz;
+                                printf("icx = %e, icy = %e, icz = %e\n", lpF[0][0],  lpF[0][1],  lpF[0][2]);
                                 lpF[1][0] = -lpF[0][0]; lpF[1][1] = -lpF[0][1]; lpF[1][2] = -lpF[0][2];
                                 locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
                             }
