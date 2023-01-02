@@ -74,6 +74,8 @@
 #include "listed-internal.h"
 #include "restcbt.h"
 
+#include "mdstress/mds_support.h"
+
 using namespace gmx; // TODO: Remove when this file is moved into gmx namespace
 
 /*! \brief Mysterious CMAP coefficient matrix */
@@ -148,8 +150,8 @@ void locals_bonds_distribute_stress_born(
         const rvec x[],
         const rvec dx,
         mds::StressGrid *locals_grid,
-		double phi,
-		double kappa)
+        double phi,
+        double kappa)
 {
     rvec R[2], F[2];
     int atIDs[2];
@@ -209,8 +211,8 @@ void locals_angles_distribute_stress(
             lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
             lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
             locals_grid->DistributeInteraction(3, lpR, lpF, lpatIDs);
-		}
-	}
+        }
+    }
 }
 
 void locals_angles_distribute_stress_born(
@@ -449,14 +451,14 @@ real morse_bonds(int nbonds,
             fshift[CENTRAL][m] -= fij;
         }
 
-		// Calculate Phi and Kappa
-		double phi = 2*be*cb*temp*cbomtemp;
-		double kappa = 2*be*be*cb*temp*(2*temp-1);
+        // Calculate Phi and Kappa
+        double phi = 2*be*cb*temp*cbomtemp;
+        double kappa = 2*be*be*cb*temp*(2*temp-1);
 
-		//locals_grid->MorsePhiKappa(temp, be, cb, phi, kappa);
+        //locals_grid->MorsePhiKappa(temp, be, cb, phi, kappa);
         /* begin stress tensor */
         //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
+        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
     }                                         /*  83 TOTAL    */
     return vtot;
@@ -602,15 +604,15 @@ real FENE_bonds(int nbonds,
             fshift[CENTRAL][m] -= fij;
         }
 
-		// Calculate Phi and Kappa
-		//double dr = dr2*gmx::invsqrt(dr2);
-		double phi = kb * sqrt(dr2)/omdr2obm2;
-		double kappa = kb * (1+dr2/bm2)/omdr2obm2;
+        // Calculate Phi and Kappa
+        //double dr = dr2*gmx::invsqrt(dr2);
+        double phi = kb * sqrt(dr2)/omdr2obm2;
+        double kappa = kb * (1+dr2/bm2)/omdr2obm2;
 
-		//locals_grid->FENEPhiKappa(dr,kb,omdr2obm2,phi,kappa);
+        //locals_grid->FENEPhiKappa(dr,kb,omdr2obm2,phi,kappa);
         /* begin stress tensor */
         //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
+        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
     }                                         /*  58 TOTAL    */
     return vtot;
@@ -664,8 +666,8 @@ real bonds(int nbonds,
         aj   = forceatoms[i++];
 
         ki   = pbc_rvec_sub(pbc, x[ai], x[aj], dx); /*   3      */
-        dr2  = iprod(dx, dx);                       /*   5		*/
-        dr   = dr2*gmx::invsqrt(dr2);               /*  10		*/
+        dr2  = iprod(dx, dx);                       /*   5        */
+        dr   = dr2*gmx::invsqrt(dr2);               /*  10        */
 
         *dvdlambda += harmonic(forceparams[type].harmonic.krA,
                                forceparams[type].harmonic.krB,
@@ -680,7 +682,7 @@ real bonds(int nbonds,
 
 
         vtot  += vbond;             /* 1*/
-        fbond *= gmx::invsqrt(dr2); /*   6		*/
+        fbond *= gmx::invsqrt(dr2); /*   6        */
 #ifdef DEBUG
         if (debug)
         {
@@ -693,7 +695,7 @@ real bonds(int nbonds,
             ivec_sub(SHIFT_IVEC(g, ai), SHIFT_IVEC(g, aj), dt);
             ki = IVEC2IS(dt);
         }
-        for (m = 0; (m < DIM); m++)     /*  15		*/
+        for (m = 0; (m < DIM); m++)     /*  15        */
         {
             fij                 = fbond*dx[m];
             f[ai][m]           += fij;
@@ -712,7 +714,7 @@ real bonds(int nbonds,
         //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
         locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
-    }               /* 59 TOTAL	*/
+    }               /* 59 TOTAL    */
     return vtot;
 }
 
@@ -742,8 +744,8 @@ real restraint_bonds(int nbonds,
         aj   = forceatoms[i++];
 
         ki   = pbc_rvec_sub(pbc, x[ai], x[aj], dx); /*   3      */
-        dr2  = iprod(dx, dx);                       /*   5		*/
-        dr   = dr2*gmx::invsqrt(dr2);               /*  10		*/
+        dr2  = iprod(dx, dx);                       /*   5        */
+        dr   = dr2*gmx::invsqrt(dr2);               /*  10        */
 
         low  = L1*forceparams[type].restraint.lowA + lambda*forceparams[type].restraint.lowB;
         dlow =   -forceparams[type].restraint.lowA +        forceparams[type].restraint.lowB;
@@ -775,7 +777,7 @@ real restraint_bonds(int nbonds,
             vbond       = 0.5*k*drh2;
             fbond       = -k*drh;
             *dvdlambda += 0.5*dk*drh2 - k*dup1*drh;
-        } /* 11	*/
+        } /* 11    */
         else
         {
             drh         = dr - up2;
@@ -792,7 +794,7 @@ real restraint_bonds(int nbonds,
         }
 
         vtot  += vbond;             /* 1*/
-        fbond *= gmx::invsqrt(dr2); /*   6		*/
+        fbond *= gmx::invsqrt(dr2); /*   6        */
 #ifdef DEBUG
         if (debug)
         {
@@ -805,7 +807,7 @@ real restraint_bonds(int nbonds,
             ivec_sub(SHIFT_IVEC(g, ai), SHIFT_IVEC(g, aj), dt);
             ki = IVEC2IS(dt);
         }
-        for (m = 0; (m < DIM); m++)             /*  15		*/
+        for (m = 0; (m < DIM); m++)             /*  15        */
         {
             fij                 = fbond*dx[m];
             f[ai][m]           += fij;
@@ -815,9 +817,9 @@ real restraint_bonds(int nbonds,
         }
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
+        //locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
-    }                   /* 59 TOTAL	*/
+    }                   /* 59 TOTAL    */
 
     return vtot;
 }
@@ -848,8 +850,8 @@ real polarize(int nbonds,
         }
 
         ki   = pbc_rvec_sub(pbc, x[ai], x[aj], dx);                         /*   3      */
-        dr2  = iprod(dx, dx);                                               /*   5		*/
-        dr   = std::sqrt(dr2);                                              /*  10		*/
+        dr2  = iprod(dx, dx);                                               /*   5        */
+        dr   = std::sqrt(dr2);                                              /*  10        */
 
         *dvdlambda += harmonic(ksh, ksh, 0, 0, dr, lambda, &vbond, &fbond); /*  19  */
 
@@ -859,14 +861,14 @@ real polarize(int nbonds,
         }
 
         vtot  += vbond;             /* 1*/
-        fbond *= gmx::invsqrt(dr2); /*   6		*/
+        fbond *= gmx::invsqrt(dr2); /*   6        */
 
         if (g)
         {
             ivec_sub(SHIFT_IVEC(g, ai), SHIFT_IVEC(g, aj), dt);
             ki = IVEC2IS(dt);
         }
-        for (m = 0; (m < DIM); m++)     /*  15		*/
+        for (m = 0; (m < DIM); m++)     /*  15        */
         {
             fij                 = fbond*dx[m];
             f[ai][m]           += fij;
@@ -877,9 +879,9 @@ real polarize(int nbonds,
         
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
+        //locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
-    }               /* 59 TOTAL	*/
+    }               /* 59 TOTAL    */
     return vtot;
 }
 
@@ -911,8 +913,8 @@ real anharm_polarize(int nbonds,
         }
 
         ki   = pbc_rvec_sub(pbc, x[ai], x[aj], dx);                         /*   3      */
-        dr2  = iprod(dx, dx);                                               /*   5		*/
-        dr   = dr2*gmx::invsqrt(dr2);                                       /*  10		*/
+        dr2  = iprod(dx, dx);                                               /*   5        */
+        dr   = dr2*gmx::invsqrt(dr2);                                       /*  10        */
 
         *dvdlambda += harmonic(ksh, ksh, 0, 0, dr, lambda, &vbond, &fbond); /*  19  */
 
@@ -928,7 +930,7 @@ real anharm_polarize(int nbonds,
             vbond += khyp*ddr*ddr3;
             fbond -= 4*khyp*ddr3;
         }
-        fbond *= gmx::invsqrt(dr2); /*   6		*/
+        fbond *= gmx::invsqrt(dr2); /*   6        */
         vtot  += vbond;             /* 1*/
 
         if (g)
@@ -936,7 +938,7 @@ real anharm_polarize(int nbonds,
             ivec_sub(SHIFT_IVEC(g, ai), SHIFT_IVEC(g, aj), dt);
             ki = IVEC2IS(dt);
         }
-        for (m = 0; (m < DIM); m++)     /*  15		*/
+        for (m = 0; (m < DIM); m++)     /*  15        */
         {
             fij                 = fbond*dx[m];
             f[ai][m]           += fij;
@@ -947,9 +949,9 @@ real anharm_polarize(int nbonds,
 
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
+        //locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
-    }               /* 72 TOTAL	*/
+    }               /* 72 TOTAL    */
     return vtot;
 }
 
@@ -1184,12 +1186,12 @@ real bond_angle(const rvec xi, const rvec xj, const rvec xk, const t_pbc *pbc,
     /* 41 FLOPS */
     real th;
 
-    *t1 = pbc_rvec_sub(pbc, xi, xj, r_ij); /*  3		*/
-    *t2 = pbc_rvec_sub(pbc, xk, xj, r_kj); /*  3		*/
+    *t1 = pbc_rvec_sub(pbc, xi, xj, r_ij); /*  3        */
+    *t2 = pbc_rvec_sub(pbc, xk, xj, r_kj); /*  3        */
 
-    *costh = cos_angle(r_ij, r_kj);        /* 25		*/
-    th     = std::acos(*costh);            /* 10		*/
-    /* 41 TOTAL	*/
+    *costh = cos_angle(r_ij, r_kj);        /* 25        */
+    th     = std::acos(*costh);            /* 10        */
+    /* 41 TOTAL    */
     return th;
 }
 
@@ -1215,7 +1217,7 @@ real angles(int nbonds,
         ak   = forceatoms[i++];
 
         theta  = bond_angle(x[ai], x[aj], x[ak], pbc,
-                            r_ij, r_kj, &cos_theta, &t1, &t2);  /*  41		*/
+                            r_ij, r_kj, &cos_theta, &t1, &t2);  /*  41        */
 
         *dvdlambda += harmonic(forceparams[type].harmonic.krA,
                                forceparams[type].harmonic.krB,
@@ -1234,8 +1236,8 @@ real angles(int nbonds,
             real nrkj_1, nrij_1;
             rvec f_i, f_j, f_k;
 
-            st  = dVdt*gmx::invsqrt(1 - cos_theta2); /*  12		*/
-            sth = st*cos_theta;                      /*   1		*/
+            st  = dVdt*gmx::invsqrt(1 - cos_theta2); /*  12        */
+            sth = st*cos_theta;                      /*   1        */
 #ifdef DEBUG
             if (debug)
             {
@@ -1243,18 +1245,18 @@ real angles(int nbonds,
                         theta*RAD2DEG, va, dVdt);
             }
 #endif
-            nrij2 = iprod(r_ij, r_ij);      /*   5		*/
-            nrkj2 = iprod(r_kj, r_kj);      /*   5		*/
+            nrij2 = iprod(r_ij, r_ij);      /*   5        */
+            nrkj2 = iprod(r_kj, r_kj);      /*   5        */
 
-            nrij_1 = gmx::invsqrt(nrij2);   /*  10		*/
-            nrkj_1 = gmx::invsqrt(nrkj2);   /*  10		*/
+            nrij_1 = gmx::invsqrt(nrij2);   /*  10        */
+            nrkj_1 = gmx::invsqrt(nrkj2);   /*  10        */
 
-            cik = st*nrij_1*nrkj_1;         /*   2		*/
-            cii = sth*nrij_1*nrij_1;        /*   2		*/
-            ckk = sth*nrkj_1*nrkj_1;        /*   2		*/
+            cik = st*nrij_1*nrkj_1;         /*   2        */
+            cii = sth*nrij_1*nrij_1;        /*   2        */
+            ckk = sth*nrkj_1*nrkj_1;        /*   2        */
 
             for (m = 0; m < DIM; m++)
-            {           /*  39		*/
+            {           /*  39        */
                 f_i[m]    = -(cik*r_kj[m] - cii*r_ij[m]);
                 f_k[m]    = -(cik*r_ij[m] - ckk*r_kj[m]);
                 f_j[m]    = -f_i[m] - f_k[m];
@@ -1277,7 +1279,7 @@ real angles(int nbonds,
             mds::matrix3_ext kappa;
             mds::zeroarray3(phi);
             mds::zeromatrix3(kappa);
-            locals_grid->HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, spk, phi, kappa);
+            mds::HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, spk, phi, kappa);
             locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
             //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
             /* end stress tensor */
@@ -1293,7 +1295,7 @@ real angles(int nbonds,
             rvec_inc(fshift[t1], f_i);
             rvec_inc(fshift[CENTRAL], f_j);
             rvec_inc(fshift[t2], f_k);
-        }                                           /* 161 TOTAL	*/
+        }                                           /* 161 TOTAL    */
     }
 
     return vtot;
@@ -1502,7 +1504,7 @@ real linear_angles(int nbonds,
 
         /* begin stress tensor */
         locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+        //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
         if (g)
@@ -1517,7 +1519,7 @@ real linear_angles(int nbonds,
         rvec_inc(fshift[t1], f_i);
         rvec_inc(fshift[CENTRAL], f_j);
         rvec_inc(fshift[t2], f_k);
-    }                                         /* 57 TOTAL	*/
+    }                                         /* 57 TOTAL    */
     return vtot;
 }
 
@@ -1553,18 +1555,18 @@ real urey_bradley(int nbonds,
         kUBB  = forceparams[type].u_b.kUBB;
 
         theta  = bond_angle(x[ai], x[aj], x[ak], pbc,
-                            r_ij, r_kj, &cos_theta, &t1, &t2);                     /*  41		*/
+                            r_ij, r_kj, &cos_theta, &t1, &t2);                     /*  41        */
 
         *dvdlambda += harmonic(kthA, kthB, th0A, th0B, theta, lambda, &va, &dVdt); /*  21  */
         vtot       += va;
 
         ki   = pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);                               /*   3      */
-        dr2  = iprod(r_ik, r_ik);                                                   /*   5		*/
-        dr   = dr2*gmx::invsqrt(dr2);                                               /*  10		*/
+        dr2  = iprod(r_ik, r_ik);                                                   /*   5        */
+        dr   = dr2*gmx::invsqrt(dr2);                                               /*  10        */
 
         *dvdlambda += harmonic(kUBA, kUBB, r13A, r13B, dr, lambda, &vbond, &fbond); /*  19  */
 
-        cos_theta2 = gmx::square(cos_theta);                                        /*   1		*/
+        cos_theta2 = gmx::square(cos_theta);                                        /*   1        */
         if (cos_theta2 < 1)
         {
             real st, sth;
@@ -1572,8 +1574,8 @@ real urey_bradley(int nbonds,
             real nrkj2, nrij2;
             rvec f_i, f_j, f_k;
 
-            st  = dVdt*gmx::invsqrt(1 - cos_theta2); /*  12		*/
-            sth = st*cos_theta;                      /*   1		*/
+            st  = dVdt*gmx::invsqrt(1 - cos_theta2); /*  12        */
+            sth = st*cos_theta;                      /*   1        */
 #ifdef DEBUG
             if (debug)
             {
@@ -1581,15 +1583,15 @@ real urey_bradley(int nbonds,
                         theta*RAD2DEG, va, dVdt);
             }
 #endif
-            nrkj2 = iprod(r_kj, r_kj);  /*   5		*/
+            nrkj2 = iprod(r_kj, r_kj);  /*   5        */
             nrij2 = iprod(r_ij, r_ij);
 
 
-            cik = st*gmx::invsqrt(nrkj2*nrij2); /*  12		*/
-            cii = sth/nrij2;                    /*  10		*/
-            ckk = sth/nrkj2;                    /*  10		*/
+            cik = st*gmx::invsqrt(nrkj2*nrij2); /*  12        */
+            cii = sth/nrij2;                    /*  10        */
+            ckk = sth/nrkj2;                    /*  10        */
 
-            for (m = 0; (m < DIM); m++)         /*  39		*/
+            for (m = 0; (m < DIM); m++)         /*  39        */
             {
                 f_i[m]    = -(cik*r_kj[m]-cii*r_ij[m]);
                 f_k[m]    = -(cik*r_ij[m]-ckk*r_kj[m]);
@@ -1612,7 +1614,7 @@ real urey_bradley(int nbonds,
             mds::matrix3_ext kappa;
             mds::zeroarray3(phi);
             mds::zeromatrix3(kappa);
-            locals_grid->HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, kthA, phi, kappa);
+            mds::HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, kthA, phi, kappa);
             locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
             //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
             /* end stress tensor */
@@ -1629,7 +1631,7 @@ real urey_bradley(int nbonds,
             rvec_inc(fshift[t1], f_i);
             rvec_inc(fshift[CENTRAL], f_j);
             rvec_inc(fshift[t2], f_k);
-        }                                       /* 161 TOTAL	*/
+        }                                       /* 161 TOTAL    */
         /* Time for the bond calculations */
         if (dr2 == 0.0)
         {
@@ -1637,14 +1639,14 @@ real urey_bradley(int nbonds,
         }
 
         vtot  += vbond;             /* 1*/
-        fbond *= gmx::invsqrt(dr2); /*   6		*/
+        fbond *= gmx::invsqrt(dr2); /*   6        */
 
         if (g)
         {
             ivec_sub(SHIFT_IVEC(g, ai), SHIFT_IVEC(g, ak), dt_ik);
             ki = IVEC2IS(dt_ik);
         }
-        for (m = 0; (m < DIM); m++)     /*  15		*/
+        for (m = 0; (m < DIM); m++)     /*  15        */
         {
             fik                 = fbond*r_ik[m];
             f[ai][m]           += fik;
@@ -1688,7 +1690,7 @@ real quartic_angles(int nbonds,
         ak   = forceatoms[i++];
 
         theta  = bond_angle(x[ai], x[aj], x[ak], pbc,
-                            r_ij, r_kj, &cos_theta, &t1, &t2); /*  41		*/
+                            r_ij, r_kj, &cos_theta, &t1, &t2); /*  41        */
 
         dt = theta - forceparams[type].qangle.theta*DEG2RAD;   /* 2          */
 
@@ -1706,7 +1708,7 @@ real quartic_angles(int nbonds,
 
         vtot += va;
 
-        cos_theta2 = gmx::square(cos_theta);            /*   1		*/
+        cos_theta2 = gmx::square(cos_theta);            /*   1        */
         if (cos_theta2 < 1)
         {
             int  m;
@@ -1715,8 +1717,8 @@ real quartic_angles(int nbonds,
             real nrkj2, nrij2;
             rvec f_i, f_j, f_k;
 
-            st  = dVdt*gmx::invsqrt(1 - cos_theta2); /*  12		*/
-            sth = st*cos_theta;                      /*   1		*/
+            st  = dVdt*gmx::invsqrt(1 - cos_theta2); /*  12        */
+            sth = st*cos_theta;                      /*   1        */
 #ifdef DEBUG
             if (debug)
             {
@@ -1724,14 +1726,14 @@ real quartic_angles(int nbonds,
                         theta*RAD2DEG, va, dVdt);
             }
 #endif
-            nrkj2 = iprod(r_kj, r_kj);  /*   5		*/
+            nrkj2 = iprod(r_kj, r_kj);  /*   5        */
             nrij2 = iprod(r_ij, r_ij);
 
-            cik = st*gmx::invsqrt(nrkj2*nrij2); /*  12		*/
-            cii = sth/nrij2;                    /*  10		*/
-            ckk = sth/nrkj2;                    /*  10		*/
+            cik = st*gmx::invsqrt(nrkj2*nrij2); /*  12        */
+            cii = sth/nrij2;                    /*  10        */
+            ckk = sth/nrkj2;                    /*  10        */
 
-            for (m = 0; (m < DIM); m++)         /*  39		*/
+            for (m = 0; (m < DIM); m++)         /*  39        */
             {
                 f_i[m]    = -(cik*r_kj[m]-cii*r_ij[m]);
                 f_k[m]    = -(cik*r_ij[m]-ckk*r_kj[m]);
@@ -1741,27 +1743,27 @@ real quartic_angles(int nbonds,
                 f[ak][m] += f_k[m];
             }
 
-			//Calculate Phi and Kappa
+            //Calculate Phi and Kappa
             real distij = nrij2*gmx::invsqrt(nrij2);
             real distjk = nrkj2*gmx::invsqrt(nrkj2);
-			rvec r_ik;
-			pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
-			real nrik2 = iprod(r_ik, r_ik);
-			//real nrik2 = nrij2 + nrkj2 - 2*distij*distjk*cos_theta;
+            rvec r_ik;
+            pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
+            real nrik2 = iprod(r_ik, r_ik);
+            //real nrik2 = nrij2 + nrkj2 - 2*distij*distjk*cos_theta;
             real distik = nrik2*gmx::invsqrt(nrik2);
             real coeff[5] = {0,0,0,0,0};
-			for(int i = 0; i < 5; i++){
-				coeff[i] = forceparams[type].qangle.c[i];
-			}
-			mds::array3_ext phi;
-			mds::matrix3_ext kappa;
-			mds::zeroarray3(phi);
-			mds::zeromatrix3(kappa);
-			locals_grid->QuarticAnglePhiKappa(distij, distjk, distik, cos_theta, dt, coeff, phi, kappa);
+            for(int i = 0; i < 5; i++){
+                coeff[i] = forceparams[type].qangle.c[i];
+            }
+            mds::array3_ext phi;
+            mds::matrix3_ext kappa;
+            mds::zeroarray3(phi);
+            mds::zeromatrix3(kappa);
+                        mds::QuarticAnglePhiKappa(distij, distjk, distik, cos_theta, dt, coeff, phi, kappa);
 
             /* begin stress tensor */
             //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-			locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+            locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
             /* end stress tensor */
 
             if (g)
@@ -1776,7 +1778,7 @@ real quartic_angles(int nbonds,
             rvec_inc(fshift[t1], f_i);
             rvec_inc(fshift[CENTRAL], f_j);
             rvec_inc(fshift[t2], f_k);
-        }                                       /* 153 TOTAL	*/
+        }                                       /* 153 TOTAL    */
     }
     return vtot;
 }
@@ -1789,16 +1791,16 @@ real dih_angle(const rvec xi, const rvec xj, const rvec xk, const rvec xl,
     real ipr, phi;
 
     *t1 = pbc_rvec_sub(pbc, xi, xj, r_ij); /*  3        */
-    *t2 = pbc_rvec_sub(pbc, xk, xj, r_kj); /*  3		*/
-    *t3 = pbc_rvec_sub(pbc, xk, xl, r_kl); /*  3		*/
+    *t2 = pbc_rvec_sub(pbc, xk, xj, r_kj); /*  3        */
+    *t3 = pbc_rvec_sub(pbc, xk, xl, r_kl); /*  3        */
 
     cprod(r_ij, r_kj, m);                  /*  9        */
-    cprod(r_kj, r_kl, n);                  /*  9		*/
+    cprod(r_kj, r_kl, n);                  /*  9        */
     phi     = gmx_angle(m, n);             /* 49 (assuming 25 for atan2) */
     ipr     = iprod(r_ij, n);              /*  5        */
     (*sign) = (ipr < 0.0) ? -1.0 : 1.0;
-    phi     = (*sign)*phi;                 /*  1		*/
-    /* 82 TOTAL	*/
+    phi     = (*sign)*phi;                 /*  1        */
+    /* 82 TOTAL    */
     return phi;
 }
 
@@ -1939,31 +1941,31 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
     ivec jt, dt_ij, dt_kj, dt_lj;
 
     iprm  = iprod(m, m);       /*  5    */
-    iprn  = iprod(n, n);       /*  5	*/
-    nrkj2 = iprod(r_kj, r_kj); /*  5	*/
+    iprn  = iprod(n, n);       /*  5    */
+    nrkj2 = iprod(r_kj, r_kj); /*  5    */
     toler = nrkj2*GMX_REAL_EPS;
     if ((iprm > toler) && (iprn > toler))
     {
-        nrkj_1 = gmx::invsqrt(nrkj2); /* 10	*/
-        nrkj_2 = nrkj_1*nrkj_1;       /*  1	*/
-        nrkj   = nrkj2*nrkj_1;        /*  1	*/
-        a      = -ddphi*nrkj/iprm;    /* 11	*/
-        svmul(a, m, f_i);             /*  3	*/
-        b     = ddphi*nrkj/iprn;      /* 11	*/
+        nrkj_1 = gmx::invsqrt(nrkj2); /* 10    */
+        nrkj_2 = nrkj_1*nrkj_1;       /*  1    */
+        nrkj   = nrkj2*nrkj_1;        /*  1    */
+        a      = -ddphi*nrkj/iprm;    /* 11    */
+        svmul(a, m, f_i);             /*  3    */
+        b     = ddphi*nrkj/iprn;      /* 11    */
         svmul(b, n, f_l);             /*  3  */
-        p     = iprod(r_ij, r_kj);    /*  5	*/
-        p    *= nrkj_2;               /*  1	*/
-        q     = iprod(r_kl, r_kj);    /*  5	*/
-        q    *= nrkj_2;               /*  1	*/
-        svmul(p, f_i, uvec);          /*  3	*/
-        svmul(q, f_l, vvec);          /*  3	*/
-        rvec_sub(uvec, vvec, svec);   /*  3	*/
-        rvec_sub(f_i, svec, f_j);     /*  3	*/
-        rvec_add(f_l, svec, f_k);     /*  3	*/
-        rvec_inc(f[i], f_i);          /*  3	*/
-        rvec_dec(f[j], f_j);          /*  3	*/
-        rvec_dec(f[k], f_k);          /*  3	*/
-        rvec_inc(f[l], f_l);          /*  3	*/
+        p     = iprod(r_ij, r_kj);    /*  5    */
+        p    *= nrkj_2;               /*  1    */
+        q     = iprod(r_kl, r_kj);    /*  5    */
+        q    *= nrkj_2;               /*  1    */
+        svmul(p, f_i, uvec);          /*  3    */
+        svmul(q, f_l, vvec);          /*  3    */
+        rvec_sub(uvec, vvec, svec);   /*  3    */
+        rvec_sub(f_i, svec, f_j);     /*  3    */
+        rvec_add(f_l, svec, f_k);     /*  3    */
+        rvec_inc(f[i], f_i);          /*  3    */
+        rvec_dec(f[j], f_j);          /*  3    */
+        rvec_dec(f[k], f_k);          /*  3    */
+        rvec_inc(f[l], f_l);          /*  3    */
 
         if (g)
         {
@@ -2044,27 +2046,27 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
     real a, b, p, q, toler;
     
     iprm  = iprod(m, m);       /*  5    */
-    iprn  = iprod(n, n);       /*  5	*/
-    nrkj2 = iprod(r_kj, r_kj); /*  5	*/
+    iprn  = iprod(n, n);       /*  5    */
+    nrkj2 = iprod(r_kj, r_kj); /*  5    */
     toler = nrkj2*GMX_REAL_EPS;
     if ((iprm > toler) && (iprn > toler))
     {
-        nrkj_1 = gmx::invsqrt(nrkj2); /* 10	*/
-        nrkj_2 = nrkj_1*nrkj_1;       /*  1	*/
-        nrkj   = nrkj2*nrkj_1;        /*  1	*/
-        a      = -ddphi*nrkj/iprm;    /* 11	*/
-        svmul(a, m, f_i);             /*  3	*/
-        b     = ddphi*nrkj/iprn;      /* 11	*/
+        nrkj_1 = gmx::invsqrt(nrkj2); /* 10    */
+        nrkj_2 = nrkj_1*nrkj_1;       /*  1    */
+        nrkj   = nrkj2*nrkj_1;        /*  1    */
+        a      = -ddphi*nrkj/iprm;    /* 11    */
+        svmul(a, m, f_i);             /*  3    */
+        b     = ddphi*nrkj/iprn;      /* 11    */
         svmul(b, n, f_l);             /*  3  */
-        p     = iprod(r_ij, r_kj);    /*  5	*/
-        p    *= nrkj_2;               /*  1	*/
-        q     = iprod(r_kl, r_kj);    /*  5	*/
-        q    *= nrkj_2;               /*  1	*/
-        svmul(p, f_i, uvec);          /*  3	*/
-        svmul(q, f_l, vvec);          /*  3	*/
-        rvec_sub(uvec, vvec, svec);   /*  3	*/
-        rvec_sub(f_i, svec, f_j);     /*  3	*/
-        rvec_add(f_l, svec, f_k);     /*  3	*/
+        p     = iprod(r_ij, r_kj);    /*  5    */
+        p    *= nrkj_2;               /*  1    */
+        q     = iprod(r_kl, r_kj);    /*  5    */
+        q    *= nrkj_2;               /*  1    */
+        svmul(p, f_i, uvec);          /*  3    */
+        svmul(q, f_l, vvec);          /*  3    */
+        rvec_sub(uvec, vvec, svec);   /*  3    */
+        rvec_sub(f_i, svec, f_j);     /*  3    */
+        rvec_add(f_l, svec, f_k);     /*  3    */
         
         /* begin stress tensor */
         if (locals_grid != NULL)
@@ -2103,10 +2105,10 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
         }
         /* end stress tensor */
 
-        rvec_inc(f[i], f_i);          /*  3	*/
-        rvec_dec(f[j], f_j);          /*  3	*/
-        rvec_dec(f[k], f_k);          /*  3	*/
-        rvec_inc(f[l], f_l);          /*  3	*/
+        rvec_inc(f[i], f_i);          /*  3    */
+        rvec_dec(f[j], f_j);          /*  3    */
+        rvec_dec(f[k], f_k);          /*  3    */
+        rvec_inc(f[l], f_l);          /*  3    */
     }
 }
 
@@ -2240,7 +2242,7 @@ real pdihs(int nbonds,
         vtot += vpd;
         do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
                        f, fshift, pbc, g, x, t1, t2, t3,
-                       locals_grid, mds_dip);/* 112		*/
+                       locals_grid, mds_dip);/* 112        */
 
 #ifdef DEBUG
         fprintf(debug, "pdih: (%d,%d,%d,%d) phi=%g\n",
@@ -2596,7 +2598,7 @@ real idihs(int nbonds,
         al   = forceatoms[i++];
 
         phi = dih_angle(x[ai], x[aj], x[ak], x[al], pbc, r_ij, r_kj, r_kl, m, n,
-                        &sign, &t1, &t2, &t3);  /*  84		*/
+                        &sign, &t1, &t2, &t3);  /*  84        */
 
         /* phi can jump if phi0 is close to Pi/-Pi, which will cause huge
          * force changes if we just apply a normal harmonic.
@@ -2627,8 +2629,8 @@ real idihs(int nbonds,
 
         do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
                    f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid, mds_dii);/* 112		*/
-        /* 218 TOTAL	*/
+                   locals_grid, mds_dii);/* 112        */
+        /* 218 TOTAL    */
 #ifdef DEBUG
         if (debug)
         {
@@ -2665,12 +2667,12 @@ static real low_angres(int nbonds,
         type = forceatoms[i++];
         ai   = forceatoms[i++];
         aj   = forceatoms[i++];
-        t1   = pbc_rvec_sub(pbc, x[aj], x[ai], r_ij);       /*  3		*/
+        t1   = pbc_rvec_sub(pbc, x[aj], x[ai], r_ij);       /*  3        */
         if (!bZAxis)
         {
             ak   = forceatoms[i++];
             al   = forceatoms[i++];
-            t2   = pbc_rvec_sub(pbc, x[al], x[ak], r_kl);  /*  3		*/
+            t2   = pbc_rvec_sub(pbc, x[al], x[ak], r_kl);  /*  3        */
         }
         else
         {
@@ -2679,7 +2681,7 @@ static real low_angres(int nbonds,
             r_kl[ZZ] = 1;
         }
 
-        cos_phi = cos_angle(r_ij, r_kl); /* 25		*/
+        cos_phi = cos_angle(r_ij, r_kl); /* 25        */
         phi     = std::acos(cos_phi);    /* 10           */
 
         *dvdlambda += dopdihs_min(forceparams[type].pdihs.cpA,
@@ -2691,17 +2693,17 @@ static real low_angres(int nbonds,
 
         vtot += vid;
 
-        cos_phi2 = gmx::square(cos_phi);                /*   1		*/
+        cos_phi2 = gmx::square(cos_phi);                /*   1        */
         if (cos_phi2 < 1)
         {
-            st    = -dVdphi*gmx::invsqrt(1 - cos_phi2); /*  12		*/
-            sth   = st*cos_phi;                         /*   1		*/
-            nrij2 = iprod(r_ij, r_ij);                  /*   5		*/
+            st    = -dVdphi*gmx::invsqrt(1 - cos_phi2); /*  12        */
+            sth   = st*cos_phi;                         /*   1        */
+            nrij2 = iprod(r_ij, r_ij);                  /*   5        */
             nrkl2 = iprod(r_kl, r_kl);                  /*   5          */
 
-            c   = st*gmx::invsqrt(nrij2*nrkl2);         /*  11		*/
-            cij = sth/nrij2;                            /*  10		*/
-            ckl = sth/nrkl2;                            /*  10		*/
+            c   = st*gmx::invsqrt(nrij2*nrkl2);         /*  11        */
+            cij = sth/nrij2;                            /*  10        */
+            ckl = sth/nrkl2;                            /*  10        */
 
             for (m = 0; m < DIM; m++)                   /*  18+18       */
             {
@@ -2854,7 +2856,7 @@ real dihres(int nbonds,
             }
             do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
                        f, fshift, pbc, g, x, t1, t2, t3,
-                       locals_grid, mds_dio);      /* 112		*/
+                       locals_grid, mds_dio);      /* 112        */
         }
     }
     return vtot;
@@ -2949,7 +2951,7 @@ real restrangles(int nbonds,
 
         /* begin stress tensor */
         locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+        //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
         /*   Computation of potential energy   */
@@ -3292,7 +3294,7 @@ real rbdihs(int nbonds,
         al   = forceatoms[i++];
 
         phi = dih_angle(x[ai], x[aj], x[ak], x[al], pbc, r_ij, r_kj, r_kl, m, n,
-                        &sign, &t1, &t2, &t3);  /*  84		*/
+                        &sign, &t1, &t2, &t3);  /*  84        */
 
         /* Change to polymer convention */
         if (phi < c0)
@@ -3301,7 +3303,7 @@ real rbdihs(int nbonds,
         }
         else
         {
-            phi -= M_PI;    /*   1		*/
+            phi -= M_PI;    /*   1        */
 
         }
         cos_phi = std::cos(phi);
@@ -3354,11 +3356,11 @@ real rbdihs(int nbonds,
         v           += cosfac*rbp;
         dvdl_term   += cosfac*rbpBA;
 
-        ddphi = -ddphi*sin_phi;         /*  11		*/
+        ddphi = -ddphi*sin_phi;         /*  11        */
 
         do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
                    f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid, mds_drb); /* 112		*/
+                   locals_grid, mds_drb); /* 112        */
         vtot += v;
     }
     *dvdlambda += dvdl_term;
@@ -3911,7 +3913,7 @@ real g96bonds(int nbonds,
         aj   = forceatoms[i++];
 
         ki   = pbc_rvec_sub(pbc, x[ai], x[aj], dx); /*   3      */
-        dr2  = iprod(dx, dx);                       /*   5		*/
+        dr2  = iprod(dx, dx);                       /*   5        */
 
         *dvdlambda += g96harmonic(forceparams[type].harmonic.krA,
                                   forceparams[type].harmonic.krB,
@@ -3933,7 +3935,7 @@ real g96bonds(int nbonds,
             ivec_sub(SHIFT_IVEC(g, ai), SHIFT_IVEC(g, aj), dt);
             ki = IVEC2IS(dt);
         }
-        for (m = 0; (m < DIM); m++)     /*  15		*/
+        for (m = 0; (m < DIM); m++)     /*  15        */
         {
             fij                 = fbond*dx[m];
             f[ai][m]           += fij;
@@ -3943,20 +3945,20 @@ real g96bonds(int nbonds,
         }
 
 
-		//Calculate Phi and Kappa
-		real dr02 = forceparams[type].harmonic.rA;
-		double dr = dr2*gmx::invsqrt(dr2);
-		//double dr0 = dr02*gmx::invsqrt(dr02);
-		double spk = forceparams[type].harmonic.krA;
-		double phi = spk*dr*(dr2-dr02);
-		double kappa = spk*(3*dr2-dr02);
-		//locals_grid->FourthPowerPhiKappa(spk, dr, dr0, phi, kappa);
+        //Calculate Phi and Kappa
+        real dr02 = forceparams[type].harmonic.rA;
+        double dr = dr2*gmx::invsqrt(dr2);
+        //double dr0 = dr02*gmx::invsqrt(dr02);
+        double spk = forceparams[type].harmonic.krA;
+        double phi = spk*dr*(dr2-dr02);
+        double kappa = spk*(3*dr2-dr02);
+        //locals_grid->FourthPowerPhiKappa(spk, dr, dr0, phi, kappa);
 
         /* begin stress tensor */
         //locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
+        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, phi, kappa);
         /* end stress tensor */
-    }               /* 44 TOTAL	*/
+    }               /* 44 TOTAL    */
     return vtot;
 }
 
@@ -3967,11 +3969,11 @@ real g96bond_angle(const rvec xi, const rvec xj, const rvec xk, const t_pbc *pbc
 {
     real costh;
 
-    *t1 = pbc_rvec_sub(pbc, xi, xj, r_ij); /*  3		*/
-    *t2 = pbc_rvec_sub(pbc, xk, xj, r_kj); /*  3		*/
+    *t1 = pbc_rvec_sub(pbc, xi, xj, r_ij); /*  3        */
+    *t2 = pbc_rvec_sub(pbc, xk, xj, r_kj); /*  3        */
 
-    costh = cos_angle(r_ij, r_kj);         /* 25		*/
-    /* 41 TOTAL	*/
+    costh = cos_angle(r_ij, r_kj);         /* 25        */
+    /* 41 TOTAL    */
     return costh;
 }
 
@@ -4020,7 +4022,7 @@ real g96angles(int nbonds,
                     cos_theta, va, dVdt);
         }
 #endif
-        for (m = 0; (m < DIM); m++)     /*  42	*/
+        for (m = 0; (m < DIM); m++)     /*  42    */
         {
             f_i[m]    = dVdt*(r_kj[m]*rijrkj_1 - r_ij[m]*rij_2*cos_theta);
             f_k[m]    = dVdt*(r_ij[m]*rijrkj_1 - r_kj[m]*rkj_2*cos_theta);
@@ -4029,7 +4031,7 @@ real g96angles(int nbonds,
             f[aj][m] += f_j[m];
             f[ak][m] += f_k[m];
         }
-		
+        
         /* begin stress tensor */
         //Calculate Phi and Kappa
         real r_ij2 = iprod(r_ij,r_ij);
@@ -4046,7 +4048,7 @@ real g96angles(int nbonds,
         mds::matrix3_ext kappa;
         mds::zeroarray3(phi);
         mds::zeromatrix3(kappa);
-        locals_grid->HarmonicCosPhiKappa(distij, distkj, distik, deltacos, spk, phi, kappa);
+        mds::HarmonicCosPhiKappa(distij, distkj, distik, deltacos, spk, phi, kappa);
         locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
         //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
         //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
@@ -4064,7 +4066,7 @@ real g96angles(int nbonds,
         rvec_inc(fshift[t1], f_i);
         rvec_inc(fshift[CENTRAL], f_j);
         rvec_inc(fshift[t2], f_k);          /* 9 */
-        /* 163 TOTAL	*/
+        /* 163 TOTAL    */
     }
     return vtot;
 }
@@ -4117,25 +4119,25 @@ real cross_bond_bond(int nbonds,
         svmul(-krr*s2/r1, r_ij, f_i);
         svmul(-krr*s1/r2, r_kj, f_k);
 
-        for (m = 0; (m < DIM); m++)     /*  12	*/
+        for (m = 0; (m < DIM); m++)     /*  12    */
         {
             f_j[m]    = -f_i[m] - f_k[m];
             f[ai][m] += f_i[m];
             f[aj][m] += f_j[m];
             f[ak][m] += f_k[m];
         }
-		
-		//Calculate Phi and Kappa
-		mds::array3_ext phi;
-		mds::matrix3_ext kappa;
-		mds::zeroarray3(phi);
-		mds::zeromatrix3(kappa);
-		locals_grid->BondBondCrossPhiKappa(krr, s1, s2, phi, kappa);
+        
+        //Calculate Phi and Kappa
+        mds::array3_ext phi;
+        mds::matrix3_ext kappa;
+        mds::zeroarray3(phi);
+        mds::zeromatrix3(kappa);
+                mds::BondBondCrossPhiKappa(krr, s1, s2, phi, kappa);
         
         /* begin stress tensor */
-		locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+        locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
         //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+        //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
         /* Virial stuff */
@@ -4151,7 +4153,7 @@ real cross_bond_bond(int nbonds,
         rvec_inc(fshift[t1], f_i);
         rvec_inc(fshift[CENTRAL], f_j);
         rvec_inc(fshift[t2], f_k);          /* 9 */
-        /* 163 TOTAL	*/
+        /* 163 TOTAL    */
     }
     return vtot;
 }
@@ -4215,24 +4217,24 @@ real cross_bond_angle(int nbonds,
             f_j[m] = -f_i[m] - f_k[m];
         }
 
-        for (m = 0; (m < DIM); m++)     /*  12	*/
+        for (m = 0; (m < DIM); m++)     /*  12    */
         {
             f[ai][m] += f_i[m];
             f[aj][m] += f_j[m];
             f[ak][m] += f_k[m];
         }
         
-		//Calculate Phi and Kappa
-		mds::array3_ext phi;
-		mds::matrix3_ext kappa;
-		mds::zeroarray3(phi);
-		mds::zeromatrix3(kappa);
-		locals_grid->BondAngleCrossPhiKappa(krt, s1, s2, s3, phi, kappa);
+        //Calculate Phi and Kappa
+        mds::array3_ext phi;
+        mds::matrix3_ext kappa;
+        mds::zeroarray3(phi);
+        mds::zeromatrix3(kappa);
+                mds::BondAngleCrossPhiKappa(krt, s1, s2, s3, phi, kappa);
         
         /* begin stress tensor */
-		locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+        locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
         //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-		//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+        //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
         /* Virial stuff */
@@ -4248,7 +4250,7 @@ real cross_bond_angle(int nbonds,
         rvec_inc(fshift[t1], f_i);
         rvec_inc(fshift[CENTRAL], f_j);
         rvec_inc(fshift[t2], f_k);          /* 9 */
-        /* 163 TOTAL	*/
+        /* 163 TOTAL    */
     }
     return vtot;
 }
@@ -4314,8 +4316,8 @@ real tab_bonds(int nbonds,
         aj   = forceatoms[i++];
 
         ki   = pbc_rvec_sub(pbc, x[ai], x[aj], dx); /*   3      */
-        dr2  = iprod(dx, dx);                       /*   5		*/
-        dr   = dr2*gmx::invsqrt(dr2);               /*  10		*/
+        dr2  = iprod(dx, dx);                       /*   5        */
+        dr   = dr2*gmx::invsqrt(dr2);               /*  10        */
 
         table = forceparams[type].tab.table;
 
@@ -4332,7 +4334,7 @@ real tab_bonds(int nbonds,
 
 
         vtot  += vbond;             /* 1*/
-        fbond *= gmx::invsqrt(dr2); /*   6		*/
+        fbond *= gmx::invsqrt(dr2); /*   6        */
 #ifdef DEBUG
         if (debug)
         {
@@ -4345,7 +4347,7 @@ real tab_bonds(int nbonds,
             ivec_sub(SHIFT_IVEC(g, ai), SHIFT_IVEC(g, aj), dt);
             ki = IVEC2IS(dt);
         }
-        for (m = 0; (m < DIM); m++)     /*  15		*/
+        for (m = 0; (m < DIM); m++)     /*  15        */
         {
             fij                 = fbond*dx[m];
             f[ai][m]           += fij;
@@ -4356,9 +4358,9 @@ real tab_bonds(int nbonds,
         
         /* begin stress tensor */
         locals_bonds_distribute_stress(ai, aj, fbond, x, dx, locals_grid);
-		//locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
+        //locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
-    }               /* 62 TOTAL	*/
+    }               /* 62 TOTAL    */
     return vtot;
 }
 
@@ -4384,7 +4386,7 @@ real tab_angles(int nbonds,
         ak   = forceatoms[i++];
 
         theta  = bond_angle(x[ai], x[aj], x[ak], pbc,
-                            r_ij, r_kj, &cos_theta, &t1, &t2); /*  41		*/
+                            r_ij, r_kj, &cos_theta, &t1, &t2); /*  41        */
 
         table = forceparams[type].tab.table;
 
@@ -4395,7 +4397,7 @@ real tab_angles(int nbonds,
                                  theta, lambda, &va, &dVdt); /*  22  */
         vtot += va;
 
-        cos_theta2 = gmx::square(cos_theta);            /*   1		*/
+        cos_theta2 = gmx::square(cos_theta);            /*   1        */
         if (cos_theta2 < 1)
         {
             int  m;
@@ -4404,8 +4406,8 @@ real tab_angles(int nbonds,
             real nrkj2, nrij2;
             rvec f_i, f_j, f_k;
 
-            st  = dVdt*gmx::invsqrt(1 - cos_theta2); /*  12		*/
-            sth = st*cos_theta;                      /*   1		*/
+            st  = dVdt*gmx::invsqrt(1 - cos_theta2); /*  12        */
+            sth = st*cos_theta;                      /*   1        */
 #ifdef DEBUG
             if (debug)
             {
@@ -4413,14 +4415,14 @@ real tab_angles(int nbonds,
                         theta*RAD2DEG, va, dVdt);
             }
 #endif
-            nrkj2 = iprod(r_kj, r_kj);  /*   5		*/
+            nrkj2 = iprod(r_kj, r_kj);  /*   5        */
             nrij2 = iprod(r_ij, r_ij);
 
-            cik = st*gmx::invsqrt(nrkj2*nrij2); /*  12		*/
-            cii = sth/nrij2;                    /*  10		*/
-            ckk = sth/nrkj2;                    /*  10		*/
+            cik = st*gmx::invsqrt(nrkj2*nrij2); /*  12        */
+            cii = sth/nrij2;                    /*  10        */
+            ckk = sth/nrkj2;                    /*  10        */
 
-            for (m = 0; (m < DIM); m++)         /*  39		*/
+            for (m = 0; (m < DIM); m++)         /*  39        */
             {
                 f_i[m]    = -(cik*r_kj[m]-cii*r_ij[m]);
                 f_k[m]    = -(cik*r_ij[m]-ckk*r_kj[m]);
@@ -4432,7 +4434,7 @@ real tab_angles(int nbonds,
             
             /* begin stress tensor */
             locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-			//locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+            //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
             /* end stress tensor */
 
             if (g)
@@ -4447,7 +4449,7 @@ real tab_angles(int nbonds,
             rvec_inc(fshift[t1], f_i);
             rvec_inc(fshift[CENTRAL], f_j);
             rvec_inc(fshift[t2], f_k);
-        }                                       /* 169 TOTAL	*/
+        }                                       /* 169 TOTAL    */
     }
     return vtot;
 }
@@ -4489,7 +4491,7 @@ real tab_dihs(int nbonds,
         vtot += vpd;
         do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
                    f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid, mds_dio); /* 112	*/
+                   locals_grid, mds_dio); /* 112    */
 
 #ifdef DEBUG
         fprintf(debug, "pdih: (%d,%d,%d,%d) phi=%g\n",
