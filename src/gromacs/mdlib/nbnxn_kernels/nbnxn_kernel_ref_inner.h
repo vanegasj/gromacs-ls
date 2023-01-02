@@ -77,7 +77,7 @@
             real            VLJ gmx_unused;
             // Locals constants needed to compute the elasticity tensor from vdw and coul interactions
             real            phi_coul = 0, kappa_coul = 0, phi_lj = 0, kappa_lj = 0, phi_coul_ic = 0, kappa_coul_ic = 0, phi_lj_ic = 0, kappa_lj_ic = 0, skipmask_rvdw;
-            real            dfw = locals_grid->GetSpacingC(), dfwsq = dfw*dfw, deltavdw = 0, deltavdwsq = 0, deltacoul = 0, deltacoulsq = 0, rinvl = 0, rinvsql = 0, rinvsixl = 0;
+            real            dfw = locals_grid->GetSpacing(), dfwsq = dfw*dfw, deltavdw = 0, deltavdwsq = 0, deltacoul = 0, deltacoulsq = 0, rinvl = 0, rinvsql = 0, rinvsixl = 0;
             bool            bCoulEwald = EEL_FULL(ic->eeltype); // Locals needs to know whether we are using plain coul or Ewald for elasticity calculations
             bool            bCoulCut = (ic->eeltype == eelCUT);
 #if defined LJ_FORCE_SWITCH || defined LJ_POT_SWITCH

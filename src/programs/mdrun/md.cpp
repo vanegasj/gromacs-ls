@@ -229,12 +229,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   int localsgridx,
                   int localsgridy,
                   int localsgridz,
-                  real localsgridspacingc,
-                  int localsgridxc,
-                  int localsgridyc,
-                  int localsgridzc,
                   int localscontrib,
-                  int localscontribc,
                   int localsfdecomp,
                   int localsspatialatom,
                   gmx_bool localsdispcor,
@@ -590,13 +585,8 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             {
                 gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgrid) <= 0.0\n");
             }
-            if(localsgridspacingc<=0)
-            {
-                gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgridc) <= 0.0\n");
-            }
 
             locals_grid.SetSpacing(localsgridspacing);
-            locals_grid.SetSpacingc(localsgridspacingc);
 
             if(localsgridx == 0)
                 locals_grid.SetNumberOfGridCellsX(box_size[XX]/localsgridspacing);
@@ -611,18 +601,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             else
                 locals_grid.SetNumberOfGridCellsZ(localsgridz);
 
-            if(localsgridxc == 0)
-                locals_grid.SetNumberOfGridCellsXC(box_size[XX]/localsgridspacingc);
-            else
-                locals_grid.SetNumberOfGridCellsXC(localsgridxc);
-            if(localsgridyc == 0)
-                locals_grid.SetNumberOfGridCellsYC(box_size[YY]/localsgridspacingc);
-            else
-                locals_grid.SetNumberOfGridCellsYC(localsgridyc);
-            if(localsgridzc == 0)
-                locals_grid.SetNumberOfGridCellsZC(box_size[ZZ]/localsgridspacingc);
-            else
-                locals_grid.SetNumberOfGridCellsZC(localsgridzc);
 
             int ngrid =
                 locals_grid.GetNumberOfGridCellsX()*
@@ -636,34 +614,12 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                locals_grid.GetNumberOfGridCellsZ(),
                ngrid);
 
-            int ngridc =
-                locals_grid.GetNumberOfGridCellsXC()*
-                locals_grid.GetNumberOfGridCellsYC()*
-                locals_grid.GetNumberOfGridCellsZC();
-
-            /*printf("Charge spacing requested: %g    Using nxc=%d nyc=%d nzc=%d, charge grid size %d \n",
-               localsgridspacingc,
-               locals_grid.GetNumberOfGridCellsXC(),
-               locals_grid.GetNumberOfGridCellsYC(),
-               locals_grid.GetNumberOfGridCellsZC(),
-               ngridc);*/
-
             if(locals_grid.GetNumberOfGridCellsX()==0)
                 locals_grid.SetNumberOfGridCellsX(1);
             if(locals_grid.GetNumberOfGridCellsY()==0)
                 locals_grid.SetNumberOfGridCellsY(1);
             if(locals_grid.GetNumberOfGridCellsZ()==0)
                 locals_grid.SetNumberOfGridCellsZ(1);
-
-            if(locals_grid.GetNumberOfGridCellsXC()==0)
-                locals_grid.SetNumberOfGridCellsXC(1);
-            if(locals_grid.GetNumberOfGridCellsYC()==0)
-                locals_grid.SetNumberOfGridCellsYC(1);
-            if(locals_grid.GetNumberOfGridCellsZC()==0)
-                locals_grid.SetNumberOfGridCellsZC(1);
-
-            // set the cutoff used
-            locals_grid.SetChargeParams(localscontribc, fr->epsfac, fr->rcoulomb, fr->ewaldcoeff_q);
 
             // set the temperature based on the ref_T value of the first group (we are assumming that the temperature is the same for all groups)
             printf("The temperature value used for the elasticity calculations is T = %g K.\n", ir->opts.ref_t[0]);
@@ -702,16 +658,11 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                             radius = 0.0;
 
                         locals_grid.SetVoronoiRadius(radius, atom_index);
-
-                        //printf("atom: %i, c6: %12.5e, c12: %12.5e, r: %12.5e\n", atom_index, c6, c12, radius);
-
                         atom_index += 1;
                     }
                 }
             }
         }
-        //calc_recipbox(state->box,locals_grid.invbox); /**/// possibly call Update() here?
-        //locals_grid.ePBC = ir->ePBC; /**/// I don't see an equivalent for this.
     }
     /* local stress end */
 

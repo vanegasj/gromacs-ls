@@ -316,15 +316,10 @@ int gmx_mdrun(int argc, char *argv[])
     int localsgridx=0;
     int localsgridy=0;
     int localsgridz=0;
-    real localsgridspacingc=0.1;
-    int localsgridxc=0;
-    int localsgridyc=0;
-    int localsgridzc=0;
     int localsskip=1;
     const char * localsenum = "all";
     const char * localsfdenum = "ccfd";
     const char * localssanum  = "spat";
-    const char * localsenumc = "off";
     gmx_bool localsdispcor = TRUE;
     gmx_bool localscuda = FALSE;
     gmx_bool localsdisable = FALSE;
@@ -422,8 +417,6 @@ int gmx_mdrun(int argc, char *argv[])
           "Seed for replica exchange, -1 is generate a seed" },
         { "-localsgrid",  FALSE, etREAL, {&localsgridspacing},
           "Spacing for local stress grid (default = 0.1 nm)" },
-        { "-localsgridc",  FALSE, etREAL, {&localsgridspacingc},
-          "HIDDENSpacing for local stress charge grid (default = 0.1 nm)" },
         { "-nstlp",  FALSE, etINT, {&nstlocals},
           "HIDDENFrequency of writing local stress grid to file (default = 0)" },
         { "-lsgridx", FALSE, etINT, {&localsgridx},
@@ -432,16 +425,8 @@ int gmx_mdrun(int argc, char *argv[])
           "Set the local stress grid size in the y direction (default use box[YY][YY]/localsgrid)"},
         { "-lsgridz", FALSE, etINT, {&localsgridz},
           "Set the local stress grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
-        { "-lsgridxc", FALSE, etINT, {&localsgridxc},
-          "HIDDENSet the local stress charge grid size in the x direction (default use box[XX][XX]/localsgrid)"},
-        { "-lsgridyc", FALSE, etINT, {&localsgridyc},
-          "HIDDENSet the local stress charge grid size in the y direction (default use box[YY][YY]/localsgrid)"},
-        { "-lsgridzc", FALSE, etINT, {&localsgridzc},
-          "HIDDENSet the local stress charge grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
         { "-lscont", FALSE, etSTR, {&localsenum},
           "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel, none"},
-        { "-lsgridc", FALSE, etSTR, {&localsenumc},
-          "HIDDENSelect the type of gridc (default = off): off, near, far, full"},
         { "-lsfd", FALSE, etSTR, {&localsfdenum},
           "Select the type of force decomposition to be used: ccfd (covariant central force decomposition, default), ncfd (non-covariant central force decomposition), or gld (Goetz-Lipowsky decomposition)"},
         { "-lssa", FALSE, etSTR, {&localssanum},
@@ -597,25 +582,6 @@ int gmx_mdrun(int argc, char *argv[])
       printf("\nOption not recognized, will write all contributions to the local stress\n");
       localscontrib = mds_all;
     }
-    /*
-    printf("\nSelected gridc type: %s\n",localsenumc);
-    if (strcmp(localsenumc,"off") == 0) {
-      printf("\nWill disable the coulomb contribution from the charge grid\n");
-      localscontribc = mds_gridc_off;
-    }else if(strcmp(localsenumc,"near") == 0){
-      printf("\nWill enable near coulomb contributions from the charge grid\n");
-      localscontribc = mds_gridc_near;
-    }else if(strcmp(localsenumc,"far") == 0){
-      printf("\nWill enable far coulomb contribution from the charge grid\n");
-      localscontribc = mds_gridc_far;
-    }else if(strcmp(localsenumc,"full") == 0){
-      printf("\nWill enable full coulomb contribution from the charge grid\n");
-      localscontribc = mds_gridc_full;
-    }else{
-      printf("\nOption not recognized, will disable the coulomb contribution from the charge grid\n");
-      localscontribc = mds_gridc_off;
-    }
-    */
 
     /* now check the -multi and -multidir option */
     if (opt2bSet("-multidir", NFILE, fnm))
@@ -626,7 +592,6 @@ int gmx_mdrun(int argc, char *argv[])
         }
         nmultisim = opt2fns(&multidir, "-multidir", NFILE, fnm);
     }
-
 
     if (repl_ex_nst != 0 && nmultisim < 2)
     {
@@ -712,8 +677,7 @@ int gmx_mdrun(int argc, char *argv[])
                        nmultisim, repl_ex_nst, repl_ex_nex, repl_ex_seed,
                        pforce, cpt_period, max_hours, imdport, nstlocals,
                        localsgridspacing, localsgridx, localsgridy, localsgridz,
-                       localsgridspacingc, localsgridxc, localsgridyc, localsgridzc,
-                       localscontrib, localscontribc, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, localscuda, localsskip, Flags);
+                       localscontrib, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, localscuda, localsskip, Flags);
 
     /* Log file has to be closed in mdrunner if we are appending to it
        (fplog not set here) */
