@@ -1825,22 +1825,18 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 if (!bRerunMD && !bVV)
                 {
                     locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], state->v[i], gi);
-                    locals_grid.DistributeKineticElast(mass, x_full[i], v_half[i], state->v[i]);
                 }
                 else if (!bRerunMD && bVV)
                 {
                     locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], v_half[i], gi);
-                    locals_grid.DistributeKineticElast(mass, x_full[i], v_half[i], v_half[i]);
                 }
                 else if (bRerunMD && !bVV)
                 {
                     locals_grid.DistributeKinetic(mass, rerun_fr.x[gi], rerun_fr.v[gi], state->v[i], gi);
-                    locals_grid.DistributeKineticElast(mass, rerun_fr.x[gi], rerun_fr.v[gi], state->v[i]);
                 }
                 else if (bRerunMD && bVV)
                 {
                     locals_grid.DistributeKinetic(mass, rerun_fr.x[gi], rerun_fr.v[gi], rerun_fr.v[gi], gi);
-                    locals_grid.DistributeKineticElast(mass, rerun_fr.x[gi], rerun_fr.v[gi], rerun_fr.v[gi]);
                 }
             }
         }
