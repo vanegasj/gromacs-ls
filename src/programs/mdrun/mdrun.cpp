@@ -322,7 +322,6 @@ int gmx_mdrun(int argc, char *argv[])
     const char * localssanum  = "spat";
     gmx_bool localsdispcor = TRUE;
     gmx_bool localscuda = FALSE;
-    gmx_bool localsdisable = FALSE;
     gmx_bool localspbc = FALSE;
 
     /* Non transparent initialization of a complex gmx_hw_opt_t struct.
@@ -437,8 +436,6 @@ int gmx_mdrun(int argc, char *argv[])
           "Correct periodic boundary conditions in mdstress library." },
         { "-lsmindihang",  FALSE, etREAL, {&localsmindihangle},
           "Don't include dihedral local stress contributions if the sin(|phi|) is less than this factor. Use this flag if there is a dihedral potential (e.g. CHARMM36 lipid FF) that has been parametrized with a min/max that is not 0/Pi and the stress profiles show large noise that does not converge with additional frames. A -lsmindihang value of 0.0005 is typically sufficient to fix this problem." },
-        { "-lsdisable",  FALSE, etBOOL, {&localsdisable},
-          "Disable all MDStress related functions and output" },
         { "-lsskip",  FALSE, etINT, {&localsskip},
           "Only compute the local stress every nth frame" },
         { "-lscuda",  FALSE, etBOOL, {&localscuda},
@@ -666,8 +663,6 @@ int gmx_mdrun(int argc, char *argv[])
     ddxyz[ZZ] = (int)(realddxyz[ZZ] + 0.5);
     /* Disable MDStress here (there is no enable)
      */
-    if (localsdisable == TRUE)
-        locals_grid.Disable();
 
     rc = gmx::mdrunner(&hw_opt, fplog, cr, NFILE, fnm, oenv, bVerbose,
                        nstglobalcomm, ddxyz, dd_rank_order, npme, rdd, rconstr,

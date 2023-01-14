@@ -224,8 +224,8 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
 
     /* begin stress tensor */
     real fx,fy,fz,ccc;
-	real kappa, phi;
-	real rsq, rmag;
+    real kappa, phi;
+    real rsq, rmag;
     rvec lpR[2], lpF[2];
     int  lpatIDs[2];
     /* end stress tensor */
@@ -348,12 +348,12 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
                 fx = rij[ll][0]*ccc;
                 fy = rij[ll][1]*ccc;
                 fz = rij[ll][2]*ccc;
-				
-				rsq  = iprod(rij[ll], rij[ll]);
-				rmag   = rsq*gmx::invsqrt(rsq);
-				
-				phi = ccc*rmag; 
-				kappa = ccc;
+                
+                rsq  = iprod(rij[ll], rij[ll]);
+                rmag   = rsq*gmx::invsqrt(rsq);
+                
+                phi = ccc*rmag; 
+                kappa = ccc;
 
                 if ((locals_grid->GetContribType() == mds_all)
                         || (locals_grid->GetContribType() == mds_sha))
@@ -363,9 +363,7 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
                     lpatIDs[0] = ia[1]; lpatIDs[1] = ia[2];
                     lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
                     lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
-					//DistributeElasticity(darray xi, darray xj, darray xk, darray xl, double phi, double kappa)
-					locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi, kappa);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, &phi, &kappa, lpatIDs);
                 }
             }
             /* end stress tensor */

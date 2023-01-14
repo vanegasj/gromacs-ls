@@ -157,8 +157,7 @@ real RF_excl_correction(const t_forcerec *fr, t_graph *g,
                                 lpatIDs[0] = i; lpatIDs[1] = k;
                                 lpF[0][0] = df[0];  lpF[0][1] = df[1];  lpF[0][2] = df[2];
                                 lpF[1][0] = -df[0]; lpF[1][1] = -df[1]; lpF[1][2] = -df[2];
-                                locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
-                                locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi, kappa);
+                                locals_grid->DistributeInteraction(2, lpR, lpF, &phi, &kappa, lpatIDs);
                             }
                         }
                         /* end stress tensor */
@@ -225,8 +224,7 @@ real RF_excl_correction(const t_forcerec *fr, t_graph *g,
                                 lpatIDs[0] = i; lpatIDs[1] = k;
                                 lpF[0][0] = df[0];  lpF[0][1] = df[1];  lpF[0][2] = df[2];
                                 lpF[1][0] = -df[0]; lpF[1][1] = -df[1]; lpF[1][2] = -df[2];
-                                locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
-                                locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi, kappa);
+                                locals_grid->DistributeInteraction(2, lpR, lpF, &phi, &kappa, lpatIDs);
                             }
                         }
                         /* end stress tensor */

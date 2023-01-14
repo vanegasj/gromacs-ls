@@ -1094,13 +1094,11 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         if ((step % localsskip == 0) && (locals_grid.CheckInit() == true))
         {
-            //locals_grid.Enable();
             locals_grid.SetContribType(localscontrib);
             locals_grid.UpdateBoxSpacings(state->box);
         }
         else
         {
-            //locals_grid.Disable();
             locals_grid.SetContribType(mds_none);
         }
 

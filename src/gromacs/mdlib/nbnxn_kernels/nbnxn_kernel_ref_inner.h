@@ -486,58 +486,64 @@
                 if (lpatIDs[0] != -1 && lpatIDs[1] != -1)
                 {
                     int cont_type = locals_grid->GetContribType();
+                    
+                    mds::array3_ext lpR[2] = {0}, lpF[2] = {0};
+                    mds::real_ext lpPhi = 0;
+                    mds::real_ext lpKappa = 0;
                     if (cont_type == mds_all || cont_type == mds_vdw || cont_type == mds_cou)
                     {
                         real ix = xi[i*XI_STRIDE+XX]; real jx = x[aj*X_STRIDE+XX];
                         real iy = xi[i*XI_STRIDE+YY]; real jy = x[aj*X_STRIDE+YY];
                         real iz = xi[i*XI_STRIDE+ZZ]; real jz = x[aj*X_STRIDE+ZZ];
 
-                        rvec lpR[2], lpF[2];
                         lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz;
                         lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz;
-                        lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
-                        lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
+
+                        bool distribute = false;
                         if (skipmask > 0)
                         {
-                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
-                            locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi_lj, kappa_lj);
+                            lpF[0][0] +=  fx; lpF[0][1] +=  fy; lpF[0][2] +=  fz;
+                            lpF[1][0] += -fx; lpF[1][1] += -fy; lpF[1][2] += -fz;
+                            lpPhi += phi_lj;
+                            lpKappa += kappa_lj;
 #ifdef CALC_COULOMB
-                            locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], phi_coul,kappa_coul);
+                            lpPhi += phi_coul;
+                            lpKappa += kappa_coul;
 #endif
+                            distribute = true;
                         }
 #ifdef LJ_CUT
                         //if (deltavdwsq < dfwsq) // uncomment this line to include impulse correction from particles below and above the cutoff
                         if (deltavdwsq < dfwsq && skipmask_rvdw > 0) // uncomment this line to include impulse correction only from particles below the cutoff
                         {
-                            locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], -phi_lj_ic, -kappa_lj_ic);
+                            lpPhi += -phi_lj_ic;
+                            lpKappa += -kappa_lj_ic;
                             if (ic->vdwtype == evdwCUT && ic->vdw_modifier == eintmodNONE)
                             {
                                 real lj_ic = phi_lj_ic*rinvl;
-                                lpF[0][0] = lj_ic*dx;  lpF[0][1] = lj_ic*dy;  lpF[0][2] = lj_ic*dz;
-                                lpF[1][0] = -lpF[0][0]; lpF[1][1] = -lpF[0][1]; lpF[1][2] = -lpF[0][2];
-                                locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                lpF[0][0] +=  lj_ic*dx; lpF[0][1] +=  lj_ic*dy; lpF[0][2] +=  lj_ic*dz;
+                                lpF[1][0] += -lj_ic*dx; lpF[1][1] += -lj_ic*dy; lpF[1][2] += -lj_ic*dz;
                             }
+                            distribute = true;
                         }
 #endif
 #ifdef CALC_COULOMB
                         //if (deltacoulsq < dfwsq) // uncomment this line to include impulse correction from particles below and above the cutoff
                         if (deltacoulsq < dfwsq && skipmask > 0) // uncomment this line to include impulse correction only from particles below the cutoff
                         {
-                            locals_grid->DistributeElasticity(lpR[0], lpR[1], lpR[0], lpR[1], -phi_coul_ic, -kappa_coul_ic);
+                            lpPhi += -phi_coul_ic;
+                            lpKappa += -kappa_coul_ic;
                             if ((bCoulCut && ic->coulomb_modifier == eintmodNONE) || bCoulEwald)
                             {
                                 real coul_ic = phi_coul_ic*rinvl;
-                                lpF[0][0] = coul_ic*dx;  lpF[0][1] = coul_ic*dy;  lpF[0][2] = coul_ic*dz;
-                                printf("icx = %e, icy = %e, icz = %e\n", lpF[0][0],  lpF[0][1],  lpF[0][2]);
-                                lpF[1][0] = -lpF[0][0]; lpF[1][1] = -lpF[0][1]; lpF[1][2] = -lpF[0][2];
-                                locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                lpF[0][0] +=  coul_ic*dx; lpF[0][1] +=  coul_ic*dy; lpF[0][2] +=  coul_ic*dz;
+                                lpF[1][0] += -coul_ic*dx; lpF[1][1] += -coul_ic*dy; lpF[1][2] += -coul_ic*dz;
                             }
+                            distribute = true;
                         }
 #endif
-
-                        //if (ic->eeltype == eelCUT)
-                        //printf("ai = %d, aj = %d, fx = %e, fy = %e, fz = %e, px = %e, py = %e, pz = %e\n", xi_id[i], x_id[aj], fx, fy, fz, phi_lj*dx*rinv, phi_lj*dy*rinv, phi_lj*dz*rinv);
-                        //printf("r = %e, phi_ic = %e, kappa_ic = %e\n", 1/rinv, phi_lj_ic, kappa_lj_ic);
+                        if (distribute)
+                            locals_grid->DistributeInteraction(2, lpR, lpF, &lpPhi, &lpKappa, lpatIDs);
                     }
                 }
             }

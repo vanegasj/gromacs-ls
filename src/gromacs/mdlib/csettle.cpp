@@ -777,7 +777,7 @@ static void settleTemplate(const gmx_settledata_t settled,
                             transposeScatterStoreU<0>(lpF[1], offset, fb_p[3*i2+0], fb_p[3*i2+1], fb_p[3*i2+2]);
                             transposeScatterStoreU<0>(lpF[2], offset, fc_p[3*i2+0], fc_p[3*i2+1], fc_p[3*i2+2]);
 
-                            locals_grid->DistributeInteraction(-3, lpR, lpF, lpatIDs);
+                            locals_grid->DistributeInteraction(-3, lpR, lpF, nullptr, nullptr, lpatIDs);
                         }
                     }
                 }
