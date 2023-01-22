@@ -186,7 +186,7 @@ void locals_angles_distribute_stress(
             lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
             lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
             lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
-            locals_grid->DistributeInteraction(3, lpR, lpF, lpatIDs);
+            locals_grid->DistributeInteraction(3, lpR, lpF, nullptr, nullptr, lpatIDs);
         }
     }
 }
@@ -1887,7 +1887,7 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
                 lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
                 lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
                 lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, lpatIDs);
+                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr, lpatIDs);
             }
         }
         /* end stress tensor */
@@ -1969,7 +1969,7 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
                 lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
                 lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
                 lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, lpatIDs);
+                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr, lpatIDs);
             }
         }
         /* end stress tensor */
@@ -2949,7 +2949,7 @@ real restrdihs(int nbonds,
                 lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
                 lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
                 lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, lpatIDs);
+                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr, lpatIDs);
             }
         }
         /* end stress tensor */
@@ -3091,7 +3091,7 @@ real cbtdihs(int nbonds,
                 lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
                 lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
                 lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, lpatIDs);
+                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr, lpatIDs);
             }
         }
         /* end stress tensor */
@@ -3720,7 +3720,7 @@ cmap_dihs(int nbonds,
                 lpF[3][0] = Fl[0]; lpF[3][1] = Fl[1]; lpF[3][2] = Fl[2];
                 lpF[4][0] = Fm[0]; lpF[4][1] = Fm[1]; lpF[4][2] = Fm[2];
 
-                locals_grid->DistributeInteraction(5, lpR, lpF, lpatIDs);
+                locals_grid->DistributeInteraction(5, lpR, lpF, nullptr, nullptr, lpatIDs);
             }
         }
         /* end stress tensor */

@@ -540,7 +540,7 @@ do_pairs_general(int ftype, int nbonds,
                 lpatIDs[0] = ai; lpatIDs[1] = aj;
                 lpF[0][0] = dx[0];  lpF[0][1] = dx[1];  lpF[0][2] = dx[2];
                 lpF[1][0] = -dx[0]; lpF[1][1] = -dx[1]; lpF[1][2] = -dx[2];
-                locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
             }
         }
 

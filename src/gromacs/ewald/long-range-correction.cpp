@@ -291,7 +291,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                                             lpatIDs[0] = i; lpatIDs[1] = k;
                                             lpF[0][0] = -df[0];  lpF[0][1] = -df[1];  lpF[0][2] = -df[2];
                                             lpF[1][0] = df[0]; lpF[1][1] = df[1]; lpF[1][2] = df[2];
-                                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                            locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                                         }
                                     }
                                     /* end stress tensor */
@@ -348,7 +348,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                                             lpatIDs[0] = i; lpatIDs[1] = k;
                                             lpF[0][0] = -df[0];  lpF[0][1] = -df[1];  lpF[0][2] = -df[2];
                                             lpF[1][0] = df[0]; lpF[1][1] = df[1]; lpF[1][2] = df[2];
-                                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                            locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                                         }
                                     }
                                     /* end stress tensor */
@@ -493,7 +493,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                                             lpatIDs[0] = i; lpatIDs[1] = k;
                                             lpF[0][0] = -df[0];  lpF[0][1] = -df[1];  lpF[0][2] = -df[2];
                                             lpF[1][0] = df[0]; lpF[1][1] = df[1]; lpF[1][2] = df[2];
-                                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                            locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                                         }
                                     }
                                     /* end stress tensor */
@@ -546,7 +546,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                                             lpatIDs[0] = i; lpatIDs[1] = k;
                                             lpF[0][0] = -df[0];  lpF[0][1] = -df[1];  lpF[0][2] = -df[2];
                                             lpF[1][0] = df[0]; lpF[1][1] = df[1]; lpF[1][2] = df[2];
-                                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                                            locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                                         }
                                     }
                                     /* end stress tensor */

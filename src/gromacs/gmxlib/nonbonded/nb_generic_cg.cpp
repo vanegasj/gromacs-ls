@@ -336,7 +336,7 @@ gmx_nb_generic_cg_kernel(t_nblist *                nlist,
                             lpatIDs[0] = ai; lpatIDs[1] = aj;
                             lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
                             lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
-                            locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                            locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                         }
                     }
                     /* end stress tensor */

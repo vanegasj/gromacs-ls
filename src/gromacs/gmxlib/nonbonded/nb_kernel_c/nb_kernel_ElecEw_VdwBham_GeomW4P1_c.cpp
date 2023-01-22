@@ -270,7 +270,7 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_VF_c
                     lpatIDs[0] = inr+0; lpatIDs[1] = jnr+0;
                     lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
                     lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                 }
             }
             /* end stress tensor */
@@ -329,7 +329,7 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_VF_c
                     lpatIDs[0] = inr+1; lpatIDs[1] = jnr+0;
                     lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
                     lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                 }
             }
             /* end stress tensor */
@@ -388,7 +388,7 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_VF_c
                     lpatIDs[0] = inr+2; lpatIDs[1] = jnr+0;
                     lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
                     lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                 }
             }
             /* end stress tensor */
@@ -447,7 +447,7 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_VF_c
                     lpatIDs[0] = inr+3; lpatIDs[1] = jnr+0;
                     lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
                     lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                 }
             }
             /* end stress tensor */
@@ -729,7 +729,7 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_F_c
                     lpatIDs[0] = inr+0; lpatIDs[1] = jnr+0;
                     lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
                     lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                 }
             }
             /* end stress tensor */
@@ -783,7 +783,7 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_F_c
                     lpatIDs[0] = inr+1; lpatIDs[1] = jnr+0;
                     lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
                     lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                 }
             }
             /* end stress tensor */
@@ -837,7 +837,7 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_F_c
                     lpatIDs[0] = inr+2; lpatIDs[1] = jnr+0;
                     lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
                     lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                 }
             }
             /* end stress tensor */
@@ -891,7 +891,7 @@ nb_kernel_ElecEw_VdwBham_GeomW4P1_F_c
                     lpatIDs[0] = inr+3; lpatIDs[1] = jnr+0;
                     lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
                     lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, lpatIDs);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
                 }
             }
             /* end stress tensor */
