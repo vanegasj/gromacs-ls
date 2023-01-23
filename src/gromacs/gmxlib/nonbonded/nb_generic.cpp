@@ -108,9 +108,9 @@ gmx_nb_generic_kernel(t_nblist *                nlist,
     locals_grid         = kernel_data->locals_grid;
 
     /* begin stress tensor */
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_vdw){
+    if (locals_grid != NULL && locals_grid->settings.contrib == mds_vdw){
        ielec               = 0;
-    }else if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou){
+    }else if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou){
        ivdw                = 0;
     }
     /* end stress tensor */
@@ -475,9 +475,9 @@ gmx_nb_generic_kernel(t_nblist *                nlist,
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
                     lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 

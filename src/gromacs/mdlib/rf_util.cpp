@@ -150,7 +150,7 @@ real RF_excl_correction(const t_forcerec *fr, t_graph *g,
                         phi = kappa*norm(dx);
                         if (locals_grid != NULL)
                         {
-                            if (locals_grid->GetContribType() == mds_all || locals_grid->GetContribType() == mds_cou)
+                            if (locals_grid->settings.contrib == mds_all || locals_grid->settings.contrib == mds_cou)
                             {
                                 lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2];
                                 lpR[1][0] = x[k][0]; lpR[1][1] = x[k][1]; lpR[1][2] = x[k][2];
@@ -217,7 +217,7 @@ real RF_excl_correction(const t_forcerec *fr, t_graph *g,
                         phi = kappa*norm(dx);
                         if (locals_grid != NULL)
                         {
-                            if ((locals_grid->GetContribType() == mds_all) || (locals_grid->GetContribType() == mds_cou))
+                            if ((locals_grid->settings.contrib == mds_all) || (locals_grid->settings.contrib == mds_cou))
                             {
                                 lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2];
                                 lpR[1][0] = x[k][0]; lpR[1][1] = x[k][1]; lpR[1][2] = x[k][2];

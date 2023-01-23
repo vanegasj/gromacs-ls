@@ -267,7 +267,7 @@ void
     qq{I}{J}             = iq{I}*jq{J};
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq{I}{J}             = 0.0;
     }
     /*         #endif */
@@ -278,7 +278,7 @@ void
     cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_cou)
+        if (locals_grid->settings.contrib == mds_cou)
         {
             c6_{I}{J}            = 0.0;
             cexp1_{I}{J}         = 0.0;
@@ -291,7 +291,7 @@ void
     c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_cou)
+        if (locals_grid->settings.contrib == mds_cou)
         {
             c6_{I}{J}            = 0.0;
             c12_{I}{J}           = 0.0;
@@ -303,7 +303,7 @@ void
     c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_cou)
+        if (locals_grid->settings.contrib == mds_cou)
         {
             c6_{I}{J}            = 0.0;
             c12_{I}{J}           = 0.0;
@@ -505,7 +505,7 @@ void
             qq{I}{J}             = iq{I}*jq{J};
             if (locals_grid != NULL)
             {
-                if (locals_grid->GetContribType() == mds_vdw)
+                if (locals_grid->settings.contrib == mds_vdw)
                     qq{I}{J}             = 0.0;
             }
             /*             #define INNERFLOPS INNERFLOPS+1 */
@@ -517,7 +517,7 @@ void
             cexp2_{I}{J}         = vdwparam[vdwioffset{I}+vdwjidx{J}+2];
             if (locals_grid != NULL)
             {
-                if (locals_grid->GetContribType() == mds_cou)
+                if (locals_grid->settings.contrib == mds_cou)
                 {
                     c6_{I}{J}            = 0.0;
                     cexp1_{I}{J}         = 0.0;
@@ -530,7 +530,7 @@ void
             c6grid_{I}{J}        = vdwgridparam[vdwioffset{I}+vdwjidx{J}];
             if (locals_grid != NULL)
             {
-                if (locals_grid->GetContribType() == mds_cou)
+                if (locals_grid->settings.contrib == mds_cou)
                 {
                     c6_{I}{J}            = 0.0;
                     c12_{I}{J}           = 0.0;
@@ -542,7 +542,7 @@ void
             c12_{I}{J}           = vdwparam[vdwioffset{I}+vdwjidx{J}+1];
             if (locals_grid != NULL)
             {
-                if (locals_grid->GetContribType() == mds_cou)
+                if (locals_grid->settings.contrib == mds_cou)
                 {
                     c6_{I}{J}            = 0.0;
                     c12_{I}{J}           = 0.0;
@@ -890,9 +890,9 @@ void
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix{I}; lpR[0][1] = iy{I}; lpR[0][2] = iz{I}; 
                     lpR[1][0] = jx{J}; lpR[1][1] = jy{J}; lpR[1][2] = jz{J}; 

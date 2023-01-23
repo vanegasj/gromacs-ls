@@ -77,7 +77,7 @@
             real            VLJ gmx_unused;
             // Locals constants needed to compute the elasticity tensor from vdw and coul interactions
             real            phi_coul = 0, kappa_coul = 0, phi_lj = 0, kappa_lj = 0, phi_coul_ic = 0, kappa_coul_ic = 0, phi_lj_ic = 0, kappa_lj_ic = 0, skipmask_rvdw;
-            real            dfw = locals_grid->GetSpacing(), dfwsq = dfw*dfw, deltavdw = 0, deltavdwsq = 0, deltacoul = 0, deltacoulsq = 0, rinvl = 0, rinvsql = 0, rinvsixl = 0;
+            real            dfw = locals_grid->settings.gridSpacing, dfwsq = dfw*dfw, deltavdw = 0, deltavdwsq = 0, deltacoul = 0, deltacoulsq = 0, rinvl = 0, rinvsql = 0, rinvsixl = 0;
             bool            bCoulEwald = EEL_FULL(ic->eeltype); // Locals needs to know whether we are using plain coul or Ewald for elasticity calculations
             bool            bCoulCut = (ic->eeltype == eelCUT);
 #if defined LJ_FORCE_SWITCH || defined LJ_POT_SWITCH
@@ -165,7 +165,7 @@
                 c12     = nbfp[type_i_off+type[aj]*2+1];
                 if (locals_grid != NULL)
                 {
-                    if (locals_grid->GetContribType() == mds_cou)
+                    if (locals_grid->settings.contrib == mds_cou)
                     {
                         c6 = 0.0;
                         c12 = 0.0;
@@ -268,7 +268,7 @@
                     c6grid       = ljc[type[ai]*2]*ljc[type[aj]*2];
                     if (locals_grid != NULL)
                     {
-                        if (locals_grid->GetContribType() == mds_cou)
+                        if (locals_grid->settings.contrib == mds_cou)
                         {
                             c6grid = 0.0;
                         }
@@ -285,7 +285,7 @@
                         c6grid  = epsilon*sigma2*sigma2*sigma2;
                         if (locals_grid != NULL)
                         {
-                            if (locals_grid->GetContribType() == mds_cou)
+                            if (locals_grid->settings.contrib == mds_cou)
                             {
                                 c6grid = 0.0;
                             }
@@ -365,7 +365,7 @@
             // begin locals
             if (locals_grid != NULL)
             {
-                if (locals_grid->GetContribType() == mds_vdw)
+                if (locals_grid->settings.contrib == mds_vdw)
                 {
                     qq = 0.0;
                 }
@@ -485,7 +485,7 @@
                 // remove the 'far away' particles
                 if (lpatIDs[0] != -1 && lpatIDs[1] != -1)
                 {
-                    int cont_type = locals_grid->GetContribType();
+                    int cont_type = locals_grid->settings.contrib;
                     
                     mds::array3_ext lpR[2] = {0}, lpF[2] = {0};
                     mds::real_ext lpPhi = 0;

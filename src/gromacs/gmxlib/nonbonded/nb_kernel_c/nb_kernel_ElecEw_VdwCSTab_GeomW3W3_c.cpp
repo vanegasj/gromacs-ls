@@ -144,14 +144,14 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
     qq00             = iq0*jq0;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq00             = 0.0;
     }
     c6_00            = vdwparam[vdwioffset0+vdwjidx0];
     c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_cou)
+        if (locals_grid->settings.contrib == mds_cou)
         {
             c6_00            = 0.0;
             c12_00           = 0.0;
@@ -160,49 +160,49 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
     qq01             = iq0*jq1;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq01             = 0.0;
     }
     qq02             = iq0*jq2;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq02             = 0.0;
     }
     qq10             = iq1*jq0;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq10             = 0.0;
     }
     qq11             = iq1*jq1;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq11             = 0.0;
     }
     qq12             = iq1*jq2;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq12             = 0.0;
     }
     qq20             = iq2*jq0;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq20             = 0.0;
     }
     qq21             = iq2*jq1;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq21             = 0.0;
     }
     qq22             = iq2*jq2;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq22             = 0.0;
     }
 
@@ -391,9 +391,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
                     lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
@@ -443,9 +443,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
                     lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
@@ -495,9 +495,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
                     lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
@@ -547,9 +547,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
                     lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
@@ -599,9 +599,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
                     lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
@@ -651,9 +651,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
                     lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
@@ -703,9 +703,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
                     lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
@@ -755,9 +755,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
                     lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
@@ -807,9 +807,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_VF_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
                     lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
@@ -974,14 +974,14 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
     qq00             = iq0*jq0;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq00             = 0.0;
     }
     c6_00            = vdwparam[vdwioffset0+vdwjidx0];
     c12_00           = vdwparam[vdwioffset0+vdwjidx0+1];
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_cou)
+        if (locals_grid->settings.contrib == mds_cou)
         {
             c6_00            = 0.0;
             c12_00           = 0.0;
@@ -990,49 +990,49 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
     qq01             = iq0*jq1;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq01             = 0.0;
     }
     qq02             = iq0*jq2;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq02             = 0.0;
     }
     qq10             = iq1*jq0;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq10             = 0.0;
     }
     qq11             = iq1*jq1;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq11             = 0.0;
     }
     qq12             = iq1*jq2;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq12             = 0.0;
     }
     qq20             = iq2*jq0;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq20             = 0.0;
     }
     qq21             = iq2*jq1;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq21             = 0.0;
     }
     qq22             = iq2*jq2;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
             qq22             = 0.0;
     }
 
@@ -1204,9 +1204,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
                     lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
@@ -1251,9 +1251,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
                     lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
@@ -1298,9 +1298,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
                     lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
@@ -1345,9 +1345,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
                     lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
@@ -1392,9 +1392,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
                     lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
@@ -1439,9 +1439,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix1; lpR[0][1] = iy1; lpR[0][2] = iz1; 
                     lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 
@@ -1486,9 +1486,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
                     lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
@@ -1533,9 +1533,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
                     lpR[1][0] = jx1; lpR[1][1] = jy1; lpR[1][2] = jz1; 
@@ -1580,9 +1580,9 @@ nb_kernel_ElecEw_VdwCSTab_GeomW3W3_F_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix2; lpR[0][1] = iy2; lpR[0][2] = iz2; 
                     lpR[1][0] = jx2; lpR[1][1] = jy2; lpR[1][2] = jz2; 

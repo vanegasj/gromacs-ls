@@ -350,7 +350,7 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
                 qq                = iq*charge[k];
                 if (locals_grid != NULL)
                 {
-                   if (locals_grid->GetContribType() == mds_vdw)
+                   if (locals_grid->settings.contrib == mds_vdw)
                        qq                = 0.0;
                 }
 
@@ -358,7 +358,7 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
                 c12               = pvdw[2*k+1];
                 if (locals_grid != NULL)
                 {
-                    if (locals_grid->GetContribType() == mds_cou)
+                    if (locals_grid->settings.contrib == mds_cou)
                     {
                         c6                = 0.0;
                         c12               = 0.0;
@@ -384,9 +384,9 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
                 /* begin stress tensor */
                 if (locals_grid != NULL)
                 {
-                    if ((locals_grid->GetContribType() == mds_all) ||
-                        (locals_grid->GetContribType() == mds_vdw) ||
-                        (locals_grid->GetContribType() == mds_cou))
+                    if ((locals_grid->settings.contrib == mds_all) ||
+                        (locals_grid->settings.contrib == mds_vdw) ||
+                        (locals_grid->settings.contrib == mds_cou))
                     {
                         lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
                         lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
@@ -435,7 +435,7 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
             qq                = iq*charge[k];
             if (locals_grid != NULL)
             {
-               if (locals_grid->GetContribType() == mds_vdw)
+               if (locals_grid->settings.contrib == mds_vdw)
                    qq                = 0.0;
             }
 
@@ -443,7 +443,7 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
             c12               = pvdw[2*k+1];
             if (locals_grid != NULL)
             {
-                if(locals_grid->GetContribType() == mds_cou)
+                if(locals_grid->settings.contrib == mds_cou)
                 {
                     c6                = 0.0;
                     c12               = 0.0;
@@ -469,9 +469,9 @@ nb_kernel_allvsall(t_nblist gmx_unused *     nlist,
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
                     lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 

@@ -1189,8 +1189,8 @@ static void do_lincs(rvec *x, rvec *xp, matrix box, t_pbc *pbc,
                 phi = -ccc*rmag;
                 kappa = -ccc; //ccc;
                 
-                if ((locals_grid->GetContribType() == mds_all)
-                        || (locals_grid->GetContribType() == mds_lin))
+                if ((locals_grid->settings.contrib == mds_all)
+                        || (locals_grid->settings.contrib == mds_lin))
                 {
                     lpR[0][0] = x1[0]; lpR[0][1] = x1[1]; lpR[0][2] = x1[2]; 
                     lpR[1][0] = x2[0]; lpR[1][1] = x2[1]; lpR[1][2] = x2[2]; 

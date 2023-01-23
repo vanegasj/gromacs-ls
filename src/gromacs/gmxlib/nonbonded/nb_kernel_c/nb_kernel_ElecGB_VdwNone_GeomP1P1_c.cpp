@@ -178,7 +178,7 @@ nb_kernel_ElecGB_VdwNone_GeomP1P1_VF_c
             qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
-                if (locals_grid->GetContribType() == mds_vdw)
+                if (locals_grid->settings.contrib == mds_vdw)
                     qq00             = 0.0;
             }
 
@@ -226,9 +226,9 @@ nb_kernel_ElecGB_VdwNone_GeomP1P1_VF_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
                     lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 
@@ -413,7 +413,7 @@ nb_kernel_ElecGB_VdwNone_GeomP1P1_F_c
             qq00             = iq0*jq0;
             if (locals_grid != NULL)
             {
-                if (locals_grid->GetContribType() == mds_vdw)
+                if (locals_grid->settings.contrib == mds_vdw)
                     qq00             = 0.0;
             }
 
@@ -457,9 +457,9 @@ nb_kernel_ElecGB_VdwNone_GeomP1P1_F_c
             /* begin stress tensor */
             if (locals_grid != NULL)
             {
-                if ((locals_grid->GetContribType() == mds_all) ||
-                    (locals_grid->GetContribType() == mds_vdw) ||
-                    (locals_grid->GetContribType() == mds_cou))
+                if ((locals_grid->settings.contrib == mds_all) ||
+                    (locals_grid->settings.contrib == mds_vdw) ||
+                    (locals_grid->settings.contrib == mds_cou))
                 {
                     lpR[0][0] = ix0; lpR[0][1] = iy0; lpR[0][2] = iz0; 
                     lpR[1][0] = jx0; lpR[1][1] = jy0; lpR[1][2] = jz0; 

@@ -287,7 +287,7 @@ nb_kernel_ElecEw_VdwLJEw_GeomW4P1_VF_avx_256_double
                                             vdwioffsetptr0+vdwjidx0D,
                                             &c6_00,&c12_00);
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou)
             {
                 c6grid_00       = _mm256_set1_pd(0.0);
             }
@@ -565,7 +565,7 @@ nb_kernel_ElecEw_VdwLJEw_GeomW4P1_VF_avx_256_double
                                             vdwioffsetptr0+vdwjidx0D,
                                             &c6_00,&c12_00);
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou)
             {
                 c6grid_00       = _mm256_set1_pd(0.0);
             }
@@ -1030,7 +1030,7 @@ nb_kernel_ElecEw_VdwLJEw_GeomW4P1_F_avx_256_double
                                             vdwioffsetptr0+vdwjidx0D,
                                             &c6_00,&c12_00);
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou)
             {
                 c6grid_00       = _mm256_set1_pd(0.0);
             }
@@ -1281,7 +1281,7 @@ nb_kernel_ElecEw_VdwLJEw_GeomW4P1_F_avx_256_double
                                             vdwioffsetptr0+vdwjidx0D,
                                             &c6_00,&c12_00);
 
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou)
             {
                 c6grid_00       = _mm256_set1_pd(0.0);
             }

@@ -558,7 +558,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         locals_grid.SetForceDecomposition(localsfdecomp);
         locals_grid.SetMinDihAngle(localsmindihangle);
 
-        //printf("\n\nmindihangle = %8.6f\n\n",locals_grid.GetMinDihAngle());
+        //printf("\n\nmindihangle = %8.6f\n\n",locals_grid.settings.mindihangle);
         // setup periodic boundary conditions
         bool xper, yper, zper, periodic;
         periodic = (localspbc == TRUE);
@@ -600,26 +600,25 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 locals_grid.SetNumberOfGridCellsZ(box_size[ZZ]/localsgridspacing);
             else
                 locals_grid.SetNumberOfGridCellsZ(localsgridz);
-
+            
+            if(0 == locals_grid.settings.gridCells[0])
+                locals_grid.SetNumberOfGridCellsX(1);
+            if(0 == locals_grid.settings.gridCells[1])
+                locals_grid.SetNumberOfGridCellsY(1);
+            if(0 == locals_grid.settings.gridCells[2])
+                locals_grid.SetNumberOfGridCellsZ(1);
 
             int ngrid =
-                locals_grid.GetNumberOfGridCellsX()*
-                locals_grid.GetNumberOfGridCellsY()*
-                locals_grid.GetNumberOfGridCellsZ();
+                locals_grid.settings.gridCells[0]*
+                locals_grid.settings.gridCells[1]*
+                locals_grid.settings.gridCells[2];
 
             printf("Spacing requested: %g    Using nx=%d ny=%d nz=%d, grid size %d \n",
                localsgridspacing,
-               locals_grid.GetNumberOfGridCellsX(),
-               locals_grid.GetNumberOfGridCellsY(),
-               locals_grid.GetNumberOfGridCellsZ(),
+               locals_grid.settings.gridCells[0],
+               locals_grid.settings.gridCells[1],
+               locals_grid.settings.gridCells[2],
                ngrid);
-
-            if(locals_grid.GetNumberOfGridCellsX()==0)
-                locals_grid.SetNumberOfGridCellsX(1);
-            if(locals_grid.GetNumberOfGridCellsY()==0)
-                locals_grid.SetNumberOfGridCellsY(1);
-            if(locals_grid.GetNumberOfGridCellsZ()==0)
-                locals_grid.SetNumberOfGridCellsZ(1);
 
             // set the temperature based on the ref_T value of the first group (we are assumming that the temperature is the same for all groups)
             printf("The temperature value used for the elasticity calculations is T = %g K.\n", ir->opts.ref_t[0]);
@@ -1809,7 +1808,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             natoms = state->natoms;
         }
 
-        if ((locals_grid.GetContribType() == mds_all || locals_grid.GetContribType() == mds_kin) && (step % localsskip == 0))
+        if ((locals_grid.settings.contrib == mds_all || locals_grid.settings.contrib == mds_kin) && (step % localsskip == 0))
         {
             for (i=0; i < natoms; i++)
             {

@@ -148,7 +148,7 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomW3W3_VF_avx_256_double
     jq2              = _mm256_set1_pd(charge[inr+2]);
     vdwjidx0A        = 2*vdwtype[inr+0];
     qq00             = _mm256_mul_pd(iq0,jq0);
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou)
     {
         c6_00            = _mm256_set1_pd(0.0);
         c12_00           = _mm256_set1_pd(0.0);
@@ -1276,7 +1276,7 @@ nb_kernel_ElecRFCut_VdwLJSh_GeomW3W3_F_avx_256_double
     jq2              = _mm256_set1_pd(charge[inr+2]);
     vdwjidx0A        = 2*vdwtype[inr+0];
     qq00             = _mm256_mul_pd(iq0,jq0);
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou)
     {
         c6_00            = _mm256_set1_pd(0.0);
         c12_00           = _mm256_set1_pd(0.0);

@@ -366,7 +366,7 @@ do_pairs_general(int ftype, int nbonds,
     int  lpatIDs[2];
     int  lctype;
     if (locals_grid != NULL)
-        lctype = locals_grid->GetContribType();
+        lctype = locals_grid->settings.contrib;
 
     switch (ftype)
     {

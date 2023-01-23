@@ -276,7 +276,7 @@ void
     /*         #endif */
     /*         #if 'vdw' in INTERACTION_FLAGS[I][J] */
     /*             #if 'LJEwald' in KERNEL_VDW */
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou)
     {
         c6_{I}{J}            = _mm256_set1_pd(0.0);
         c12_{I}{J}           = _mm256_set1_pd(0.0);
@@ -289,7 +289,7 @@ void
         c6grid_{I}{J}        = _mm256_set1_pd(vdwgridioffsetptr{I}[vdwjidx{J}A]);
     }
     /*             #else */
-    if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+    if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou)
     {
         c6_{I}{J}            = _mm256_set1_pd(0.0);
         c12_{I}{J}           = _mm256_set1_pd(0.0);
@@ -600,7 +600,7 @@ void
                                             &c6_{I}{J},&c12_{I}{J});
 
             /*           #if 'LJEwald' in KERNEL_VDW */
-            if (locals_grid != NULL && locals_grid->GetContribType() == mds_cou)
+            if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou)
             {
                 c6grid_{I}{J}       = _mm256_set1_pd(0.0);
             }

@@ -311,7 +311,7 @@
     qq_S2       = iq_S2 * jq_S;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_vdw)
+        if (locals_grid->settings.contrib == mds_vdw)
         {
             qq_S0 = RealSimd(0.0);
             qq_S2 = RealSimd(0.0);
@@ -325,7 +325,7 @@
     gatherLoadTransposeHsimd<c_simdBestPairAlignment>(nbfp0, nbfp1, type+aj, &c6_S0, &c12_S0);
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_coul)
+        if (locals_grid->settings.contrib == mds_coul)
         {
             c6_S0 = RealSimd(0.0);
             c12_S0 = RealSimd(0.0);
@@ -336,7 +336,7 @@
     gatherLoadTransposeHsimd<c_simdBestPairAlignment>(nbfp2, nbfp3, type+aj, &c6_S2, &c12_S2);
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_coul)
+        if (locals_grid->settings.contrib == mds_coul)
         {
             c6_S2 = RealSimd(0.0);
             c12_S2 = RealSimd(0.0);
@@ -351,7 +351,7 @@
     SimdReal c6_S0       = c6s_S0 * c6s_j_S;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_coul)
+        if (locals_grid->settings.contrib == mds_coul)
         {
             c6_S0 = RealSimd(0.0);
         }
@@ -360,7 +360,7 @@
     SimdReal c6_S2       = c6s_S2 * c6s_j_S;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_coul)
+        if (locals_grid->settings.contrib == mds_coul)
         {
             c6_S2 = RealSimd(0.0);
         }
@@ -369,7 +369,7 @@
     SimdReal c12_S0      = c12s_S0 * c12s_j_S;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_coul)
+        if (locals_grid->settings.contrib == mds_coul)
         {
             c12_S0 = RealSimd(0.0);
         }
@@ -378,7 +378,7 @@
     SimdReal c12_S2      = c12s_S2 * c12s_j_S;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_coul)
+        if (locals_grid->settings.contrib == mds_coul)
         {
             c12_S2 = RealSimd(0.0);
         }
@@ -394,7 +394,7 @@
     eps_S0      = seps_i_S0 * seps_j_S;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_coul)
+        if (locals_grid->settings.contrib == mds_coul)
         {
             eps_S0 = RealSimd(0.0);
         }
@@ -404,7 +404,7 @@
     eps_S2      = seps_i_S2 * seps_j_S;
     if (locals_grid != NULL)
     {
-        if (locals_grid->GetContribType() == mds_coul)
+        if (locals_grid->settings.contrib == mds_coul)
         {
             eps_S2 = RealSimd(0.0);
         }
