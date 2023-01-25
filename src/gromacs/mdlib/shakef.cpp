@@ -355,8 +355,7 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
                 phi = ccc*rmag; 
                 kappa = ccc;
 
-                if ((locals_grid->settings.contrib == mds_all)
-                        || (locals_grid->settings.contrib == mds_sha))
+                if (locals_grid->settings.contrib & (mds_all | mds_sha) )
                 {
                     lpR[0][0] = x[ia[1]][0]; lpR[0][1] = x[ia[1]][1]; lpR[0][2] = x[ia[1]][2]; 
                     lpR[1][0] = x[ia[2]][0]; lpR[1][1] = x[ia[2]][1]; lpR[1][2] = x[ia[2]][2]; 

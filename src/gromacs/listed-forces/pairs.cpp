@@ -531,9 +531,7 @@ do_pairs_general(int ftype, int nbonds,
         /* begin stress tensor */
         if (locals_grid != NULL)
         {
-            if ((lctype == mds_all) ||
-                (lctype == mds_vdw) ||
-                (lctype == mds_cou))
+            if (lctype & (mds_all | mds_vdw | mds_cou) )
             {
                 lpR[0][0] = x[aj][0] + dx2[0]; lpR[0][1] = x[aj][1] + dx2[1]; lpR[0][2] = x[aj][2] + dx2[2]; 
                 lpR[1][0] = x[aj][0]; lpR[1][1] = x[aj][1]; lpR[1][2] = x[aj][2]; 
@@ -543,6 +541,7 @@ do_pairs_general(int ftype, int nbonds,
                 locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
             }
         }
+        /* end stress tensor */
 
         /* Add the forces */
         rvec_inc(f[ai], dx);

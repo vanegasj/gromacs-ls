@@ -730,8 +730,7 @@ static void settleTemplate(const gmx_settledata_t settled,
                 /* begin stress tensor */
                 if (locals_grid != NULL)
                 {
-                    if ((locals_grid->settings.contrib == mds_all)
-                            || (locals_grid->settings.contrib == mds_set))
+                    if (locals_grid->settings.contrib & (mds_all | mds_set) )
                     {
                         // on the off chance that we upgrade to avx512 hardware someday...
                         int offset [] = {0,1,2,3,4,5,6,7};
@@ -781,7 +780,6 @@ static void settleTemplate(const gmx_settledata_t settled,
                         }
                     }
                 }
-
                 /* end stress tensor */
 
           /* 3*24 - 9 flops */

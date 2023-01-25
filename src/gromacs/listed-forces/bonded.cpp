@@ -131,7 +131,7 @@ void locals_bonds_distribute_stress_born(
 {
     if (locals_grid != NULL)
     {
-        if ((locals_grid->settings.contrib == mds_all) || (locals_grid->settings.contrib == mds_bnd))
+        if (locals_grid->settings.contrib & (mds_all | mds_bnd) )
         {
             const int atIDs[2] = {ai, aj};
             const mds::array3_ext R[2] = {
@@ -177,7 +177,7 @@ void locals_angles_distribute_stress(
         pbc_rvec_sub(pbc, x[ak], x[ai], dx);
         rvec_add(x[ai], dx, Rk);
 
-        if ((locals_grid->settings.contrib == mds_all) || (locals_grid->settings.contrib == mds_ang))
+        if (locals_grid->settings.contrib & (mds_all | mds_ang) )
         {
             lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
             lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
@@ -217,7 +217,7 @@ void locals_angles_distribute_stress_born(
         pbc_rvec_sub(pbc, x[ak], x[ai], dx);
         rvec_add(x[ai], dx, Rk);
 
-        if ((locals_grid->settings.contrib == mds_all) || (locals_grid->settings.contrib == mds_ang))
+        if (locals_grid->settings.contrib & (mds_all | mds_ang) )
         {
             lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2];
             lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2];
@@ -1860,7 +1860,7 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
         {
             real phi = std::abs(gmx_angle(m, n));
             //printf("sin(phi) = %8.6f, mindihangle = %8.6f\n", std::sin(phi), locals_grid->settings.mindihangle);
-            if ((locals_grid->settings.contrib == mds_all || locals_grid->settings.contrib == locals_contrib) && locals_grid->settings.mindihangle < std::sin(phi))
+            if ( (locals_grid->settings.contrib & (mds_all | locals_contrib) ) && locals_grid->settings.mindihangle < std::sin(phi) )
             {
                 rvec Ri, Rj, Rk, Rl, dx;
                 rvec Fj, Fk;
@@ -2922,7 +2922,7 @@ real restrdihs(int nbonds,
         /* begin stress tensor */
         if (locals_grid != NULL)
         {
-            if (locals_grid->settings.contrib == mds_all || locals_grid->settings.contrib == mds_dio)
+            if (locals_grid->settings.contrib & (mds_all | mds_dio) )
             {
                 rvec Ri, Rj, Rk, Rl, dx;
                 rvec Fj, Fk;
@@ -3064,7 +3064,7 @@ real cbtdihs(int nbonds,
         /* begin stress tensor */
         if (locals_grid != NULL)
         {
-            if (locals_grid->settings.contrib == mds_all || locals_grid->settings.contrib == mds_dio)
+            if (locals_grid->settings.contrib & (mds_all | mds_dio) )
             {
                 rvec Ri, Rj, Rk, Rl, dx;
                 rvec Fj, Fk;
@@ -3677,7 +3677,7 @@ cmap_dihs(int nbonds,
         /* begin stress tensor */
         if (locals_grid != NULL)
         {
-            if ((locals_grid->settings.contrib== mds_all) || (locals_grid->settings.contrib == mds_cmp))
+            if (locals_grid->settings.contrib & (mds_all | mds_cmp) )
             {
                 rvec Ri, Rj, Rk, Rl, Rm, dx;
                 rvec Fi, Fj, Fk, Fl, Fm;

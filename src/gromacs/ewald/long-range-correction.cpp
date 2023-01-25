@@ -284,7 +284,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                                     /* begin stress tensor */
                                     if (locals_grid != NULL)
                                     {
-                                        if ((locals_grid->settings.contrib == mds_all) || (locals_grid->settings.contrib == mds_cou))
+                                        if (locals_grid->settings.contrib & (mds_all | mds_cou) )
                                         {
                                             lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2];
                                             lpR[1][0] = x[i][0]-dx[0]; lpR[1][1] = x[i][1]-dx[1]; lpR[1][2] = x[i][2]-dx[2];
@@ -341,7 +341,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                                     /* begin stress tensor */
                                     if (locals_grid != NULL)
                                     {
-                                        if ((locals_grid->settings.contrib == mds_all) || (locals_grid->settings.contrib == mds_vdw))
+                                        if (locals_grid->settings.contrib & (mds_all | mds_vdw) )
                                         {
                                             lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2];
                                             lpR[1][0] = x[i][0]-dx[0]; lpR[1][1] = x[i][1]-dx[1]; lpR[1][2] = x[i][2]-dx[2];
@@ -486,7 +486,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                                     /* begin stress tensor */
                                     if (locals_grid != NULL)
                                     {
-                                        if ((locals_grid->settings.contrib == mds_all) || (locals_grid->settings.contrib == mds_cou))
+                                        if (locals_grid->settings.contrib & (mds_all | mds_cou) )
                                         {
                                             lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2];
                                             lpR[1][0] = x[i][0]-dx[0]; lpR[1][1] = x[i][1]-dx[1]; lpR[1][2] = x[i][2]-dx[2];
@@ -539,7 +539,7 @@ void ewald_LRcorrection(int numAtomsLocal,
                                     /* begin stress tensor */
                                     if (locals_grid != NULL)
                                     {
-                                        if ((locals_grid->settings.contrib == mds_all) || (locals_grid->settings.contrib == mds_vdw))
+                                        if (locals_grid->settings.contrib & (mds_all | mds_vdw) )
                                         {
                                             lpR[0][0] = x[i][0]; lpR[0][1] = x[i][1]; lpR[0][2] = x[i][2];
                                             lpR[1][0] = x[i][0]-dx[0]; lpR[1][1] = x[i][1]-dx[1]; lpR[1][2] = x[i][2]-dx[2];

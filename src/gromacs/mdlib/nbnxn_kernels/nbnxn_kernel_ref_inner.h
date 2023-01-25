@@ -485,12 +485,10 @@
                 // remove the 'far away' particles
                 if (lpatIDs[0] != -1 && lpatIDs[1] != -1)
                 {
-                    int cont_type = locals_grid->settings.contrib;
-                    
                     mds::array3_ext lpR[2] = {0}, lpF[2] = {0};
                     mds::real_ext lpPhi = 0;
                     mds::real_ext lpKappa = 0;
-                    if (cont_type == mds_all || cont_type == mds_vdw || cont_type == mds_cou)
+                    if (locals_grid->settings.contrib & (mds_all | mds_vdw | mds_cou) )
                     {
                         real ix = xi[i*XI_STRIDE+XX]; real jx = x[aj*X_STRIDE+XX];
                         real iy = xi[i*XI_STRIDE+YY]; real jy = x[aj*X_STRIDE+YY];
