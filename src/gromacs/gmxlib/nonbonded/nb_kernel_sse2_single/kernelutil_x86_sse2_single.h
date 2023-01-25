@@ -39,7 +39,7 @@
 
 #include "config.h"
 
-#include <cmath>
+#include <math.h>
 
 #include <emmintrin.h>
 

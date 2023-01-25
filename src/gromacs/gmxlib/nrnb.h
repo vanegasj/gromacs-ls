@@ -38,7 +38,7 @@
 #ifndef GMX_GMXLIB_NRNB_H
 #define GMX_GMXLIB_NRNB_H
 
-#include <cstdio>
+#include <stdio.h>
 
 #include "gromacs/utility/basedefinitions.h"
 
@@ -129,6 +129,10 @@ t_nrnb;
 struct t_commrec;
 struct t_nrnb;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void init_nrnb(t_nrnb *nrnb);
 
 void cp_nrnb(t_nrnb *dest, t_nrnb *src);
@@ -164,5 +168,9 @@ int cost_nrnb(int enr);
 
 const char *nrnb_str(int enr);
 /* Name of this component */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* GMX_GMXLIB_NRNB_H */

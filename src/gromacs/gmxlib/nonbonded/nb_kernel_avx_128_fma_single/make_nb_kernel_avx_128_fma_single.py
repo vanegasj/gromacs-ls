@@ -426,7 +426,7 @@ ntot    = nelec*nmod*nVdw*nmod*ngeom
 
 numKernels = 0
 
-fpdecl = open('nb_kernel_' + Arch + '.cpp','w')
+fpdecl = open('nb_kernel_' + Arch + '.c','w')
 fpdecl.write( FileHeader )
 fpdecl.write( '#include "gmxpre.h"\n\n' )
 fpdecl.write( '#include "gromacs/gmxlib/nonbonded/nb_kernel.h"\n\n' )
@@ -446,7 +446,7 @@ for KernelElec in ElectrostaticsList:
                 for KernelGeom in GeometryNameList:
 
                     cnt += 1
-                    KernelFilename = MakeKernelFileName(KernelElec,KernelElecMod,KernelVdw,KernelVdwMod,KernelGeom) + '.cpp'
+                    KernelFilename = MakeKernelFileName(KernelElec,KernelElecMod,KernelVdw,KernelVdwMod,KernelGeom) + '.c'
                     fpkernel = open(KernelFilename,'w')
                     defines['INCLUDE_HEADER'] = 1  # Include header first time in new file
                     DoHeader = 1

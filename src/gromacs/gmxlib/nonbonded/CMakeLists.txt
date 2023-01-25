@@ -33,7 +33,7 @@
 # the research papers on the package. Check out http://www.gromacs.org.
 
 # Sources that should always be built
-file(GLOB NONBONDED_SOURCES *.cpp nb_kernel_c/*.cpp)
+file(GLOB NONBONDED_SOURCES *.cpp nb_kernel_c/*.c)
 
 if("${GMX_SIMD}" STREQUAL "SSE2" AND NOT GMX_DOUBLE)
     file(GLOB NONBONDED_SSE2_SINGLE_SOURCES nb_kernel_sse2_single/*.c)
@@ -64,7 +64,7 @@ if("${GMX_SIMD}" STREQUAL "AVX_128_FMA" AND GMX_DOUBLE)
 endif()
 
 if((("${GMX_SIMD}" STREQUAL "AVX_256") OR ("${GMX_SIMD}" STREQUAL "AVX2_256")) AND GMX_DOUBLE)
-    file(GLOB NONBONDED_AVX_256_DOUBLE_SOURCES nb_kernel_avx_256_double/*.cpp)
+    file(GLOB NONBONDED_AVX_256_DOUBLE_SOURCES nb_kernel_avx_256_double/*.c)
 endif()
 
 if("${GMX_SIMD}" STREQUAL "SPARC64_HPC_ACE" AND GMX_DOUBLE)

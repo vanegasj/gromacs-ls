@@ -320,7 +320,7 @@ void do_nonbonded(t_forcerec *fr,
                   rvec x[], rvec f_shortrange[], t_mdatoms *mdatoms, t_blocka *excl,
                   gmx_grppairener_t *grppener,
                   t_nrnb *nrnb, real *lambda, real *dvdl,
-                  int nls, int eNL, mds::StressGrid * locals_grid, int flags)
+                  int nls, int eNL, int flags)
 {
     t_nblist *        nlist;
     int               n, n0, n1, i, i0, i1;
@@ -333,7 +333,6 @@ void do_nonbonded(t_forcerec *fr,
     kernel_data.exclusions              = excl;
     kernel_data.lambda                  = lambda;
     kernel_data.dvdl                    = dvdl;
-    kernel_data.locals_grid             = locals_grid;
 
     if (fr->bAllvsAll)
     {

@@ -35,7 +35,7 @@
 #ifndef _nb_kernel_h_
 #define _nb_kernel_h_
 
-#include <cstdio>
+#include <stdio.h>
 
 #include "gromacs/gmxlib/nrnb.h"
 #include "gromacs/math/vectypes.h"
@@ -44,8 +44,10 @@
 #include "gromacs/mdtypes/nblist.h"
 #include "gromacs/topology/block.h"
 #include "gromacs/utility/real.h"
-#include "mdstress/mds_stressgrid.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #if 0
 } /* fixes auto-indentation problems */
 #endif
@@ -69,9 +71,6 @@ typedef struct
     real *             energygrp_elec;
     real *             energygrp_vdw;
     real *             energygrp_polarization;
-
-    /* mdstresslib object */
-    mds::StressGrid *  locals_grid;
 }
 nb_kernel_data_t;
 
@@ -168,5 +167,9 @@ nb_kernel_list_findkernel(FILE *              log,
                           const char *        vf);
 
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _nb_kernel_h_ */

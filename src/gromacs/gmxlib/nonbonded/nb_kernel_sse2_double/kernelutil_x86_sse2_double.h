@@ -37,8 +37,8 @@
 
 #include "config.h"
 
-#include <cmath>
-#include <cstdio>
+#include <math.h>
+#include <stdio.h>
 
 #include <emmintrin.h>
 

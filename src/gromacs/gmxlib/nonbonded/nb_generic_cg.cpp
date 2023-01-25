@@ -87,23 +87,13 @@ gmx_nb_generic_cg_kernel(t_nblist *                nlist,
     real *        VFtab;
     real *        x;
     real *        f;
-    mds::StressGrid  *locals_grid;
-    rvec lpR[2], lpF[2];
-    int  lpatIDs[2];
     gmx_bool      do_tab;
 
     x                   = xx[0];
     f                   = ff[0];
     ielec               = nlist->ielec;
     ivdw                = nlist->ivdw;
-    /* begin stress tensor */
-    locals_grid         = kernel_data->locals_grid;
-    if (locals_grid != NULL && locals_grid->settings.contrib == mds_vdw){
-       ielec               = 0;
-    }else if (locals_grid != NULL && locals_grid->settings.contrib == mds_cou){
-       ivdw                = 0;
-    }
-    /* end stress tensor */
+
     fshift              = fr->fshift[0];
     Vc                  = kernel_data->energygrp_elec;
     Vvdw                = kernel_data->energygrp_vdw;
@@ -206,7 +196,7 @@ gmx_nb_generic_cg_kernel(t_nblist *                nlist,
                     }
 
                     /* Coulomb interaction. ielec==0 means no interaction */
-                    else if (ielec > 0)
+                    if (ielec > 0)
                     {
                         qq               = iq*charge[aj];
 
@@ -253,7 +243,7 @@ gmx_nb_generic_cg_kernel(t_nblist *                nlist,
 
 
                     /* VdW interaction. ivdw==0 means no interaction */
-                    else if (ivdw > 0)
+                    if (ivdw > 0)
                     {
                         tj               = nti+nvdwparam*type[aj];
 
@@ -323,25 +313,6 @@ gmx_nb_generic_cg_kernel(t_nblist *                nlist,
                     tx               = fscal*dx;
                     ty               = fscal*dy;
                     tz               = fscal*dz;
-                    
-                    /* begin stress tensor */
-                    if (locals_grid != NULL)
-                    {
-                        if ((locals_grid->settings.contrib == mds_all) ||
-                            (locals_grid->settings.contrib == mds_vdw) ||
-                            (locals_grid->settings.contrib == mds_cou))
-                        {
-                            lpR[0][0] = ix; lpR[0][1] = iy; lpR[0][2] = iz; 
-                            lpR[1][0] = jx; lpR[1][1] = jy; lpR[1][2] = jz; 
-                            lpatIDs[0] = ai; lpatIDs[1] = aj;
-                            lpF[0][0] = tx;  lpF[0][1] = ty;  lpF[0][2] = tz;
-                            lpF[1][0] = -tx; lpF[1][1] = -ty; lpF[1][2] = -tz;
-                            locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
-                        }
-                    }
-                    /* end stress tensor */
-
-
                     f[i3+0]         += tx;
                     f[i3+1]         += ty;
                     f[i3+2]         += tz;
