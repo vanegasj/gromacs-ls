@@ -227,7 +227,6 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
     real kappa, phi;
     real rsq, rmag;
     rvec lpR[2], lpF[2];
-    int  lpatIDs[2];
     /* end stress tensor */
 
     if (ncon > shaked->nalloc)
@@ -359,10 +358,9 @@ int vec_shakef(FILE *fplog, gmx_shakedata_t shaked,
                 {
                     lpR[0][0] = x[ia[1]][0]; lpR[0][1] = x[ia[1]][1]; lpR[0][2] = x[ia[1]][2]; 
                     lpR[1][0] = x[ia[2]][0]; lpR[1][1] = x[ia[2]][1]; lpR[1][2] = x[ia[2]][2]; 
-                    lpatIDs[0] = ia[1]; lpatIDs[1] = ia[2];
                     lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
                     lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, &phi, &kappa, lpatIDs);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, &phi, &kappa);
                 }
             }
             /* end stress tensor */

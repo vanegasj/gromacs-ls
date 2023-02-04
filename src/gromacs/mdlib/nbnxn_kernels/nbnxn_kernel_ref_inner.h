@@ -477,18 +477,15 @@
             fz = fscal*dz;
 
             /* begin stress tensor */
-            if (locals_grid != NULL)
+            if (locals_grid->settings.contrib & (mds_all | mds_vdw | mds_cou) )
             {
-                int  lpatIDs[2];
-                lpatIDs[0] = xi_id[i]; lpatIDs[1] = x_id[aj];
-
                 // remove the 'far away' particles
-                if (lpatIDs[0] != -1 && lpatIDs[1] != -1)
+                if (xi_id[i] != -1 && x_id[aj] != -1)
                 {
                     mds::array3_ext lpR[2] = {0}, lpF[2] = {0};
                     mds::real_ext lpPhi = 0;
                     mds::real_ext lpKappa = 0;
-                    if (locals_grid->settings.contrib & (mds_all | mds_vdw | mds_cou) )
+                    if (locals_grid != NULL)
                     {
                         real ix = xi[i*XI_STRIDE+XX]; real jx = x[aj*X_STRIDE+XX];
                         real iy = xi[i*XI_STRIDE+YY]; real jy = x[aj*X_STRIDE+YY];
@@ -541,7 +538,7 @@
                         }
 #endif
                         if (distribute)
-                            locals_grid->DistributeInteraction(2, lpR, lpF, &lpPhi, &lpKappa, lpatIDs);
+                            locals_grid->DistributeInteraction(2, lpR, lpF, &lpPhi, &lpKappa);
                     }
                 }
             }

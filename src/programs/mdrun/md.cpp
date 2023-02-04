@@ -231,7 +231,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   int localsgridz,
                   int localscontrib,
                   int localsfdecomp,
-                  int localsspatialatom,
                   gmx_bool localsdispcor,
                   gmx_bool localspbc,
                   real localsmindihangle,
@@ -303,7 +302,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     /* local stress begin */
 
     real mass;
-    rvec box_size;
     rvec *x_full, *v_half;
     int cr_size;
 
@@ -523,8 +521,11 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         set_constraints(constr, top, ir, mdatoms, cr);
     }
 
+    if (PAR(cr))
+        MPI_Barrier(MPI_COMM_WORLD);
+    
     /* local stress begin */
-    /*if(EEL_PME(ir->coulombtype))
+    if(EEL_PME(ir->coulombtype))
     {
         printf("STOP!\n");
         printf("The contributions from PME cannot currently be added to the stress tensor.\n");
@@ -532,141 +533,37 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         printf("electrostatics are treated with a plain cut-off or reaction-field (rcoul >= 2.0 nm).\n");
         printf("\n");
         gmx_fatal(FARGS,"Stopping the local stress analysis\n");
-    }*/
+    }
 
-    // initialization
-    if (PAR(cr))
-        MPI_Barrier(MPI_COMM_WORLD);
-
-    // all threads call this to get thread ids
+    // this call acts as a registration of all threads on this node
     locals_grid.SetThreadIDs(cr->nodeid, cr->nnodes);
 
-    if (MASTER(cr))
-    {
+    // only the master thread will finish initialization
+    if (MASTER(cr)) {
         locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
-        if (localsdispcor == FALSE)
-            locals_grid.DisableDispersionCorrection();
-        if (localscuda == TRUE)
-            locals_grid.EnableCuda();
-
-        for(i=0; (i<DIM); i++)
-            box_size[i]=state_global->box[i][i];
         locals_grid.SetBox(state_global->box, ir->epc);
 
-        locals_grid.SetContribType(localscontrib);
-        locals_grid.SetStressType(localsspatialatom);
-        locals_grid.SetForceDecomposition(localsfdecomp);
-        locals_grid.SetMinDihAngle(localsmindihangle);
-
-        //printf("\n\nmindihangle = %8.6f\n\n",locals_grid.settings.mindihangle);
         // setup periodic boundary conditions
         bool xper, yper, zper, periodic;
         periodic = (localspbc == TRUE);
-        if (ir->ePBC == epbcXYZ)
-        {
+        if (ir->ePBC == epbcXYZ) {
             xper = yper = zper = true;
-        }
-        else
-        if (ir->ePBC == epbcXY)
-        {
+        } else if (ir->ePBC == epbcXY) {
             xper = yper = true;
             zper = false;
-        }
-        else
-        {
+        } else {
             xper = yper = zper = false;
         }
         locals_grid.SetPeriodicBoundaries(xper,yper,zper,periodic);
 
-        // setup spatial/atomic specific variables
-        if (localsspatialatom == mds_spat)
-        {
-            if(localsgridspacing<=0)
-            {
-                gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgrid) <= 0.0\n");
-            }
+        // set the temperature based on the ref_T value of the first group (we are assumming that the temperature is the same for all groups)
+        locals_grid.SetTemperature(ir->opts.ref_t[0]);
 
-            locals_grid.SetSpacing(localsgridspacing);
-
-            if(localsgridx == 0)
-                locals_grid.SetNumberOfGridCellsX(box_size[XX]/localsgridspacing);
-            else
-                locals_grid.SetNumberOfGridCellsX(localsgridx);
-            if(localsgridy == 0)
-                locals_grid.SetNumberOfGridCellsY(box_size[YY]/localsgridspacing);
-            else
-                locals_grid.SetNumberOfGridCellsY(localsgridy);
-            if(localsgridz == 0)
-                locals_grid.SetNumberOfGridCellsZ(box_size[ZZ]/localsgridspacing);
-            else
-                locals_grid.SetNumberOfGridCellsZ(localsgridz);
-            
-            if(0 == locals_grid.settings.gridCells[0])
-                locals_grid.SetNumberOfGridCellsX(1);
-            if(0 == locals_grid.settings.gridCells[1])
-                locals_grid.SetNumberOfGridCellsY(1);
-            if(0 == locals_grid.settings.gridCells[2])
-                locals_grid.SetNumberOfGridCellsZ(1);
-
-            int ngrid =
-                locals_grid.settings.gridCells[0]*
-                locals_grid.settings.gridCells[1]*
-                locals_grid.settings.gridCells[2];
-
-            printf("Spacing requested: %g    Using nx=%d ny=%d nz=%d, grid size %d \n",
-               localsgridspacing,
-               locals_grid.settings.gridCells[0],
-               locals_grid.settings.gridCells[1],
-               locals_grid.settings.gridCells[2],
-               ngrid);
-
-            // set the temperature based on the ref_T value of the first group (we are assumming that the temperature is the same for all groups)
-            printf("The temperature value used for the elasticity calculations is T = %g K.\n", ir->opts.ref_t[0]);
-            locals_grid.SetTemperature(ir->opts.ref_t[0]);
-
-            // this will initialize locals_grid.current_grid and locals_grid.sum_grid
-            locals_grid.Init();
-            locals_grid.UpdateBoxSpacings(state->box);
-        }
-        else if(localsspatialatom == mds_atom)
-        {
-            // now set the number of atoms for mdstresslib
-            locals_grid.SetNumberOfAtoms(top_global->natoms);
-
-            // this will initialize locals_grid.current_grid and locals_grid.sum_grid
-            locals_grid.Init();
-
-            // calculate the radii (once) and set them
-            int atom_index = 0;
-            for (int mb = 0; mb < top_global->nmolblock; ++mb)
-            {
-                gmx_molblock_t * molb = &top_global->molblock[mb];
-
-                for (int mol = 0; mol < molb->nmol; ++mol)
-                {
-                    for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
-                    {
-                        int ii = top_global->moltype[molb->type].atoms.atom[mol_atom].type;
-                        double c6 = C6(fr->nbfp,fr->ntype,ii,ii)/6.0; // factor needed as the C6 is scaled by 6.0 for performance in the rest of the code
-                        double c12 = C12(fr->nbfp,fr->ntype,ii,ii)/12.0; //same as above. See src/gromacs/mdtypes/forcerec.h
-
-                        double radius;
-                        if (c6 > 0.0)
-                            radius = (int)(1000000*pow(c12/c6,1/6.0)/2.0)/1000000.0; // keeping only 6 sig digits for radius to avoid problems with the tesselation
-                        else
-                            radius = 0.0;
-
-                        locals_grid.SetVoronoiRadius(radius, atom_index);
-                        atom_index += 1;
-                    }
-                }
-            }
-        }
+        // this will initialize locals_grid.current_grid and locals_grid.sum_grid
+        locals_grid.Init();
+        locals_grid.UpdateBoxSpacings(state->box);
     }
     /* local stress end */
-
-    if (PAR(cr))
-        MPI_Barrier(MPI_COMM_WORLD);
 
     if (repl_ex_nst > 0 && MASTER(cr))
     {
@@ -1821,62 +1718,21 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
                 if (!bRerunMD && !bVV)
                 {
-                    locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], state->v[i], gi);
+                    locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], state->v[i]);
                 }
                 else if (!bRerunMD && bVV)
                 {
-                    locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], v_half[i], gi);
+                    locals_grid.DistributeKinetic(mass, x_full[i], v_half[i], v_half[i]);
                 }
                 else if (bRerunMD && !bVV)
                 {
-                    locals_grid.DistributeKinetic(mass, rerun_fr.x[gi], rerun_fr.v[gi], state->v[i], gi);
+                    locals_grid.DistributeKinetic(mass, rerun_fr.x[gi], rerun_fr.v[gi], state->v[i]);
                 }
                 else if (bRerunMD && bVV)
                 {
-                    locals_grid.DistributeKinetic(mass, rerun_fr.x[gi], rerun_fr.v[gi], rerun_fr.v[gi], gi);
+                    locals_grid.DistributeKinetic(mass, rerun_fr.x[gi], rerun_fr.v[gi], rerun_fr.v[gi]);
                 }
             }
-        }
-
-        if(localsspatialatom == mds_atom)
-        {
-            // If using stress per atom, calculate the radical voronoi tesselation to obtain the particle volumes
-            if (MASTER(cr))
-            {
-                // initialize the voronoi portion of mdstresslib
-                rvec voro_pos;
-
-                int pid = 0;
-                for (int mb = 0; mb < top_global->nmolblock; ++mb)
-                {
-                    gmx_molblock_t * molb = &top_global->molblock[mb];
-                    for (int mid = 0; mid < molb->nmol; ++mid)
-                    {
-                        for (int mol_atom = 0; mol_atom < molb->natoms_mol; ++mol_atom)
-                        {
-                            // grab the atom positions and put it in the box
-                            if (bRerunMD)
-                            {
-                                voro_pos[XX] = rerun_fr.x[pid][XX];
-                                voro_pos[YY] = rerun_fr.x[pid][YY];
-                                voro_pos[ZZ] = rerun_fr.x[pid][ZZ];
-                            }
-                            else
-                            {
-                                voro_pos[XX] = state->x[pid][XX];
-                                voro_pos[YY] = state->x[pid][YY];
-                                voro_pos[ZZ] = state->x[pid][ZZ];
-                            }
-                            put_atoms_in_box(ir->ePBC, state->box, 1, &voro_pos);
-
-                            // add the particle to locals_grid
-                            locals_grid.AddVoronoiAtom(voro_pos[0], voro_pos[1], voro_pos[2], pid, mid);
-                            pid += 1;
-                        }
-                    }
-                }
-            }
-
         }
 
         if (!bRerunMD && step % localsskip == 0)

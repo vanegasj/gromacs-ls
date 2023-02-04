@@ -319,7 +319,6 @@ int gmx_mdrun(int argc, char *argv[])
     int localsskip=1;
     const char * localsenum = "all";
     const char * localsfdenum = "ccfd";
-    const char * localssanum  = "spat";
     gmx_bool localsdispcor = TRUE;
     gmx_bool localscuda = FALSE;
     gmx_bool localspbc = FALSE;
@@ -428,8 +427,6 @@ int gmx_mdrun(int argc, char *argv[])
           "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel, none"},
         { "-lsfd", FALSE, etSTR, {&localsfdenum},
           "Select the type of force decomposition to be used: ccfd (covariant central force decomposition, default), ncfd (non-covariant central force decomposition), or gld (Goetz-Lipowsky decomposition)"},
-        { "-lssa", FALSE, etSTR, {&localssanum},
-          "Select the type of stress to calculate: spat (spatial stress from IKN theory, default), atom (stress per atom)"},
         { "-lsdispcor",  FALSE, etBOOL, {&localsdispcor},
           "Include contribution from dispersion correction." },
         { "-lspbc",  FALSE, etBOOL, {&localspbc},
@@ -465,7 +462,6 @@ int gmx_mdrun(int argc, char *argv[])
     int             localscontrib;
     int             localscontribc;
     int             localsfdecomp;
-    int             localsspatialatom;
     gmx_bool        bDoAppendFiles, bStartFromCpt;
     FILE           *fplog;
     int             rc;
@@ -504,25 +500,11 @@ int gmx_mdrun(int argc, char *argv[])
     dd_rank_order = nenum(ddrank_opt);
     hw_opt.thread_affinity = nenum(thread_aff_opt);
 
-    if (strcmp(localssanum,"spat") == 0) {
-      localsspatialatom = mds_spat;
-      printf("\nSelected spatial stress tensor\n");
-    }else if (strcmp(localssanum,"atom") == 0) {
-      localsspatialatom = mds_atom;
-      printf("\nSelected stress tensor by atom. Will not use force decomposition flag.\n");
-    }else{
-      printf("\nOption not recognized, will use spatial stress tensor\n");
-      localsspatialatom = mds_spat;
-    }
-
     if (strcmp(localsfdenum,"ccfd") == 0) {
       localsfdecomp = mds_ccfd;
       printf("\nSelected force decomposition: %s\n", localsfdenum);
     }else if (strcmp(localsfdenum,"ncfd") == 0) {
       localsfdecomp = mds_ncfd;
-      printf("\nSelected force decomposition: %s\n", localsfdenum);
-    }else if(strcmp(localsfdenum,"gld") == 0){
-      localsfdecomp = mds_gld;
       printf("\nSelected force decomposition: %s\n", localsfdenum);
     }else{
       printf("\nOption not recognized, will use covariant central force decomposition\n");
@@ -579,6 +561,25 @@ int gmx_mdrun(int argc, char *argv[])
       printf("\nOption not recognized, will write all contributions to the local stress\n");
       localscontrib = mds_all;
     }
+    
+    /* initialize what we can of locals_grid */
+    if (localsdispcor == FALSE)
+        locals_grid.DisableDispersionCorrection();
+    if (localscuda == TRUE)
+        locals_grid.EnableCuda();
+    locals_grid.SetContribType(localscontrib);
+    locals_grid.SetForceDecomposition(localsfdecomp);
+    locals_grid.SetMinDihAngle(localsmindihangle);
+
+    if(localsgridspacing<=0)
+    {
+        gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgrid) <= 0.0\n");
+    }
+
+    locals_grid.SetSpacing(localsgridspacing);
+    locals_grid.SetNumberOfGridCellsX(localsgridx);
+    locals_grid.SetNumberOfGridCellsY(localsgridy);
+    locals_grid.SetNumberOfGridCellsZ(localsgridz);
 
     /* now check the -multi and -multidir option */
     if (opt2bSet("-multidir", NFILE, fnm))
@@ -672,7 +673,7 @@ int gmx_mdrun(int argc, char *argv[])
                        nmultisim, repl_ex_nst, repl_ex_nex, repl_ex_seed,
                        pforce, cpt_period, max_hours, imdport, nstlocals,
                        localsgridspacing, localsgridx, localsgridy, localsgridz,
-                       localscontrib, localsfdecomp, localsspatialatom, localsdispcor, localspbc, localsmindihangle, localscuda, localsskip, Flags);
+                       localscontrib, localsfdecomp, localsdispcor, localspbc, localsmindihangle, localscuda, localsskip, Flags);
 
     /* Log file has to be closed in mdrunner if we are appending to it
        (fplog not set here) */

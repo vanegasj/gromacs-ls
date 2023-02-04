@@ -133,7 +133,6 @@ void locals_bonds_distribute_stress_born(
     {
         if (locals_grid->settings.contrib & (mds_all | mds_bnd) )
         {
-            const int atIDs[2] = {ai, aj};
             const mds::array3_ext R[2] = {
                 {x[ai][0], x[ai][1], x[ai][2]}, 
                 {x[ai][0]-dx[0], x[ai][1]-dx[1], x[ai][2]-dx[2]} 
@@ -142,7 +141,7 @@ void locals_bonds_distribute_stress_born(
                 { fbond*dx[0],  fbond*dx[1],  fbond*dx[2]},
                 {-fbond*dx[0], -fbond*dx[1], -fbond*dx[2]}
             };
-            locals_grid->DistributeInteraction(2, R, F, &phi, &kappa, atIDs);
+            locals_grid->DistributeInteraction(2, R, F, &phi, &kappa);
         }
     }
 }
@@ -182,11 +181,10 @@ void locals_angles_distribute_stress(
             lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
             lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
             lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
-            lpatIDs[0] = ai; lpatIDs[1] = aj; lpatIDs[2] = ak;
             lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
             lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
             lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
-            locals_grid->DistributeInteraction(3, lpR, lpF, nullptr, nullptr, lpatIDs);
+            locals_grid->DistributeInteraction(3, lpR, lpF, nullptr, nullptr);
         }
     }
 }
@@ -222,7 +220,6 @@ void locals_angles_distribute_stress_born(
             lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2];
             lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2];
             lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2];
-            lpatIDs[0] = ai; lpatIDs[1] = aj; lpatIDs[2] = ak;
             lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
             lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
             lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
@@ -246,7 +243,7 @@ void locals_angles_distribute_stress_born(
                 kappa[ik][ij], kappa[ik][ik], kappa[ik][jk],
                 kappa[jk][ij], kappa[jk][ik], kappa[jk][jk],
             };
-            locals_grid->DistributeInteraction(3, lpR, lpF, lpPhi, lpKappa, lpatIDs);
+            locals_grid->DistributeInteraction(3, lpR, lpF, lpPhi, lpKappa);
         }
     }
 }
@@ -1865,7 +1862,6 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
                 rvec Ri, Rj, Rk, Rl, dx;
                 rvec Fj, Fk;
                 rvec lpR[4], lpF[4];
-                int  lpatIDs[4];
               
                 copy_rvec(x[i], Ri);
                 pbc_rvec_sub(pbc, x[j], x[i], dx);
@@ -1882,12 +1878,11 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
                 lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
                 lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
                 lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
-                lpatIDs[0] = i; lpatIDs[1] = j; lpatIDs[2] = k; lpatIDs[3] = l;
                 lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
                 lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
                 lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
                 lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr, lpatIDs);
+                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr);
             }
         }
         /* end stress tensor */
@@ -1947,7 +1942,6 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
                 rvec Ri, Rj, Rk, Rl, dx;
                 rvec Fj, Fk;
                 rvec lpR[4], lpF[4];
-                int  lpatIDs[4];
               
                 copy_rvec(x[i], Ri);
                 pbc_rvec_sub(pbc, x[j], x[i], dx);
@@ -1964,12 +1958,11 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
                 lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
                 lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
                 lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
-                lpatIDs[0] = i; lpatIDs[1] = j; lpatIDs[2] = k; lpatIDs[3] = l;
                 lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
                 lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
                 lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
                 lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr, lpatIDs);
+                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr);
             }
         }
         /* end stress tensor */
@@ -2927,7 +2920,6 @@ real restrdihs(int nbonds,
                 rvec Ri, Rj, Rk, Rl, dx;
                 rvec Fj, Fk;
                 rvec lpR[4], lpF[4];
-                int  lpatIDs[4];
               
                 copy_rvec(x[ai], Ri);
                 pbc_rvec_sub(pbc, x[aj], x[ai], dx);
@@ -2944,12 +2936,11 @@ real restrdihs(int nbonds,
                 lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
                 lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
                 lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
-                lpatIDs[0] = ai; lpatIDs[1] = aj; lpatIDs[2] = ak; lpatIDs[3] = al;
                 lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
                 lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
                 lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
                 lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr, lpatIDs);
+                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr);
             }
         }
         /* end stress tensor */
@@ -3069,7 +3060,6 @@ real cbtdihs(int nbonds,
                 rvec Ri, Rj, Rk, Rl, dx;
                 rvec Fj, Fk;
                 rvec lpR[4], lpF[4];
-                int  lpatIDs[4];
               
                 copy_rvec(x[ai], Ri);
                 pbc_rvec_sub(pbc, x[aj], x[ai], dx);
@@ -3086,12 +3076,11 @@ real cbtdihs(int nbonds,
                 lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
                 lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
                 lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
-                lpatIDs[0] = ai; lpatIDs[1] = aj; lpatIDs[2] = ak; lpatIDs[3] = al;
                 lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
                 lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
                 lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
                 lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr, lpatIDs);
+                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr);
             }
         }
         /* end stress tensor */
@@ -3682,7 +3671,6 @@ cmap_dihs(int nbonds,
                 rvec Ri, Rj, Rk, Rl, Rm, dx;
                 rvec Fi, Fj, Fk, Fl, Fm;
                 rvec lpR[5], lpF[5];
-                int  lpatIDs[5];
             
                 copy_rvec(x[ai], Ri);
                 pbc_rvec_sub(pbc, x[aj], x[ai], dx);
@@ -3713,14 +3701,13 @@ cmap_dihs(int nbonds,
                 lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2];
                 lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
                 lpR[4][0] = Rm[0]; lpR[4][1] = Rm[1]; lpR[4][2] = Rm[2];
-                lpatIDs[0] = ai; lpatIDs[1] = aj; lpatIDs[2] = ak; lpatIDs[3] = al; lpatIDs[4] = am;
                 lpF[0][0] = Fi[0]; lpF[0][1] = Fi[1]; lpF[0][2] = Fi[2];
                 lpF[1][0] = Fj[0]; lpF[1][1] = Fj[1]; lpF[1][2] = Fj[2];
                 lpF[2][0] = Fk[0]; lpF[2][1] = Fk[1]; lpF[2][2] = Fk[2];
                 lpF[3][0] = Fl[0]; lpF[3][1] = Fl[1]; lpF[3][2] = Fl[2];
                 lpF[4][0] = Fm[0]; lpF[4][1] = Fm[1]; lpF[4][2] = Fm[2];
 
-                locals_grid->DistributeInteraction(5, lpR, lpF, nullptr, nullptr, lpatIDs);
+                locals_grid->DistributeInteraction(5, lpR, lpF, nullptr, nullptr);
             }
         }
         /* end stress tensor */

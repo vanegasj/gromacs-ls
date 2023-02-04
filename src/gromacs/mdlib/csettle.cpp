@@ -762,11 +762,6 @@ static void settleTemplate(const gmx_settledata_t settled,
 
                         for (int i2 = 0; i2 < packSize; ++i2)
                         {
-                            int lpatIDs[3];
-                            lpatIDs[0] = settled->ow1[i + i2];
-                            lpatIDs[1] = settled->hw2[i + i2];
-                            lpatIDs[2] = settled->hw3[i + i2];
-
                             real lpR[3][3], lpF[3][3];
                             transposeScatterStoreU<0>(lpR[0], offset, x_ow1_p[3*i2+0], x_ow1_p[3*i2+1], x_ow1_p[3*i2+2]);
                             transposeScatterStoreU<0>(lpR[1], offset, x_hw2_p[3*i2+0], x_hw2_p[3*i2+1], x_hw2_p[3*i2+2]);
@@ -776,7 +771,7 @@ static void settleTemplate(const gmx_settledata_t settled,
                             transposeScatterStoreU<0>(lpF[1], offset, fb_p[3*i2+0], fb_p[3*i2+1], fb_p[3*i2+2]);
                             transposeScatterStoreU<0>(lpF[2], offset, fc_p[3*i2+0], fc_p[3*i2+1], fc_p[3*i2+2]);
 
-                            locals_grid->DistributeInteraction(-3, lpR, lpF, nullptr, nullptr, lpatIDs);
+                            locals_grid->DistributeInteraction(-3, lpR, lpF, nullptr, nullptr);
                         }
                     }
                 }

@@ -535,10 +535,9 @@ do_pairs_general(int ftype, int nbonds,
             {
                 lpR[0][0] = x[aj][0] + dx2[0]; lpR[0][1] = x[aj][1] + dx2[1]; lpR[0][2] = x[aj][2] + dx2[2]; 
                 lpR[1][0] = x[aj][0]; lpR[1][1] = x[aj][1]; lpR[1][2] = x[aj][2]; 
-                lpatIDs[0] = ai; lpatIDs[1] = aj;
                 lpF[0][0] = dx[0];  lpF[0][1] = dx[1];  lpF[0][2] = dx[2];
                 lpF[1][0] = -dx[0]; lpF[1][1] = -dx[1]; lpF[1][2] = -dx[2];
-                locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr, lpatIDs);
+                locals_grid->DistributeInteraction(2, lpR, lpF, nullptr, nullptr);
             }
         }
         /* end stress tensor */

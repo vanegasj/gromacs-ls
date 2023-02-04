@@ -905,7 +905,6 @@ static void do_lincs(rvec *x, rvec *xp, matrix box, t_pbc *pbc,
     real fx,fy,fz,ccc;
     rvec x1,x2;
     rvec lpR[2], lpF[2];
-    int  lpatIDs[2];
     
     lambda  = lincsd->mlambda;
     /* end stress tensor */
@@ -1193,10 +1192,9 @@ static void do_lincs(rvec *x, rvec *xp, matrix box, t_pbc *pbc,
                 {
                     lpR[0][0] = x1[0]; lpR[0][1] = x1[1]; lpR[0][2] = x1[2]; 
                     lpR[1][0] = x2[0]; lpR[1][1] = x2[1]; lpR[1][2] = x2[2]; 
-                    lpatIDs[0] = i; lpatIDs[1] = j;
                     lpF[0][0] = fx;  lpF[0][1] = fy;  lpF[0][2] = fz;
                     lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
-                    locals_grid->DistributeInteraction(2, lpR, lpF, &phi, &kappa, lpatIDs);
+                    locals_grid->DistributeInteraction(2, lpR, lpF, &phi, &kappa);
                 }
             }
             /* end stress tensor */
