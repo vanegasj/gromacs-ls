@@ -480,7 +480,7 @@
             if (locals_grid->settings.contrib & (mds_all | mds_vdw | mds_cou) )
             {
                 // remove the 'far away' particles
-                if (xi_id[i] != -1 && x_id[aj] != -1)
+                if ((xi_id[i] != -1 && x_id[aj] != -1) && (xi_id[i] != x_id[aj]) )
                 {
                     mds::array3_ext lpR[2] = {0}, lpF[2] = {0};
                     mds::real_ext lpPhi = 0;
@@ -505,6 +505,20 @@
                             lpPhi += phi_coul;
                             lpKappa += kappa_coul;
 #endif
+#ifdef CALC_COULOMB
+                            //if (deltacoulsq < dfwsq) // uncomment this line to include impulse correction from particles below and above the cutoff
+                            if (deltacoulsq < dfwsq) // uncomment this line to include impulse correction only from particles below the cutoff
+                            {
+                                lpPhi += -phi_coul_ic;
+                                lpKappa += -kappa_coul_ic;
+                                if ((bCoulCut && ic->coulomb_modifier == eintmodNONE) || bCoulEwald)
+                                {
+                                    real coul_ic = phi_coul_ic*rinvl;
+                                    lpF[0][0] +=  coul_ic*dx; lpF[0][1] +=  coul_ic*dy; lpF[0][2] +=  coul_ic*dz;
+                                    lpF[1][0] += -coul_ic*dx; lpF[1][1] += -coul_ic*dy; lpF[1][2] += -coul_ic*dz;
+                                }
+                            }
+#endif
                             distribute = true;
                         }
 #ifdef LJ_CUT
@@ -518,21 +532,6 @@
                                 real lj_ic = phi_lj_ic*rinvl;
                                 lpF[0][0] +=  lj_ic*dx; lpF[0][1] +=  lj_ic*dy; lpF[0][2] +=  lj_ic*dz;
                                 lpF[1][0] += -lj_ic*dx; lpF[1][1] += -lj_ic*dy; lpF[1][2] += -lj_ic*dz;
-                            }
-                            distribute = true;
-                        }
-#endif
-#ifdef CALC_COULOMB
-                        //if (deltacoulsq < dfwsq) // uncomment this line to include impulse correction from particles below and above the cutoff
-                        if (deltacoulsq < dfwsq && skipmask > 0) // uncomment this line to include impulse correction only from particles below the cutoff
-                        {
-                            lpPhi += -phi_coul_ic;
-                            lpKappa += -kappa_coul_ic;
-                            if ((bCoulCut && ic->coulomb_modifier == eintmodNONE) || bCoulEwald)
-                            {
-                                real coul_ic = phi_coul_ic*rinvl;
-                                lpF[0][0] +=  coul_ic*dx; lpF[0][1] +=  coul_ic*dy; lpF[0][2] +=  coul_ic*dz;
-                                lpF[1][0] += -coul_ic*dx; lpF[1][1] += -coul_ic*dy; lpF[1][2] += -coul_ic*dz;
                             }
                             distribute = true;
                         }
