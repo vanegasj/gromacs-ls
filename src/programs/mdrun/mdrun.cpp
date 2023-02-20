@@ -71,7 +71,7 @@
 #include "mdrun_main.h"
 #include "runner.h"
 
-mds::StressGrid locals_grid;
+extern mds::StressGrid locals_grid;
 
 /*! \brief Return whether either of the command-line parameters that
  *  will trigger a multi-simulation is set */
@@ -563,23 +563,26 @@ int gmx_mdrun(int argc, char *argv[])
     }
     
     /* initialize what we can of locals_grid */
-    if (localsdispcor == FALSE)
-        locals_grid.DisableDispersionCorrection();
-    if (localscuda == TRUE)
-        locals_grid.EnableCuda();
-    locals_grid.SetContribType(localscontrib);
-    locals_grid.SetForceDecomposition(localsfdecomp);
-    locals_grid.SetMinDihAngle(localsmindihangle);
+    if (false == locals_grid.settings.initialized) {
+        if (localsdispcor == FALSE)
+            locals_grid.DisableDispersionCorrection();
+        if (localscuda == TRUE)
+            locals_grid.EnableCuda();
+        locals_grid.SetContribType(localscontrib);
+        locals_grid.SetForceDecomposition(localsfdecomp);
+        locals_grid.SetMinDihAngle(localsmindihangle);
 
-    if(localsgridspacing<=0)
-    {
-        gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgrid) <= 0.0\n");
+        if(localsgridspacing<=0)
+        {
+            gmx_fatal(FARGS,"Cannot do local stress with spacing (-localsgrid) <= 0.0\n");
+        }
+
+        locals_grid.SetGridSpacing(localsgridspacing);
+        locals_grid.SetGridNCells(
+                localsgridx,
+                localsgridy,
+                localsgridz);
     }
-
-    locals_grid.SetSpacing(localsgridspacing);
-    locals_grid.SetNumberOfGridCellsX(localsgridx);
-    locals_grid.SetNumberOfGridCellsY(localsgridy);
-    locals_grid.SetNumberOfGridCellsZ(localsgridz);
 
     /* now check the -multi and -multidir option */
     if (opt2bSet("-multidir", NFILE, fnm))
@@ -672,8 +675,7 @@ int gmx_mdrun(int argc, char *argv[])
                        nsteps, nstepout, resetstep,
                        nmultisim, repl_ex_nst, repl_ex_nex, repl_ex_seed,
                        pforce, cpt_period, max_hours, imdport, nstlocals,
-                       localsgridspacing, localsgridx, localsgridy, localsgridz,
-                       localscontrib, localsfdecomp, localsdispcor, localspbc, localsmindihangle, localscuda, localsskip, Flags);
+                       localscontrib, localspbc, localsskip, Flags);
 
     /* Log file has to be closed in mdrunner if we are appending to it
        (fplog not set here) */

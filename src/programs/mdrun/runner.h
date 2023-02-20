@@ -103,9 +103,8 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
              int nmultisim, int repl_ex_nst, int repl_ex_nex,
              int repl_ex_seed, real pforce, real cpt_period, real max_hours,
              int imdport, int nstlocals,
-             real localsgridspacing, int localsgridx, int localsgridy, int localsgridz,
-             int localscontrib, int localsfdecomp,
-             gmx_bool localsdispcor, gmx_bool localspbc, real localsmindihangle, gmx_bool localscuda, int localsskip, unsigned long Flags);
+             int localscontrib,
+             gmx_bool localspbc, int localsskip, unsigned long Flags);
 
 
 }      // namespace gmx

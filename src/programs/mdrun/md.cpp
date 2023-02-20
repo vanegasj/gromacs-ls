@@ -225,16 +225,8 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                   real cpt_period, real max_hours,
                   int imdport,
                   int nstlocals,
-                  real localsgridspacing,
-                  int localsgridx,
-                  int localsgridy,
-                  int localsgridz,
                   int localscontrib,
-                  int localsfdecomp,
-                  gmx_bool localsdispcor,
                   gmx_bool localspbc,
-                  real localsmindihangle,
-                  gmx_bool localscuda,
                   int localsskip,
                   unsigned long Flags,
                   gmx_walltime_accounting_t walltime_accounting)
@@ -540,28 +532,31 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
     // only the master thread will finish initialization
     if (MASTER(cr)) {
-        locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
-        locals_grid.SetBox(state_global->box, ir->epc);
+        // check to see if we have already initialized with a checkpoint load
+        if (false == locals_grid.settings.initialized) {
+            locals_grid.SetFileName(opt2fn("-ols",nfile,fnm));
+            locals_grid.SetBox(state_global->box, ir->epc);
 
-        // setup periodic boundary conditions
-        bool xper, yper, zper, periodic;
-        periodic = (localspbc == TRUE);
-        if (ir->ePBC == epbcXYZ) {
-            xper = yper = zper = true;
-        } else if (ir->ePBC == epbcXY) {
-            xper = yper = true;
-            zper = false;
-        } else {
-            xper = yper = zper = false;
+            // setup periodic boundary conditions
+            bool xper, yper, zper, periodic;
+            periodic = (localspbc == TRUE);
+            if (ir->ePBC == epbcXYZ) {
+                xper = yper = zper = true;
+            } else if (ir->ePBC == epbcXY) {
+                xper = yper = true;
+                zper = false;
+            } else {
+                xper = yper = zper = false;
+            }
+            locals_grid.SetPeriodicBoundaries(xper,yper,zper,periodic);
+
+            // set the temperature based on the ref_T value of the first group (we are assumming that the temperature is the same for all groups)
+            locals_grid.SetTemperature(ir->opts.ref_t[0]);
+
+            // this will initialize locals_grid.current_grid and locals_grid.sum_grid
+            locals_grid.Init();
+            locals_grid.UpdateBoxSpacings(state->box);
         }
-        locals_grid.SetPeriodicBoundaries(xper,yper,zper,periodic);
-
-        // set the temperature based on the ref_T value of the first group (we are assumming that the temperature is the same for all groups)
-        locals_grid.SetTemperature(ir->opts.ref_t[0]);
-
-        // this will initialize locals_grid.current_grid and locals_grid.sum_grid
-        locals_grid.Init();
-        locals_grid.UpdateBoxSpacings(state->box);
     }
     /* local stress end */
 
@@ -988,7 +983,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             gmx_bcast(sizeof(localsskip), &localsskip, cr);
         }
 
-        if ((step % localsskip == 0) && (locals_grid.CheckInit() == true))
+        if ((step % localsskip == 0) && (true == locals_grid.settings.initialized))
         {
             locals_grid.SetContribType(localscontrib);
             locals_grid.UpdateBoxSpacings(state->box);

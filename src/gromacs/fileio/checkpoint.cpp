@@ -85,6 +85,9 @@
 #define CPT_MAGIC2 171819
 #define CPTSTRLEN 1024
 
+// moved the extern to mdrun.cpp, declaring actual lib here now
+mds::StressGrid locals_grid;
+
 /* cpt_version should normally only be changed
  * when the header of footer format changes.
  * The state data format itself is backward and forward compatible.
@@ -1511,6 +1514,10 @@ void write_checkpoint(const char *fn, gmx_bool bNumberAndKeep,
         fprintf(fplog, "Writing checkpoint, step %s at %s\n\n",
                 gmx_step_str(step, buf), timebuf);
     }
+    
+    /* local stress begin */
+    locals_grid.SaveCheckpoint(fn,fntemp);
+    /* local stress end */
 
     /* Get offsets for open files */
     gmx_fio_get_output_file_positions(&outputfiles, &noutputfiles);
@@ -2278,6 +2285,10 @@ void load_checkpoint(const char *fn, FILE **fplog,
     }
     ir->init_step        = step;
     ir->simulation_part += 1;
+    
+    /* local stress begin */
+    locals_grid.LoadCheckpoint(fn);
+    /* local stress end */
 }
 
 void read_checkpoint_part_and_step(const char  *filename,

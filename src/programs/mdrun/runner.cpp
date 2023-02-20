@@ -166,16 +166,8 @@ struct mdrunner_arglist
     real                    max_hours;
     int                     imdport;
     int                     nstlocals;
-    real                    localsgridspacing;
-    int                     localsgridx;
-    int                     localsgridy;
-    int                     localsgridz;
     int                     localscontrib;
-    int                     localsfdecomp;
-    int                     localsdispcor;
     int                     localspbc;
-    real                    localsmindihang;
-    int                     localscuda;
     int                     localsskip;
     unsigned long           Flags;
 };
@@ -215,9 +207,8 @@ static void mdrunner_start_fn(void *arg)
                       mc.nsteps_cmdline, mc.nstepout, mc.resetstep,
                       mc.nmultisim, mc.repl_ex_nst, mc.repl_ex_nex, mc.repl_ex_seed, mc.pforce,
                       mc.cpt_period, mc.max_hours, mc.imdport, mc.nstlocals,
-                      mc.localsgridspacing, mc.localsgridx, mc.localsgridy, mc.localsgridz,
                       mc.localscontrib,
-                      mc.localsfdecomp, mc.localsdispcor, mc.localspbc, mc.localsmindihang, mc.localscuda, mc.localsskip, mc.Flags);
+                      mc.localspbc, mc.localsskip, mc.Flags);
     }
     GMX_CATCH_ALL_AND_EXIT_WITH_FATAL_ERROR;
 }
@@ -240,8 +231,7 @@ static t_commrec *mdrunner_start_threads(gmx_hw_opt_t *hw_opt,
                                          int nstepout, int resetstep,
                                          int nmultisim, int repl_ex_nst, int repl_ex_nex, int repl_ex_seed,
                                          real pforce, real cpt_period, real max_hours, int nstlocals,
-                                         real localsgridspacing, int localsgridx, int localsgridy, int localsgridz,
-                                         int localscontrib, int localsfdecomp,
+                                         int localscontrib,
                                          unsigned long Flags)
 {
     int                      ret;
@@ -294,12 +284,7 @@ static t_commrec *mdrunner_start_threads(gmx_hw_opt_t *hw_opt,
     mda->cpt_period        = cpt_period;
     mda->max_hours         = max_hours;
     mda->nstlocals         = nstlocals;
-    mda->localsgridspacing = localsgridspacing;
-    mda->localsgridx       = localsgridx;
-    mda->localsgridy       = localsgridy;
-    mda->localsgridz       = localsgridz;
     mda->localscontrib     = localscontrib;
-    mda->localsfdecomp     = localsfdecomp;
     mda->Flags             = Flags;
 
     /* now spawn new threads that start mdrunner_start_fn(), while
@@ -710,9 +695,8 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
              int gmx_unused nmultisim, int repl_ex_nst, int repl_ex_nex,
              int repl_ex_seed, real pforce, real cpt_period, real max_hours,
              int imdport, int nstlocals,
-             real localsgridspacing, int localsgridx, int localsgridy, int localsgridz,
              int localscontrib,
-             int localsfdecomp, int localsdispcor, int localspbc, real localsmindihangle, int localscuda, int localsskip, unsigned long Flags)
+             int localspbc, int localsskip, unsigned long Flags)
 {
     gmx_bool                  bForceUseGPU, bTryUseGPU, bRerunMD;
     t_inputrec               *inputrec;
@@ -875,8 +859,7 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
                                         nsteps_cmdline, nstepout, resetstep, nmultisim,
                                         repl_ex_nst, repl_ex_nex, repl_ex_seed, pforce,
                                         cpt_period, max_hours, nstlocals,
-                                        localsgridspacing, localsgridx, localsgridy, localsgridz,
-                                        localscontrib, localsfdecomp,
+                                        localscontrib,
                                         Flags);
             /* the main thread continues here with a new cr. We don't deallocate
                the old cr because other threads may still be reading it. */
@@ -1367,16 +1350,8 @@ int mdrunner(gmx_hw_opt_t *hw_opt,
                                      cpt_period, max_hours,
                                      imdport,
                                      nstlocals,
-                                     localsgridspacing,
-                                     localsgridx,
-                                     localsgridy,
-                                     localsgridz,
                                      localscontrib,
-                                     localsfdecomp,
-                                     localsdispcor,
                                      localspbc,
-                                     localsmindihangle,
-                                     localscuda,
                                      localsskip,
                                      Flags,
                                      walltime_accounting);
