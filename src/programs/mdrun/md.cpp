@@ -238,7 +238,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     gmx_bool        bGStatEveryStep, bGStat, bCalcVir, bCalcEnerStep, bCalcEner;
     gmx_bool        bNS, bNStList, bSimAnn, bStopCM, bRerunMD,
                     bFirstStep, startingFromCheckpoint, bInitStep, bLastStep = FALSE,
-                    bBornRadii, bUsingEnsembleRestraints;
+                    bExitNow = FALSE, bBornRadii, bUsingEnsembleRestraints;
     gmx_bool          bDoDHDL = FALSE, bDoFEP = FALSE, bDoExpanded = FALSE;
     gmx_bool          do_ene, do_log, do_verbose, bRerunWarnNoV = TRUE,
                       bForceUpdate = FALSE, bCPT;
@@ -296,6 +296,19 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
     real mass;
     rvec *x_full, *v_half;
     int cr_size;
+    
+    // this call acts as a registration of all threads on this node
+    locals_grid.SetThreadIDs(cr->nodeid);
+    locals_grid.SetThreadIDs(cr->nodeid);
+    if (MASTER(cr)) {
+        // make sure we aren't getting any residual contributions
+        // from setup phase
+        locals_grid.SetContribType(mds_none);
+    }
+    // share the localsskip frame number
+    if (PAR(cr)) {
+        gmx_bcast(sizeof(localsskip), &localsskip, cr);
+    }
 
     /* local stress end */
 
@@ -527,9 +540,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         gmx_fatal(FARGS,"Stopping the local stress analysis\n");
     }
 
-    // this call acts as a registration of all threads on this node
-    locals_grid.SetThreadIDs(cr->nodeid, cr->nnodes);
-
     // only the master thread will finish initialization
     if (MASTER(cr)) {
         // check to see if we have already initialized with a checkpoint load
@@ -555,7 +565,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
             // this will initialize locals_grid.current_grid and locals_grid.sum_grid
             locals_grid.Init();
-            locals_grid.UpdateBoxSpacings(state->box);
         }
     }
     /* local stress end */
@@ -894,6 +903,24 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             t         = t0 + step*ir->delta_t;
         }
 
+        /* begin local stress */
+        bool locals_bDoAnalysis = ((step % localsskip) == 0);
+        int64_t last_analysis_step = locals_grid.SetFrameId(step,locals_bDoAnalysis);
+        if (last_analysis_step >= step) {
+            locals_bDoAnalysis = false;
+        }
+
+        if (locals_bDoAnalysis) {
+            // turn on specified contributions
+            locals_grid.SetContribType(localscontrib);
+            locals_grid.UpdateBoxSpacings(state->box);
+        } else {
+            // turn off all contributions
+            locals_grid.SetContribType(mds_none);
+        }
+        /* end local stress */
+
+
         // TODO Refactor this, so that nstfep does not need a default value of zero
         if (ir->efep != efepNO || ir->bSimTemp)
         {
@@ -946,12 +973,8 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                     }
                 }
             }
-            copy_mat(rerun_fr.box, state_global->box);
-            copy_mat(state_global->box, state->box);
-
-            /* begin local stress */
-            locals_grid.UpdateBoxSpacings(state->box);
-            /* end local stress */
+            //copy_mat(rerun_fr.box, state_global->box);
+            //copy_mat(state_global->box, state->box);
 
             if (vsite && (Flags & MD_RERUN_VSITE))
             {
@@ -976,24 +999,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 }
             }
         }
-
-        /* begin local stress */
-        if (PAR(cr))
-        {
-            gmx_bcast(sizeof(localsskip), &localsskip, cr);
-        }
-
-        if ((step % localsskip == 0) && (true == locals_grid.settings.initialized))
-        {
-            locals_grid.SetContribType(localscontrib);
-            locals_grid.UpdateBoxSpacings(state->box);
-        }
-        else
-        {
-            locals_grid.SetContribType(mds_none);
-        }
-
-        /* end local stress */
 
         /* Stop Center of Mass motion */
         bStopCM = (ir->comm_mode != ecmNO && do_per_step(step, ir->nstcomm));
@@ -1144,8 +1149,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
 
         /* begin locals */
-
-        if (!bRerunMD && step % localsskip == 0)
+        if (!bRerunMD && locals_bDoAnalysis)
         {
             int natoms;
             if (PAR(cr))
@@ -1363,7 +1367,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         /* begin locals */
         /* store the full step velocities and positions for the kinetic calculation of the local stress for md-VV */
-        if (bVV && !bRerunMD && step % localsskip == 0)
+        if (bVV && !bRerunMD && locals_bDoAnalysis)
         {
             int natoms;
             if (PAR(cr))
@@ -1414,6 +1418,29 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
 
         elapsed_time = walltime_accounting_get_current_elapsed_time(walltime_accounting);
+        
+        /* Check whether everything is still allright */
+        /* begin local stress */
+        if (((int)gmx_get_stop_condition() > handled_stop_condition)
+#if GMX_THREAD_MPI
+            && MASTER(cr)
+#endif
+                )
+        {
+            // if the stop condition is a signal/interrupt, we just break out of the loop
+            // without saving last X minutes of progress in order to make sure state isn't
+            // lost, since we are now copying two files rather than 1
+            fprintf(stderr,
+                    "\n\nReceived the %s signal, stopping immediately without saving\n\n",
+                    gmx_get_signal_name() );
+                bExitNow = true;
+        }
+        if (PAR(cr)) {
+            gmx_bcast(sizeof(bExitNow), &bExitNow, cr);
+        }
+        if (bExitNow)
+            break;
+        /* end local stress */
 
         /* Check whether everything is still allright */
         if (((int)gmx_get_stop_condition() > handled_stop_condition)
@@ -1693,14 +1720,13 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             natoms = cr->dd->nat_home;
             gmx_bcast(sizeof(rerun_fr.x), &rerun_fr.x, cr);
             gmx_bcast(sizeof(rerun_fr.v), &rerun_fr.v, cr);
-            //gmx_bcast(sizeof(localsskip), &localsskip, cr);
         }
         else
         {
             natoms = state->natoms;
         }
 
-        if ((locals_grid.settings.contrib == mds_all || locals_grid.settings.contrib == mds_kin) && (step % localsskip == 0))
+        if ((locals_grid.settings.contrib == mds_all || locals_grid.settings.contrib == mds_kin) && locals_bDoAnalysis)
         {
             for (i=0; i < natoms; i++)
             {
@@ -1730,15 +1756,20 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             }
         }
 
-        if (!bRerunMD && step % localsskip == 0)
+        if (!bRerunMD && locals_bDoAnalysis)
         {
             sfree(x_full);
             sfree(v_half);
         }
 
-        if (step % localsskip == 0)
+        if (locals_bDoAnalysis)
         {
             locals_grid.SumGrid();
+        }
+        
+        // second call made directly, should save grid after summing when possible
+        if (MASTER(cr) ) {
+            locals_grid.SaveCheckpoint(nullptr,nullptr);
         }
 
         /* end local stress */

@@ -561,6 +561,9 @@ int gmx_mdrun(int argc, char *argv[])
       printf("\nOption not recognized, will write all contributions to the local stress\n");
       localscontrib = mds_all;
     }
+
+    /* always set the maximum number of threads */
+    locals_grid.SetMaxThreads(hw_opt.nthreads_tmpi);
     
     /* initialize what we can of locals_grid */
     if (false == locals_grid.settings.initialized) {

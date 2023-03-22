@@ -2432,7 +2432,8 @@ void calc_dispcorr(t_inputrec *ir, t_forcerec *fr,
             /* pressure correction here */
             if (locals_grid != NULL)
             {
-                locals_grid->DispersionCorrection(2*svir*invvol);
+                if (mds_none != locals_grid->settings.contrib)
+                    locals_grid->DispersionCorrection(2*svir*invvol);
             }
         }
 

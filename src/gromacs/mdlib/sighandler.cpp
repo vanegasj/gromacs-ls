@@ -82,7 +82,12 @@ static void signal_handler(int n)
         case SIGTERM:
         case SIGINT:
             /* we explicitly set things up to allow this: */
-            stop_condition++;
+            /* begin locals stress */
+            // not allowing the stop condition to exceed to later
+            // stages since we want to make sure to only replace
+            // the checkpoints with recoverable states
+            stop_condition = gmx_stop_cond_none+1;
+            /* end locals stress */
             if (n == SIGINT)
             {
                 last_signal_name = 1;
