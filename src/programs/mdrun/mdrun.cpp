@@ -313,6 +313,7 @@ int gmx_mdrun(int argc, char *argv[])
     real localsmindihangle=0.0;
     int nstlocals=0;
     real localsgridspacing=0.1;
+    real localsimpulsewidth=0.1;
     int localsgridx=0;
     int localsgridy=0;
     int localsgridz=0;
@@ -415,6 +416,8 @@ int gmx_mdrun(int argc, char *argv[])
           "Seed for replica exchange, -1 is generate a seed" },
         { "-localsgrid",  FALSE, etREAL, {&localsgridspacing},
           "Spacing for local stress grid (default = 0.1 nm)" },
+        { "-localsiw",  FALSE, etREAL, {&localsimpulsewidth},
+          "Impulse width for corrections near VDW cutoff (default = 0.1 nm)" },
         { "-nstlp",  FALSE, etINT, {&nstlocals},
           "HIDDENFrequency of writing local stress grid to file (default = 0)" },
         { "-lsgridx", FALSE, etINT, {&localsgridx},
@@ -581,6 +584,7 @@ int gmx_mdrun(int argc, char *argv[])
         }
 
         locals_grid.SetGridSpacing(localsgridspacing);
+        locals_grid.SetImpulseWidth(localsimpulsewidth);
         locals_grid.SetGridNCells(
                 localsgridx,
                 localsgridy,
