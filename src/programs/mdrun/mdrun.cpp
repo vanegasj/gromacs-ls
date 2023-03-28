@@ -313,7 +313,7 @@ int gmx_mdrun(int argc, char *argv[])
     real localsmindihangle=0.0;
     int nstlocals=0;
     real localsgridspacing=0.1;
-    real localsimpulsewidth=0.1;
+    real localsimpulsewidth=0.0;
     int localsgridx=0;
     int localsgridy=0;
     int localsgridz=0;
@@ -417,7 +417,7 @@ int gmx_mdrun(int argc, char *argv[])
         { "-localsgrid",  FALSE, etREAL, {&localsgridspacing},
           "Spacing for local stress grid (default = 0.1 nm)" },
         { "-localsiw",  FALSE, etREAL, {&localsimpulsewidth},
-          "Impulse width for corrections near VDW cutoff (default = 0.1 nm)" },
+          "Apply an impulsive correction for plain cutoff potentials (VDW or elec) using a delta function with a finite width (default = 0.0 nm)" },
         { "-nstlp",  FALSE, etINT, {&nstlocals},
           "HIDDENFrequency of writing local stress grid to file (default = 0)" },
         { "-lsgridx", FALSE, etINT, {&localsgridx},
