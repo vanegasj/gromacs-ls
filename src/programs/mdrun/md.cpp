@@ -1433,7 +1433,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             fprintf(stderr,
                     "\n\nReceived the %s signal, stopping immediately without saving\n\n",
                     gmx_get_signal_name() );
-                bExitNow = true;
+                bExitNow = TRUE;
         }
         if (PAR(cr)) {
             gmx_bcast(sizeof(bExitNow), &bExitNow, cr);
@@ -1769,7 +1769,12 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         
         // second call made directly, should save grid after summing when possible
         if (MASTER(cr) ) {
-            locals_grid.SaveCheckpoint(nullptr,nullptr);
+            bool save_success = locals_grid.SaveCheckpoint(nullptr,nullptr);
+            if (false == save_success) {
+                fprintf(stderr,
+                        "\n\nSTRESSLIB: Failed to save a checkpoint, stopping immediately without saving\n\n");
+                bExitNow = TRUE;
+            }
         }
 
         /* end local stress */
