@@ -190,7 +190,10 @@
                 {
                     rinvsql = rinvl*rinvl;
                     rinvsixl = rinvsql*rinvsql*rinvsql;
-                    phi_lj_ic = (c12*rinvsixl*rinvsixl/12.0 - c6*rinvsixl/6.0)/dfw;
+                    if (ic->vdwtype == evdwCUT && ic->vdw_modifier == eintmodNONE)
+                    {
+                        phi_lj_ic = (c12*rinvsixl*rinvsixl/12.0 - c6*rinvsixl/6.0)/dfw;
+                    }
                     kappa_lj_ic = (-c12*rinvsixl*rinvsixl*rinvl + c6*rinvsixl*rinvl)/dfw;
                 }
                 // end locals
@@ -506,8 +509,7 @@
                             lpKappa += kappa_coul;
 #endif
 #ifdef CALC_COULOMB
-                            //if (deltacoulsq < dfwsq) // uncomment this line to include impulse correction from particles below and above the cutoff
-                            if (deltacoulsq < dfwsq) // uncomment this line to include impulse correction only from particles below the cutoff
+                            if (deltacoulsq < dfwsq)
                             {
                                 lpPhi += -phi_coul_ic;
                                 lpKappa += -kappa_coul_ic;
@@ -522,8 +524,7 @@
                             distribute = true;
                         }
 #ifdef LJ_CUT
-                        //if (deltavdwsq < dfwsq) // uncomment this line to include impulse correction from particles below and above the cutoff
-                        if (deltavdwsq < dfwsq && skipmask_rvdw > 0) // uncomment this line to include impulse correction only from particles below the cutoff
+                        if (deltavdwsq < dfwsq)
                         {
                             lpPhi += -phi_lj_ic;
                             lpKappa += -kappa_lj_ic;
