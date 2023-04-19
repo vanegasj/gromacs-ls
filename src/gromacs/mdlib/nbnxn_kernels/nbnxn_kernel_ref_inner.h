@@ -183,18 +183,21 @@
                 phi_lj = -c12*rinvsix*rinvsix*rinv + c6*rinvsix*rinv;
                 kappa_lj = 13*c12*rinvsix*rinvsix*rinvsq - 7*c6*rinvsix*rinvsq;
 
-                // locals impulsive correction for particles near the cutoff
-                deltavdw = (rvdw-1.0/rinvl);
-                deltavdwsq = deltavdw*deltavdw;
-                if (deltavdwsq < dfwsq)
+                // locals impulsive correction for non-switched potentials for particles near the cutoff
+                if (ic->vdwtype == evdwCUT)
                 {
-                    rinvsql = rinvl*rinvl;
-                    rinvsixl = rinvsql*rinvsql*rinvsql;
-                    if (ic->vdwtype == evdwCUT && ic->vdw_modifier == eintmodNONE)
+                    deltavdw = (rvdw-1.0/rinvl);
+                    deltavdwsq = deltavdw*deltavdw;
+                    if (deltavdwsq < dfwsq)
                     {
-                        phi_lj_ic = (c12*rinvsixl*rinvsixl/12.0 - c6*rinvsixl/6.0)/dfw;
+                        rinvsql = rinvl*rinvl;
+                        rinvsixl = rinvsql*rinvsql*rinvsql;
+                        if (ic->vdw_modifier == eintmodNONE)
+                        {
+                            phi_lj_ic = (c12*rinvsixl*rinvsixl/12.0 - c6*rinvsixl/6.0)/dfw;
+                        }
+                        kappa_lj_ic = (-c12*rinvsixl*rinvsixl*rinvl + c6*rinvsixl*rinvl)/dfw;
                     }
-                    kappa_lj_ic = (-c12*rinvsixl*rinvsixl*rinvl + c6*rinvsixl*rinvl)/dfw;
                 }
                 // end locals
 
@@ -374,7 +377,7 @@
                 }
             }
             // Locals Calculate Elasticity Constants using a plain cutoff when using PME
-            if (bCoulEwald)
+            /*if (bCoulEwald)
             {
                 phi_coul = -qq*rinvsq*interact;
                 kappa_coul = 2*qq*rinvsq*rinv*interact;
@@ -387,8 +390,8 @@
                     phi_coul_ic = (qq*rinvl)/dfw;
                     kappa_coul_ic = (-qq*rinvsql)/dfw;
                 }
-                // end locals
-            }
+            }*/
+            // end locals
 #ifdef CALC_COUL_RF
             fcoul  = qq*(interact*rinv*rinvsq - k_rf2);
             /* 4 flops for RF force */
@@ -399,7 +402,7 @@
                 phi_coul = qq*(-rinvsq*interact + k_rf2/rinv);
                 kappa_coul = qq*(2*rinvsq*rinv*interact + k_rf2);
             }
-            else //use plain cutoff electrostatitcs for everything else ....
+            /*else //use plain cutoff electrostatitcs for everything else ....
             {
                 phi_coul = -qq*rinvsq*interact;
                 kappa_coul = 2*qq*rinvsq*rinv*interact;
@@ -412,8 +415,8 @@
                     phi_coul_ic = (qq*rinvl)/dfw;
                     kappa_coul_ic = (-qq*rinvsql)/dfw;
                 }
-                // end locals
-            }
+            }*/
+            // end locals
 #ifdef CALC_ENERGIES
             vcoul  = qq*(interact*rinv + k_rf*rsq - c_rf);
             /* 4 flops for RF energy */
@@ -508,27 +511,24 @@
                             lpPhi += phi_coul;
                             lpKappa += kappa_coul;
 #endif
-#ifdef CALC_COULOMB
-                            if (deltacoulsq < dfwsq)
+                            distribute = true;
+                        }
+/*
+                            if ((bCoulCut && ic->coulomb_modifier == eintmodNONE) || bCoulEwald && deltacoulsq < dfwsq)
                             {
                                 lpPhi += -phi_coul_ic;
                                 lpKappa += -kappa_coul_ic;
-                                if ((bCoulCut && ic->coulomb_modifier == eintmodNONE) || bCoulEwald)
-                                {
-                                    real coul_ic = phi_coul_ic*rinvl;
-                                    lpF[0][0] +=  coul_ic*dx; lpF[0][1] +=  coul_ic*dy; lpF[0][2] +=  coul_ic*dz;
-                                    lpF[1][0] += -coul_ic*dx; lpF[1][1] += -coul_ic*dy; lpF[1][2] += -coul_ic*dz;
-                                }
+                                real coul_ic = phi_coul_ic*rinvl;
+                                lpF[0][0] +=  coul_ic*dx; lpF[0][1] +=  coul_ic*dy; lpF[0][2] +=  coul_ic*dz;
+                                lpF[1][0] += -coul_ic*dx; lpF[1][1] += -coul_ic*dy; lpF[1][2] += -coul_ic*dz;
                             }
-#endif
-                            distribute = true;
-                        }
+*/
 #ifdef LJ_CUT
-                        if (deltavdwsq < dfwsq)
+                        if (ic->vdwtype == evdwCUT && deltavdwsq < dfwsq)
                         {
                             lpPhi += -phi_lj_ic;
                             lpKappa += -kappa_lj_ic;
-                            if (ic->vdwtype == evdwCUT && ic->vdw_modifier == eintmodNONE)
+                            if (ic->vdw_modifier == eintmodNONE)
                             {
                                 real lj_ic = phi_lj_ic*rinvl;
                                 lpF[0][0] +=  lj_ic*dx; lpF[0][1] +=  lj_ic*dy; lpF[0][2] +=  lj_ic*dz;
