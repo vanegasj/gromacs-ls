@@ -712,6 +712,213 @@ void berendsen_pscale(t_inputrec *ir, matrix mu,
     inc_nrnb(nrnb, eNR_PCOUPL, nr_atoms);
 }
 
+void crescale_pcoupl(FILE *fplog, int64_t step,
+                      t_inputrec *ir, real dt,
+                      tensor pres, matrix box,
+                      matrix mu)
+{
+    int     d, n;
+    real    scalar_pressure, xy_pressure, p_corr_z;
+    char    buf[STRLEN];
+
+    /*
+     *  Calculate the scaling matrix mu
+     */
+    scalar_pressure = 0;
+    xy_pressure     = 0;
+    for (d = 0; d < DIM; d++)
+    {
+        scalar_pressure += pres[d][d]/DIM;
+        if (d != ZZ)
+        {
+            xy_pressure += pres[d][d]/(DIM-1);
+        }
+    }
+    /* Pressure is now in bar, everywhere. */
+#define factor(d, m) (ir->compress[d][m]*dt/ir->tau_p)
+
+    /* mu has been changed from pow(1+...,1/3) to 1+.../3, since this is
+     * necessary for triclinic scaling
+     */
+    clear_mat(mu);
+
+    /* C-RESCALE */
+    // seed hardcoded to zero now
+    gmx::ThreeFry2x64<64>          rng(ir->ld_seed, gmx::RandomDomain::Barostat);
+    gmx::NormalDistribution<real>  normalDist;
+    rng.restart(step, 0);
+    real vol=1.0;
+    for (d = 0; d < DIM; d++) vol*=box[d][d];
+    real gauss;
+    real gauss2;
+    real kt;
+    real depsilon, dsigma;
+    kt=ir->opts.ref_t[0]*BOLTZ;
+    if(kt<0.0) kt=0.0;
+    /* END C-RESCALE */
+
+    switch (ir->epct)
+    {
+        case epctISOTROPIC:
+            /* C-RESCALE */
+            gauss=normalDist(rng);
+            vol=1.0; for (d = 0; d < DIM; d++) vol*=box[d][d];
+            /* END C-RESCALE */
+            for (d = 0; d < DIM; d++)
+            {
+                /* Berendsen: */
+                /* mu[d][d] = 1.0 - factor(d, d)*(ir->ref_p[d][d] - scalar_pressure) /DIM; */
+                /* C-RESCALE */
+                mu[d][d] = exp(- factor(d, d)*(ir->ref_p[d][d] - scalar_pressure) /DIM +
+                            sqrt(2.0*kt*factor(d, d)*PRESFAC/vol)*gauss/DIM);
+            }
+            break;
+        case epctSEMIISOTROPIC:
+            /* C-RESCALE */
+            gauss=normalDist(rng);
+            gauss2=normalDist(rng);
+            vol=1.0; for (d = 0; d < DIM; d++) vol*=box[d][d];
+            for (d = 0; d < ZZ; d++)
+            {
+                /* Berendsen: */
+                /* mu[d][d] = 1.0 - factor(d, d)*(ir->ref_p[d][d]-xy_pressure)/DIM; */
+                /* C-RESCALE */
+                mu[d][d] = exp(- factor(d, d)*(ir->ref_p[d][d] - xy_pressure) /DIM +
+                            sqrt((DIM-1)*2.0*kt*factor(d, d)*PRESFAC/vol/DIM)/(DIM-1)*gauss);
+            }
+            /* Notice: we here allow ir->ref_p[ZZ][ZZ] != ir->ref_p[d][d] although this is not well defined */
+            /* Berendsen: 1.0 - factor(ZZ, ZZ)*(ir->ref_p[ZZ][ZZ] - pres[ZZ][ZZ])/DIM; */
+            mu[ZZ][ZZ] = exp(- factor(ZZ, ZZ)*(ir->ref_p[ZZ][ZZ] - pres[ZZ][ZZ]) /DIM +
+                            sqrt(2.0*kt*factor(d, d)*PRESFAC/vol/DIM)*gauss2);
+            break;
+#if 0
+        case epctANISOTROPIC:
+            for (d = 0; d < DIM; d++)
+            {
+                for (n = 0; n < DIM; n++)
+                {
+                    mu[d][n] = (d == n ? 1.0 : 0.0)
+                        -factor(d, n)*(ir->ref_p[d][n] - pres[d][n])/DIM;
+                }
+            }
+            break;
+#endif
+        case epctSURFACETENSION:
+            /* C-RESCALE */
+            gauss=normalDist(rng);
+            gauss2=normalDist(rng);
+            vol=1.0; for (d = 0; d < DIM; d++) vol*=box[d][d];
+            for (d = 0; d < ZZ; d++)
+            {
+                /* Notice: we here use ref_p[ZZ][ZZ] as isotropic pressure and ir->ref_p[d][d] as surface tension */
+                mu[d][d] = exp(- factor(d, d)*(ir->ref_p[ZZ][ZZ]-ir->ref_p[d][d]/box[ZZ][ZZ] - xy_pressure) /DIM +
+                            sqrt(4.0/3.0*kt*factor(d, d)*PRESFAC/vol)/(DIM-1)*gauss);
+            }
+            mu[ZZ][ZZ] = exp(- factor(ZZ, ZZ)*(ir->ref_p[ZZ][ZZ] - pres[ZZ][ZZ]) /DIM +
+                            sqrt(2.0/3.0*kt*factor(d, d)*PRESFAC/vol)*gauss2);
+            break;
+        default:
+            gmx_fatal(FARGS, "Berendsen pressure coupling type %s not supported yet\n",
+                      EPCOUPLTYPETYPE(ir->epct));
+    }
+    /* To fullfill the orientation restrictions on triclinic boxes
+     * we will set mu_yx, mu_zx and mu_zy to 0 and correct
+     * the other elements of mu to first order.
+     */
+    mu[YY][XX] += mu[XX][YY];
+    mu[ZZ][XX] += mu[XX][ZZ];
+    mu[ZZ][YY] += mu[YY][ZZ];
+    mu[XX][YY]  = 0;
+    mu[XX][ZZ]  = 0;
+    mu[YY][ZZ]  = 0;
+
+    if (debug)
+    {
+        pr_rvecs(debug, 0, "PC: pres ", pres, 3);
+        pr_rvecs(debug, 0, "PC: mu   ", mu, 3);
+    }
+
+    if (mu[XX][XX] < 0.99 || mu[XX][XX] > 1.01 ||
+        mu[YY][YY] < 0.99 || mu[YY][YY] > 1.01 ||
+        mu[ZZ][ZZ] < 0.99 || mu[ZZ][ZZ] > 1.01)
+    {
+        char buf2[22];
+        sprintf(buf, "\nStep %s  Warning: pressure scaling more than 1%%, "
+                "mu: %g %g %g\n",
+                gmx_step_str(step, buf2), mu[XX][XX], mu[YY][YY], mu[ZZ][ZZ]);
+        if (fplog)
+        {
+            fprintf(fplog, "%s", buf);
+        }
+        fprintf(stderr, "%s", buf);
+    }
+}
+
+void crescale_pscale( t_inputrec *ir,  matrix mu,
+                      matrix box, matrix box_rel,
+                      int start, int nr_atoms,
+                      rvec x[], rvec v[], unsigned short cFREEZE[],
+                      t_nrnb *nrnb)
+{
+    ivec   *nFreeze = ir->opts.nFreeze;
+    int     n, d;
+    int     nthreads gmx_unused;
+    matrix  inv_mu;
+
+#ifndef __clang_analyzer__
+    nthreads = gmx_omp_nthreads_get(emntUpdate);
+#endif
+
+    gmx::invertBoxMatrix(mu, inv_mu);
+
+    /* Scale the positions and the velocities */
+#pragma omp parallel for num_threads(nthreads) schedule(static)
+    for (n = start; n < start+nr_atoms; n++)
+    {
+        // Trivial OpenMP region that does not throw
+        int g;
+
+        if (cFREEZE == nullptr)
+        {
+            g = 0;
+        }
+        else
+        {
+            g = cFREEZE[n];
+        }
+
+        if (!nFreeze[g][XX])
+        {
+            x[n][XX] = mu[XX][XX]*x[n][XX]+mu[YY][XX]*x[n][YY]+mu[ZZ][XX]*x[n][ZZ];
+            v[n][XX] = inv_mu[XX][XX]*v[n][XX]+inv_mu[YY][XX]*v[n][YY]+inv_mu[ZZ][XX]*v[n][ZZ];
+        }
+        if (!nFreeze[g][YY])
+        {
+            x[n][YY] = mu[YY][YY]*x[n][YY]+mu[ZZ][YY]*x[n][ZZ];
+            v[n][YY] = inv_mu[YY][YY]*v[n][YY]+inv_mu[ZZ][YY]*v[n][ZZ];
+        }
+        if (!nFreeze[g][ZZ])
+        {
+            x[n][ZZ] = mu[ZZ][ZZ]*x[n][ZZ];
+            v[n][ZZ] = inv_mu[ZZ][ZZ]*v[n][ZZ];
+        }
+    }
+    /* compute final boxlengths */
+    for (d = 0; d < DIM; d++)
+    {
+        box[d][XX] = mu[XX][XX]*box[d][XX]+mu[YY][XX]*box[d][YY]+mu[ZZ][XX]*box[d][ZZ];
+        box[d][YY] = mu[YY][YY]*box[d][YY]+mu[ZZ][YY]*box[d][ZZ];
+        box[d][ZZ] = mu[ZZ][ZZ]*box[d][ZZ];
+    }
+
+    preserve_box_shape(ir, box_rel, box);
+
+    /* (un)shifting should NOT be done after this,
+     * since the box vectors might have changed
+     */
+    inc_nrnb(nrnb, eNR_PCOUPL, nr_atoms);
+}
+
 void berendsen_tcoupl(t_inputrec *ir, gmx_ekindata_t *ekind, real dt)
 {
     t_grpopts *opts;

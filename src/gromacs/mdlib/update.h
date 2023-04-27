@@ -242,6 +242,17 @@ void berendsen_pscale(t_inputrec *ir, matrix mu,
                       rvec x[], unsigned short cFREEZE[],
                       t_nrnb *nrnb);
 
+void crescale_pcoupl(FILE *fplog, int64_t step,
+                     t_inputrec *ir, real dt,
+                     tensor pres, matrix box,
+                     matrix mu);
+
+void crescale_pscale(t_inputrec *ir, matrix mu,
+                     matrix box, matrix box_rel,
+                     int start, int nr_atoms,
+                     rvec x[], rvec v[], unsigned short cFREEZE[],
+                     t_nrnb *nrnb);
+
 void correct_ekin(FILE *log, int start, int end, rvec v[],
                   rvec vcm, real mass[], real tmass, tensor ekin);
 /* Correct ekin for vcm */

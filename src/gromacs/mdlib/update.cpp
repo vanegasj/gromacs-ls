@@ -1265,6 +1265,13 @@ void update_pcouple(FILE             *fplog,
                                      pcoupl_mu);
                 }
                 break;
+            case (epcCRESCALE):
+                if (!bInitStep)
+                {
+                    crescale_pcoupl(fplog, step, inputrec, dtpc, state->pres_prev, state->box,
+                                    pcoupl_mu);
+                }
+                break;
             case (epcPARRINELLORAHMAN):
                 parrinellorahman_pcoupl(fplog, step, inputrec, dtpc, state->pres_prev,
                                         state->box, state->box_rel, state->boxv,
@@ -1542,6 +1549,13 @@ void update_box(FILE             *fplog,
             {
                 berendsen_pscale(inputrec, pcoupl_mu, state->box, state->box_rel,
                                  start, homenr, state->x, md->cFREEZE, nrnb);
+            }
+            break;
+        case (epcCRESCALE):
+            if (inputrec->nstpcouple == 1 || (step % inputrec->nstpcouple == 1))
+            {
+                crescale_pscale(inputrec, pcoupl_mu, state->box, state->box_rel,
+                                 start, homenr, state->x, state->v, md->cFREEZE, nrnb);
             }
             break;
         case (epcPARRINELLORAHMAN):
