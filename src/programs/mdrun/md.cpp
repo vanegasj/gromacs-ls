@@ -565,6 +565,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
             // this will initialize locals_grid.current_grid and locals_grid.sum_grid
             locals_grid.Init();
+            locals_grid.UpdateBoxSpacings(state_global->box);
         }
     }
     /* local stress end */
@@ -903,23 +904,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             t         = t0 + step*ir->delta_t;
         }
 
-        /* begin local stress */
-        bool locals_bDoAnalysis = ((step % localsskip) == 0);
-        int64_t last_analysis_step = locals_grid.SetFrameId(step,locals_bDoAnalysis);
-        if (last_analysis_step >= step) {
-            locals_bDoAnalysis = false;
-        }
-
-        if (locals_bDoAnalysis) {
-            // turn on specified contributions
-            locals_grid.SetContribType(localscontrib);
-            locals_grid.UpdateBoxSpacings(state->box);
-        } else {
-            // turn off all contributions
-            locals_grid.SetContribType(mds_none);
-        }
-        /* end local stress */
-
 
         // TODO Refactor this, so that nstfep does not need a default value of zero
         if (ir->efep != efepNO || ir->bSimTemp)
@@ -973,8 +957,8 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                     }
                 }
             }
-            //copy_mat(rerun_fr.box, state_global->box);
-            //copy_mat(state_global->box, state->box);
+            copy_mat(rerun_fr.box, state_global->box);
+            copy_mat(state_global->box, state->box);
 
             if (vsite && (Flags & MD_RERUN_VSITE))
             {
@@ -999,6 +983,23 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 }
             }
         }
+
+        /* begin locals */
+        bool locals_bDoAnalysis = ((step % localsskip) == 0 || step == -1);
+        int64_t last_analysis_step = locals_grid.SetFrameId(step,locals_bDoAnalysis);
+        if (last_analysis_step >= step) {
+            locals_bDoAnalysis = false;
+        }
+
+        if (locals_bDoAnalysis) {
+            // turn on specified contributions
+            locals_grid.SetContribType(localscontrib);
+            locals_grid.UpdateBoxSpacings(state->box);
+        } else {
+            // turn off all contributions
+            locals_grid.SetContribType(mds_none);
+        }
+        /* end locals */
 
         /* Stop Center of Mass motion */
         bStopCM = (ir->comm_mode != ecmNO && do_per_step(step, ir->nstcomm));
@@ -1076,7 +1077,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 update_realloc(upd, state->nalloc);
             }
         }
-
         if (MASTER(cr) && do_log)
         {
             print_ebin_header(fplog, step, t); /* can we improve the information printed here? */
@@ -1418,9 +1418,9 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
 
         elapsed_time = walltime_accounting_get_current_elapsed_time(walltime_accounting);
-        
+
         /* Check whether everything is still allright */
-        /* begin local stress */
+        /* begin locals */
         if (((int)gmx_get_stop_condition() > handled_stop_condition)
 #if GMX_THREAD_MPI
             && MASTER(cr)
@@ -1440,7 +1440,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
         if (bExitNow)
             break;
-        /* end local stress */
+        /* end locals */
 
         /* Check whether everything is still allright */
         if (((int)gmx_get_stop_condition() > handled_stop_condition)
@@ -1766,7 +1766,7 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         {
             locals_grid.SumGrid();
         }
-        
+
         // second call made directly, should save grid after summing when possible
         if (MASTER(cr) ) {
             bool save_success = locals_grid.SaveCheckpoint(nullptr,nullptr);
@@ -1792,7 +1792,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
         update_box(fplog, step, ir, mdatoms, state, f,
                    pcoupl_mu, nrnb, upd);
-
         /* ################# END UPDATE STEP 2 ################# */
         /* #### We now have r(t+dt) and v(t+dt/2)  ############# */
 
