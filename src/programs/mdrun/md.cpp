@@ -1711,6 +1711,22 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
 
         /* #############  END CALC EKIN AND PRESSURE ################# */
 
+        /* Note: this is OK, but there are some numerical precision issues with using the convergence of
+           the virial that should probably be addressed eventually. state->veta has better properies,
+           but what we actually need entering the new cycle is the new shake_vir value. Ideally, we could
+           generate the new shake_vir, but test the veta value for convergence.  This will take some thought. */
+
+        if (ir->efep != efepNO && (!EI_VV(ir->eI) || bRerunMD))
+        {
+            /* Sum up the foreign energy and dhdl terms for md and sd.
+               Currently done every step so that dhdl is correct in the .edr */
+            sum_dhdl(enerd, state->lambda, ir->fepvals);
+        }
+        update_box(fplog, step, ir, mdatoms, state, f,
+                   pcoupl_mu, nrnb, upd);
+        /* ################# END UPDATE STEP 2 ################# */
+        /* #### We now have r(t+dt) and v(t+dt/2)  ############# */
+
         /* begin local stress */
 
         int natoms;
@@ -1755,7 +1771,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
                 }
             }
         }
-
         if (!bRerunMD && locals_bDoAnalysis)
         {
             sfree(x_full);
@@ -1778,22 +1793,6 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
 
         /* end local stress */
-
-        /* Note: this is OK, but there are some numerical precision issues with using the convergence of
-           the virial that should probably be addressed eventually. state->veta has better properies,
-           but what we actually need entering the new cycle is the new shake_vir value. Ideally, we could
-           generate the new shake_vir, but test the veta value for convergence.  This will take some thought. */
-
-        if (ir->efep != efepNO && (!EI_VV(ir->eI) || bRerunMD))
-        {
-            /* Sum up the foreign energy and dhdl terms for md and sd.
-               Currently done every step so that dhdl is correct in the .edr */
-            sum_dhdl(enerd, state->lambda, ir->fepvals);
-        }
-        update_box(fplog, step, ir, mdatoms, state, f,
-                   pcoupl_mu, nrnb, upd);
-        /* ################# END UPDATE STEP 2 ################# */
-        /* #### We now have r(t+dt) and v(t+dt/2)  ############# */
 
         /* The coordinates (x) were unshifted in update */
         if (!bGStat)

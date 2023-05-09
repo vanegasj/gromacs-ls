@@ -194,9 +194,9 @@
                         rinvsixl = rinvsql*rinvsql*rinvsql;
                         if (ic->vdw_modifier == eintmodNONE)
                         {
-                            phi_lj_ic = (c12*rinvsixl*rinvsixl/12.0 - c6*rinvsixl/6.0)/dfw;
+                            phi_lj_ic = -(c12*rinvsixl*rinvsixl/12.0 - c6*rinvsixl/6.0)/(2.0*dfw);
                         }
-                        kappa_lj_ic = (-c12*rinvsixl*rinvsixl*rinvl + c6*rinvsixl*rinvl)/dfw;
+                        kappa_lj_ic = -(-c12*rinvsixl*rinvsixl*rinvl + c6*rinvsixl*rinvl)/(2.0*dfw);
                     }
                 }
                 // end locals
@@ -526,7 +526,10 @@
 #ifdef LJ_CUT
                         if (ic->vdwtype == evdwCUT && deltavdwsq < dfwsq)
                         {
-                            lpPhi += -phi_lj_ic;
+                            //lpF[0][0] = 0.0; lpF[0][1] = 0.0; lpF[0][2] = 0.0;
+                            //lpF[1][0] = 0.0; lpF[1][1] = 0.0; lpF[1][2] = 0.0;
+                            locals_grid->DistributeInteraction(-2, lpR, nullptr, &phi_lj_ic, &kappa_lj_ic);
+                            /*lpPhi += -phi_lj_ic;
                             lpKappa += -kappa_lj_ic;
                             if (ic->vdw_modifier == eintmodNONE)
                             {
@@ -534,7 +537,7 @@
                                 lpF[0][0] +=  lj_ic*dx; lpF[0][1] +=  lj_ic*dy; lpF[0][2] +=  lj_ic*dz;
                                 lpF[1][0] += -lj_ic*dx; lpF[1][1] += -lj_ic*dy; lpF[1][2] += -lj_ic*dz;
                             }
-                            distribute = true;
+                            distribute = true;*/
                         }
 #endif
                         if (distribute)
