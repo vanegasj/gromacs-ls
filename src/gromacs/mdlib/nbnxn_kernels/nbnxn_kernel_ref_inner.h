@@ -194,9 +194,9 @@
                         rinvsixl = rinvsql*rinvsql*rinvsql;
                         if (ic->vdw_modifier == eintmodNONE)
                         {
-                            phi_lj_ic = -(c12*rinvsixl*rinvsixl/12.0 - c6*rinvsixl/6.0)/(2.0*dfw);
+                            phi_lj_ic = -(c12*rinvsixl*rinvsixl/12.0 - c6*rinvsixl/6.0)/(dfw);
                         }
-                        kappa_lj_ic = -(-c12*rinvsixl*rinvsixl*rinvl + c6*rinvsixl*rinvl)/(2.0*dfw);
+                        kappa_lj_ic = -(-c12*rinvsixl*rinvsixl*rinvl + c6*rinvsixl*rinvl)/(dfw);
                     }
                 }
                 // end locals
@@ -528,7 +528,7 @@
                         {
                             //lpF[0][0] = 0.0; lpF[0][1] = 0.0; lpF[0][2] = 0.0;
                             //lpF[1][0] = 0.0; lpF[1][1] = 0.0; lpF[1][2] = 0.0;
-                            locals_grid->DistributeInteraction(-2, lpR, nullptr, &phi_lj_ic, &kappa_lj_ic);
+                            locals_grid->DistributeInteraction(2, lpR, nullptr, &phi_lj_ic, &kappa_lj_ic);
                             /*lpPhi += -phi_lj_ic;
                             lpKappa += -kappa_lj_ic;
                             if (ic->vdw_modifier == eintmodNONE)
