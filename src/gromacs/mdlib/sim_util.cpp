@@ -1070,6 +1070,8 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
                 nbnxn_grid_add_simple(nbv->nbs, nbv->grp[eintNonlocal].nbat);
             }
 
+            nbnxn_atomdata_copy_x_to_nbat_x(nbv->nbs, eatLocal, TRUE, x,
+                                            nbv->grp[eintNonlocal].nbat);
             nbnxn_make_pairlist(nbv->nbs, nbv->grp[eintNonlocal].nbat,
                                 &top->excls,
                                 ic->rlist,
