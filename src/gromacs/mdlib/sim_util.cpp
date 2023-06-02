@@ -1045,7 +1045,10 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
         bDiffKernels = (nbv->grp[eintNonlocal].kernel_type !=
                         nbv->grp[eintLocal].kernel_type);
 
-        if (bDiffKernels)
+        /* This also needs to happen on bNS steps in order for
+         * the non-local coordinates to still match with the local
+         * coordinates, which are used by mdstress */
+        if (bNS || bDiffKernels)
         {
             /* With GPU+CPU non-bonded calculations we need to copy
              * the local coordinates to the non-local nbat struct
@@ -1070,8 +1073,6 @@ void do_force_cutsVERLET(FILE *fplog, t_commrec *cr,
                 nbnxn_grid_add_simple(nbv->nbs, nbv->grp[eintNonlocal].nbat);
             }
 
-            nbnxn_atomdata_copy_x_to_nbat_x(nbv->nbs, eatLocal, TRUE, x,
-                                            nbv->grp[eintNonlocal].nbat);
             nbnxn_make_pairlist(nbv->nbs, nbv->grp[eintNonlocal].nbat,
                                 &top->excls,
                                 ic->rlist,
