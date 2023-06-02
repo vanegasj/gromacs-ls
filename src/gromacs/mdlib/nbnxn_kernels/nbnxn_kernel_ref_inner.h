@@ -503,10 +503,10 @@
                         bool distribute = false;
                         if (skipmask > 0)
                         {
-                            lpF[0][0] +=  fx; lpF[0][1] +=  fy; lpF[0][2] +=  fz;
-                            lpF[1][0] += -fx; lpF[1][1] += -fy; lpF[1][2] += -fz;
-                            lpPhi += phi_lj;
-                            lpKappa += kappa_lj;
+                            lpF[0][0] =  fx; lpF[0][1] =  fy; lpF[0][2] =  fz;
+                            lpF[1][0] = -fx; lpF[1][1] = -fy; lpF[1][2] = -fz;
+                            lpPhi = phi_lj;
+                            lpKappa = kappa_lj;
 #ifdef CALC_COULOMB
                             lpPhi += phi_coul;
                             lpKappa += kappa_coul;
@@ -526,8 +526,6 @@
 #ifdef LJ_CUT
                         if (ic->vdwtype == evdwCUT && deltavdwsq < dfwsq)
                         {
-                            //lpF[0][0] = 0.0; lpF[0][1] = 0.0; lpF[0][2] = 0.0;
-                            //lpF[1][0] = 0.0; lpF[1][1] = 0.0; lpF[1][2] = 0.0;
                             locals_grid->DistributeInteraction(2, lpR, nullptr, &phi_lj_ic, &kappa_lj_ic);
                             /*lpPhi += -phi_lj_ic;
                             lpKappa += -kappa_lj_ic;
