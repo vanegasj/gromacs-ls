@@ -318,6 +318,7 @@ int gmx_mdrun(int argc, char *argv[])
     int localsgridy=0;
     int localsgridz=0;
     int localsskip=1;
+    int localsdebugprint=0;
     const char * localsenum = "all";
     const char * localsfdenum = "ccfd";
     gmx_bool localsdispcor = TRUE;
@@ -440,6 +441,8 @@ int gmx_mdrun(int argc, char *argv[])
           "Only compute the local stress every nth frame" },
         { "-lscuda",  FALSE, etBOOL, {&localscuda},
           "Enable CUDA operations when calculating local stress contributions" },
+        { "-lsdebugprint",  FALSE, etINT, {&localsdebugprint},
+          "HIDDENPrint the C11, C12, and C44 elements at a given frame interval for debugging purposes" },
         { "-imdport",    FALSE, etINT, {&imdport},
           "HIDDENIMD listening port" },
         { "-imdwait",  FALSE, etBOOL, {&bIMDwait},
@@ -589,6 +592,7 @@ int gmx_mdrun(int argc, char *argv[])
                 localsgridx,
                 localsgridy,
                 localsgridz);
+        locals_grid.SetDebugPrint(localsdebugprint);
     }
 
     /* now check the -multi and -multidir option */
