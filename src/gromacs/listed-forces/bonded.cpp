@@ -1528,7 +1528,7 @@ real urey_bradley(int nbonds,
         double deltaR = dr - r13A;
         double phi = kUBA*(deltaR);
         double kappa = kUBA;
-        locals_bonds_distribute_stress_born(ai, aj, fbond, x, r_ik, phi, kappa, locals_grid);
+        locals_bonds_distribute_stress_born(ai, ak, fbond, x, r_ik, phi, kappa, locals_grid);
         /* end stress tensor */
     }
     return vtot;

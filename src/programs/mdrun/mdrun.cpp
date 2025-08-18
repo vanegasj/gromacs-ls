@@ -313,7 +313,7 @@ int gmx_mdrun(int argc, char *argv[])
     real localsmindihangle=0.0;
     int nstlocals=0;
     real localsgridspacing=0.1;
-    real localsimpulsewidth=0.0;
+    real localsimpulsewidth=0.0001;
     int localsgridx=0;
     int localsgridy=0;
     int localsgridz=0;
@@ -418,7 +418,7 @@ int gmx_mdrun(int argc, char *argv[])
         { "-localsgrid",  FALSE, etREAL, {&localsgridspacing},
           "Spacing for local stress grid (default = 0.1 nm)" },
         { "-localsiw",  FALSE, etREAL, {&localsimpulsewidth},
-          "Apply an impulsive correction for plain cutoff potentials (VDW or elec) using a delta function with a finite width (default = 0.0 nm)" },
+          "Apply an impulsive correction for plain cutoff potentials (VDW or elec) using a delta function with a finite width (default = 0.0001 nm)" },
         { "-nstlp",  FALSE, etINT, {&nstlocals},
           "HIDDENFrequency of writing local stress grid to file (default = 0)" },
         { "-lsgridx", FALSE, etINT, {&localsgridx},
@@ -440,9 +440,9 @@ int gmx_mdrun(int argc, char *argv[])
         { "-lsskip",  FALSE, etINT, {&localsskip},
           "Only compute the local stress every nth frame" },
         { "-lscuda",  FALSE, etBOOL, {&localscuda},
-          "Enable CUDA operations when calculating local stress contributions" },
+          "HIDDENEnable CUDA operations when calculating local stress contributions" },
         { "-lsdebugprint",  FALSE, etINT, {&localsdebugprint},
-          "HIDDENPrint the C11, C12, and C44 elements at a given frame interval for debugging purposes" },
+          "HIDDENPrint various elements of the elasticity tensor to stdout at a given frame interval for debugging purposes" },
         { "-imdport",    FALSE, etINT, {&imdport},
           "HIDDENIMD listening port" },
         { "-imdwait",  FALSE, etBOOL, {&bIMDwait},
