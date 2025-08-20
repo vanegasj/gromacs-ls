@@ -30,12 +30,7 @@ If you install FFTW3 with a linux distribution such as Ubuntu or Fedora, you wil
 export FFTW3_ROOT_DIR=/path/to/fftw3
 ```
 
-Now the installation of the custom GROMACS-LS package. Download the latest stable release:
-
-```
-wget gromacs-ls-2016.3-Dec-28-2019.tar.gz
-
-```
+Now the installation of the custom GROMACS-LS package. Download the latest development package from [Releases](https://github.com/vanegasj/gromacs-ls/releases)
 
 Configure, make and install:
 ```
@@ -190,7 +185,7 @@ export FFTW3_ROOT_DIR=/path/to/fftw3
 export CMAKE_PREFIX_PATH=/path/to/lapack
 ```
 
-Now the installation of the custom GROMACS-LS package. Download the latest stable release:
+Now the installation of the custom GROMACS-LS package. Download the latest stable package from [Releases](https://github.com/vanegasj/gromacs-ls/releases)
 
 ```
 wget gromacs-ls-2016.3-Dec-28-2019.tar.gz
