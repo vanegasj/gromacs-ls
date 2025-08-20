@@ -208,7 +208,7 @@ By default, the GROMACS-LS binary is called `gmx_LS` to distinguish it from othe
 
 ### 2.2 Basic usage for post-processing of a trajectory
 
-For calculating the stress tensor in an existing MD simulation, we need a trajectory file (`.trr`) that contains both positions and velocities at the same points in time. In cases where system components drift over time, you may want to center your molecule/group of interest at every frame ([see the FAQ](manual/FAQ.md)). Note that because of finite size effects, re-centering may change the resulting stress profile, so only do this if you are certain that your system is drifting.
+For calculating the stress tensor in an existing MD simulation, we need a trajectory file (`.trr`) that contains both positions and velocities at the same points in time. In cases where system components drift over time, you may want to center your molecule/group of interest at every frame ([see the FAQ](FAQ.md)). Note that because of finite size effects, re-centering may change the resulting stress profile, so only do this if you are certain that your system is drifting.
 
 The stress tensor is obtained by "rerunning" the trajectory with the `gmx_LS mdrun -rerun`. Since the `-rerun` option of `gmx_LS mdrun` outputs new `.log`, `.edr`, and `.trr` files, we suggest you first create a new folder and
 analyze the trajectory within it:
