@@ -64,8 +64,8 @@ gmx_LS mdrun -deffnm nvt -ols nvt
 When the run is completed, `gmx_LS mdrun` will produce six output files in addition to the typical trajectory output:
 
 1. `nvt_stress.dat0` - stress tensor.
-2. `nvt_eltot.dat0` - total 'intrinsic' elasticity tensor, \\(c_{ijkl}\\).
-3. `nvt_eltothooke.dat0` - total 'extrinsic' elasticity tensor, \\(\tilde{c}_{ijkl}\\), what one would measure within the context of Hooke's law. The two tensors are equal under conditions of zero stress, but may be significantly different for systems under high pressure or non-uniform systems such as lipid membranes where there is a large internal local pre-stress even if the ambient stress/pressure is small.
+2. `nvt_eltot.dat0` - total 'intrinsic' elasticity tensor, $c_{ijkl}$.
+3. `nvt_eltothooke.dat0` - total 'extrinsic' elasticity tensor, $\tilde{c}_{ijkl}$, what one would measure within the context of Hooke's law. The two tensors are equal under conditions of zero stress, but may be significantly different for systems under high pressure or non-uniform systems such as lipid membranes where there is a large internal local pre-stress even if the ambient stress/pressure is small.
 4. `nvt_elfluct.dat0` - fluctuation contribution to the elasticity tensor
 5. `nvt_elkin.dat0` - kinetic contribution to the elasticity tensor
 6. `nvt_elborn.dat0` - Born contribution to the elasticity tensor
