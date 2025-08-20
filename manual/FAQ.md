@@ -19,8 +19,11 @@ Q4. Can the program be run in parallel?
 
 Q5. Why are the velocities needed?
 
-> The particle velocities are needed to compute kinetic contribution to the stress, which is a substantial contribution to the total stress. If you have a trajectory without velocities, you may be able to approximate the kinetic contribution using the relation \\[ \sigma_{ij}^{\rm{K}} (\boldsymbol{x}) = -k_{\rm{B}}T\rho(\boldsymbol{x})\delta_{ij} \; , \\]
-> where \\( \rho(\boldsymbol{x}) \\) is the particle number (not the mass) density computed with `gmx_LS density3D` and \\( \delta_{ij} \\) is the Kronecker delta.
+> The particle velocities are needed to compute kinetic contribution to the stress, which is a substantial contribution to the total stress. If you have a trajectory without velocities, you may be able to approximate the kinetic contribution using the relation  
+>
+> $\sigma_{ij}^{\rm{K}} (\boldsymbol{x}) = -k_{\rm{B}}T\rho(\boldsymbol{x})\delta_{ij}$ ,  
+>
+> where $\rho(\boldsymbol{x})$ is the particle number (not the mass) density computed with `gmx_LS density3D` and $\delta_{ij}$ is the Kronecker delta.
 
 Q5. Can I use an `.xtc` file instead of a `.trr` file?
 
@@ -56,7 +59,7 @@ Q11. How often should I save frames to the trajectory? How long does the simulat
 >![evolution](evol.svg)
 
 
-Q12. Why is the normal component (e.g. $\sigma_{N}$) of the stress profile of my bilayer system not zero?
+Q12. Why is the normal component of the stress profile of my bilayer system not zero?
 
 > Mechanical equilibrium dictates that the component of the stress along the direction normal to a lipid bilayer should be constant. The average value of this constant component should match the imposed value of the simulation pressure for the given dimension, which may or may not be zero. The important point is that it should be constant. If $\sigma_{N}$ is not constant (beyond reasonable noise) then there could be several problems with the simulation. First, check that the lipid membrane is fully equilibrated. For our systems composed of 200 lipids (100 lipids in each leaflet) in the liquid phase we equlibrate for 400 ns before running the data collection period. Second, check the `comm_grps` option in the `.mdp` file. Bilayer systems are often simulated with center of mass motion removal done on different groups separately, e.g. `comm_grps = BILAYER SOL`. However, doing this will change the internal mechanical behavior of the system. For local stress analysis this `grompp` option should always be set `comm_grps = System` during the simulation run.
 
@@ -78,4 +81,4 @@ Q15. Which force decomposition should I use?
 
  >Forces from torsional potentials with planar dihedral configurations ($\phi=0,\;\pm 180$) cannot be decomposed into central pairwise terms as these forces would act completely within the plane, while the net forces acting on each particle are normal to the plane. This is typically not an issue as periodic torsional potentials are most often parametrized with extrema, where $\boldsymbol{F}_i=-\partial V/\partial \boldsymbol{r}_i=0$, at planar configurations, and harmonic torsional potentials, often used to fix the chirality of a carbon center, keep the dihedral angle from visiting planar arrangements. In the case of CHARMM36, one of the headgroup torsional potential terms (O11-C1-C2-O21) has minima at $\phi=-60,120$ and maxima at $\phi=-150,30$ as shown below that lead to non-zero forces for planar dihedral angles. This dihedral angle has a sizable probability of exploring the planar configuration at $\phi=180$ that leads to numerical instabilities in the CFD algorithm and results in noisy stress profiles as shown below. You can use the `-lsmindihang 0.0005` when running `gmx_LS mdrun` to exclude any contributions from dihedrals where $\sin |\phi|<5\times10^{-4}$. See [Winkeljohn et al.](https://pubs.acs.org/doi/abs/10.1021/acs.jpcb.0c03937)
 >
->![noisy dihedral](noisy-dihedral.png)
+><img src="noisy-dihedral.png" width="600">
