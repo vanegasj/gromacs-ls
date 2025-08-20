@@ -434,7 +434,7 @@ int gmx_mdrun(int argc, char *argv[])
         { "-lsdispcor",  FALSE, etBOOL, {&localsdispcor},
           "Include contribution from dispersion correction." },
         { "-lspbc",  FALSE, etBOOL, {&localspbc},
-          "Correct periodic boundary conditions in mdstress library." },
+          "Correct periodic boundary conditions in mdstress library. Typically not needed as gromacs passes the PBC-corrected positions and distances." },
         { "-lsmindihang",  FALSE, etREAL, {&localsmindihangle},
           "Don't include dihedral local stress contributions if the sin(|phi|) is less than this factor. Use this flag if there is a dihedral potential (e.g. CHARMM36 lipid FF) that has been parametrized with a min/max that is not 0/Pi and the stress profiles show large noise that does not converge with additional frames. A -lsmindihang value of 0.0005 is typically sufficient to fix this problem." },
         { "-lsskip",  FALSE, etINT, {&localsskip},

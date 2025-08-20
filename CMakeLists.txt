@@ -47,6 +47,7 @@ project(Gromacs)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_INSTALL_LIBDIR lib)
 
 # Set up common version variables, as well as general information about
 # the build tree (whether the build is from a source package or from a git
