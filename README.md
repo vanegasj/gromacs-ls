@@ -250,12 +250,12 @@ Also, the cost of the local stress calculation grows significantly as the grid d
 If you use GROMACS-LS or MDStress library in your research, please read and cite the following:
 
 ### 3.1 Local stress calculations:
-```
+<pre>
 @article{vanegas_importance_2014,
 	title = {Importance of force decomposition for local stress calculations in biomembrane molecular simulations},
 	volume = {10},
 	number = {2},
-	url = {http://pubs.acs.org/doi/abs/10.1021/ct4008926},
+	url = {<a href="http://pubs.acs.org/doi/abs/10.1021/ct4008926">http://pubs.acs.org/doi/abs/10.1021/ct4008926</a>},
 	doi = {10.1021/ct4008926},
 	journal = {J. Chem. Theory Comput.},
 	author = {Vanegas, Juan M and Torres-Sánchez, Alejandro and Arroyo, Marino},
@@ -270,7 +270,7 @@ If you use GROMACS-LS or MDStress library in your research, please read and cite
 	number = {25},
 	journal = {Phys. Rev. Lett.},
 	author = {Torres-Sánchez, Alejandro and Vanegas, Juan M and Arroyo, Marino},
-	url = {http://link.aps.org/doi/10.1103/PhysRevLett.114.258102},
+	url = {<a href="http://link.aps.org/doi/10.1103/PhysRevLett.114.258102">http://link.aps.org/doi/10.1103/PhysRevLett.114.258102</a>},
 	doi = {10.1103/PhysRevLett.114.258102},
 	month = jun,
 	year = {2015},
@@ -281,7 +281,7 @@ If you use GROMACS-LS or MDStress library in your research, please read and cite
 	title = {Geometric derivation of the microscopic stress: {A} covariant central force decomposition},
 	volume = {93},
 	number = {C},
-	url = {http://dx.doi.org/10.1016/j.jmps.2016.03.006},
+	url = {<a href="http://dx.doi.org/10.1016/j.jmps.2016.03.006">http://dx.doi.org/10.1016/j.jmps.2016.03.006</a>},
 	doi = {10.1016/j.jmps.2016.03.006},
 	journal = {J. Mech. Phys. Solids},
 	author = {Torres-Sánchez, Alejandro and Vanegas, Juan M and Arroyo, Marino},
@@ -289,28 +289,25 @@ If you use GROMACS-LS or MDStress library in your research, please read and cite
 	year = {2016},
 	pages = {224--239}
 }
-```
+</pre>
 
 ### 3.2 Local elasticity calculations:
-```
+<pre>
 @article{lewis_elast_2025a,
-	title = {Microscopic elasticity from MD part I: Bulk solid and fluid systems},
-	volume = {TBD},
-	number = {TBD},
-	journal = {TBD},
-	author = {Lewis, Andrew L and Himberg, Benjamin and Torres-Sánchez, Alejandro and Vanegas, Juan M},
-	month = jan,
+	title = {Microscopic elasticity from {MD} part {I}: {Bulk} solid and fluid systems},
+	url = {<a href="https://chemrxiv.org/engage/chemrxiv/article-details/68d31c59f416303770093e16">https://chemrxiv.org/engage/chemrxiv/article-details/68d31c59f416303770093e16</a>},
+	doi = {10.26434/chemrxiv-2025-j17x4},
+	journal = {ChemRxiv},
+	author = {Lewis, Andrew and Himberg, Ben and Torres-Sánchez, Alejandro and Vanegas, Juan M},
 	year = {2025},
-	pages = {TBD}
 }
+	
 @article{lewis_elast_2025b,
-	title = {Microscopic elasticity from MD part II: Liquid interfaces and lipid membranes},
-	volume = {TBD},
-	number = {TBD},
-	journal = {TBD},
-	author = {Lewis, Andrew L and Himberg, Benjamin and Torres-Sánchez, Alejandro and Vanegas, Juan M},
-	month = jan,
+	title = {Microscopic elasticity from {MD} part {II}: {Liquid} interfaces and lipid membranes},
+	url = {<a href="https://chemrxiv.org/engage/chemrxiv/article-details/68d3210cf41630377009949f">https://chemrxiv.org/engage/chemrxiv/article-details/68d3210cf41630377009949f</a>},
+	doi = {10.26434/chemrxiv-2025-kfhss},
+	journal = {ChemRxiv},
+	author = {Lewis, Andrew and Himberg, Ben and Torres-Sánchez, Alejandro and Vanegas, Juan M},
 	year = {2025},
-	pages = {TBD}
 }
-```
+</pre>
