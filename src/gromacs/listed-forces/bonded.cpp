@@ -75,6 +75,15 @@
 #include "restcbt.h"
 
 #include "mdstress/mds_support.h"
+#include <map>
+#include <vector>
+// index numbers used for the phi and kappa arrays for mds
+#define ij 0
+#define jk 1
+#define ik 2
+#define il 3
+#define jl 4
+#define kl 5
 
 using namespace gmx; // TODO: Remove when this file is moved into gmx namespace
 
@@ -129,21 +138,16 @@ void locals_bonds_distribute_stress_born(
         const mds::real_ext & kappa,
         mds::StressGrid *locals_grid)
 {
-    if (locals_grid != NULL)
-    {
-        if (locals_grid->settings.contrib & (mds_all | mds_bnd) )
-        {
-            const mds::array3_ext R[2] = {
-                {x[ai][0], x[ai][1], x[ai][2]}, 
-                {x[ai][0]-dx[0], x[ai][1]-dx[1], x[ai][2]-dx[2]} 
-            };
-            const mds::array3_ext F[2] = {
-                { fbond*dx[0],  fbond*dx[1],  fbond*dx[2]},
-                {-fbond*dx[0], -fbond*dx[1], -fbond*dx[2]}
-            };
-            locals_grid->DistributeInteraction(2, R, F, &phi, &kappa);
-        }
-    }
+
+    const mds::array3_ext R[2] = {
+        {x[ai][0], x[ai][1], x[ai][2]}, 
+        {x[ai][0]-dx[0], x[ai][1]-dx[1], x[ai][2]-dx[2]} 
+    };
+    const mds::array3_ext F[2] = {
+        { fbond*dx[0],  fbond*dx[1],  fbond*dx[2]},
+        {-fbond*dx[0], -fbond*dx[1], -fbond*dx[2]}
+    };
+    locals_grid->DistributeInteraction(2, R, F, &phi, &kappa);
 }
 
 /*! \brief Compute local stress for angles.
@@ -151,43 +155,6 @@ void locals_bonds_distribute_stress_born(
  * Consolidates the seemingly invariant locals_grid code for this file
  * modified to pass additional values for bondtype
  */
-
-void locals_angles_distribute_stress(
-        const int ai,
-        const int aj,
-        const int ak,
-        const rvec f_i,
-        const rvec f_j,
-        const rvec f_k,
-        const rvec x[],
-        const t_pbc * pbc,
-        mds::StressGrid *locals_grid)
-{
-    /* begin stress tensor */
-    rvec Ri, Rj, Rk, dx;
-    rvec lpR[3], lpF[3];
-    int  lpatIDs[3];
-
-    if (locals_grid != NULL)
-    {
-        copy_rvec(x[ai], Ri);
-        pbc_rvec_sub(pbc, x[aj], x[ai], dx);
-        rvec_add(x[ai], dx, Rj);
-        pbc_rvec_sub(pbc, x[ak], x[ai], dx);
-        rvec_add(x[ai], dx, Rk);
-
-        if (locals_grid->settings.contrib & (mds_all | mds_ang) )
-        {
-            lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
-            lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
-            lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
-            lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
-            lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
-            lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
-            locals_grid->DistributeInteraction(3, lpR, lpF, nullptr, nullptr);
-        }
-    }
-}
 
 void locals_angles_distribute_stress_born(
         const int ai,
@@ -207,46 +174,142 @@ void locals_angles_distribute_stress_born(
     rvec lpR[3], lpF[3];
     int  lpatIDs[3];
 
-    if (locals_grid != NULL)
-    {
-        copy_rvec(x[ai], Ri);
-        pbc_rvec_sub(pbc, x[aj], x[ai], dx);
-        rvec_add(x[ai], dx, Rj);
-        pbc_rvec_sub(pbc, x[ak], x[ai], dx);
-        rvec_add(x[ai], dx, Rk);
+    if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
+    copy_rvec(x[ai], Ri);
+    pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+    rvec_add(x[ai], dx, Rj);
+    pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+    rvec_add(x[ai], dx, Rk);
 
-        if (locals_grid->settings.contrib & (mds_all | mds_ang) )
-        {
-            lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2];
-            lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2];
-            lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2];
-            lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
-            lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
-            lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
+    lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2];
+    lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2];
+    lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2];
+    lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
+    lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
+    lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
 
-            // For a 3 body potential with particles i, j, and k, there are 3 pairs: ij, ik, and jk. The corresponding "pairs of pairs" are
-            //
-            // ijij ikij jkij
-            // ijik ikik jkik
-            // ijjk ikjk jkjk
-            //
-            // Note that by symmetry, the kappa values for swapping pairs stay constant, i.e., k[ij][ik] = k[ik][ij], but the resulting Born terms are different for the pairs of pairs ijik vs ikij.
-            // This means that there are only 6 unique values of kappa that need to be determined, but the full 3x3 matrix should be filled in for convenience
+    // For a 3 body potential with particles i, j, and k, there are 3 pairs: ij, ik, and jk. The corresponding "pairs of pairs" are
+    //
+    // ijij ikij jkij
+    // ijik ikik jkik
+    // ijjk ikjk jkjk
+    //
+    // Note that by symmetry, the kappa values for swapping pairs stay constant, i.e., k[ij][ik] = k[ik][ij], but the resulting Born terms are different for the pairs of pairs ijik vs ikij.
+    // This means that there are only 6 unique values of kappa that need to be determined, but the full 3x3 matrix should be filled in for convenience
 
-            // The order of the indices below is essential!! Otherwise the forces and components of phi do not match. The order matches with the auxiliary functions in mds_stressgrid.cpp
-            int ij = 0;
-            int jk = 1;
-            int ik = 2;
-            const mds::real_ext lpPhi[3] = {phi[ij], phi[ik], phi[jk]};
-            const mds::real_ext lpKappa[9] = {
-                kappa[ij][ij], kappa[ij][ik], kappa[ij][jk],
-                kappa[ik][ij], kappa[ik][ik], kappa[ik][jk],
-                kappa[jk][ij], kappa[jk][ik], kappa[jk][jk],
-            };
-            locals_grid->DistributeInteraction(3, lpR, lpF, lpPhi, lpKappa);
-        }
-    }
+    // The order of the indices below is essential!! Otherwise the forces and components of phi do not match. The order matches with the auxiliary functions in mds_stressgrid.cpp
+    //int ij = 0;
+    //int jk = 1;
+    //int ik = 2;
+    const mds::real_ext lpPhi[3] = {phi[ij], phi[ik], phi[jk]};
+    const mds::real_ext lpKappa[9] = {
+        kappa[ij][ij], kappa[ij][ik], kappa[ij][jk],
+        kappa[ik][ij], kappa[ik][ik], kappa[ik][jk],
+        kappa[jk][ij], kappa[jk][ik], kappa[jk][jk],
+    };
+    locals_grid->DistributeInteraction(3, lpR, lpF, lpPhi, lpKappa);
 }
+
+void locals_dihedrals_distribute_stress_born(
+        const int ai,
+        const int aj,
+        const int ak,
+        const int al,
+        const rvec f_i,
+        const rvec f_j,
+        const rvec f_k,
+        const rvec f_l,
+        const rvec x[],
+        const t_pbc * pbc,
+        mds::StressGrid *locals_grid,
+        mds::array6_ext phi,
+        mds::matrix6_ext kappa)
+{
+    /* begin stress tensor */
+    rvec Ri, Rj, Rk, Rl, dx;
+    rvec lpR[4], lpF[4];
+    int  lpatIDs[4];
+
+    copy_rvec(x[ai], Ri);
+    pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+    rvec_add(x[ai], dx, Rj);
+    pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+    rvec_add(x[ai], dx, Rk);
+    pbc_rvec_sub(pbc, x[al], x[ai], dx);
+    rvec_add(x[ai], dx, Rl);
+
+    lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2];
+    lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2];
+    lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2];
+    lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
+    lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
+    lpF[1][0] = f_j[0]; lpF[1][1] = f_j[1]; lpF[1][2] = f_j[2];
+    lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
+    lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
+
+    locals_grid->DistributeInteraction(4, lpR, lpF, NULL, NULL);
+
+    /* Code below used for debugging
+    // Fi = fij + fik + fil
+    // Fj = -fij + fjk + fjl
+    // Fk = -fik - fjk + fkl
+    // Fl = -fil - fjl - fkl
+*/
+    rvec rij, rjk, rik, ril, rjl, rkl;
+    real dij, djk, dik, dil, djl, dkl, dr2;
+
+    pbc_rvec_sub(pbc, x[aj], x[ai], rij);
+    dr2  = iprod(rij, rij);
+    dij  = dr2*gmx::invsqrt(dr2);
+
+    pbc_rvec_sub(pbc, x[ak], x[aj], rjk);
+    dr2  = iprod(rjk, rjk);
+    djk  = dr2*gmx::invsqrt(dr2);
+
+    pbc_rvec_sub(pbc, x[ak], x[ai], rik);
+    dr2  = iprod(rik, rik);
+    dik  = dr2*gmx::invsqrt(dr2);
+
+    pbc_rvec_sub(pbc, x[al], x[ai], ril);
+    dr2  = iprod(ril, ril);
+    dil  = dr2*gmx::invsqrt(dr2);
+
+    pbc_rvec_sub(pbc, x[al], x[aj], rjl);
+    dr2  = iprod(rjl, rjl);
+    djl  = dr2*gmx::invsqrt(dr2);
+
+    pbc_rvec_sub(pbc, x[al], x[ak], rkl);
+    dr2  = iprod(rkl, rkl);
+    dkl  = dr2*gmx::invsqrt(dr2);
+/*
+    printf("Fi = %6.6f, %6.6f, %6.6f\n", f_i[0], f_i[1], f_i[2]);
+    printf("Fj = %6.6f, %6.6f, %6.6f\n", f_j[0], f_j[1], f_j[2]);
+    printf("Fk = %6.6f, %6.6f, %6.6f\n", f_k[0], f_k[1], f_k[2]);
+    printf("Fl = %6.6f, %6.6f, %6.6f\n", f_l[0], f_l[1], f_l[2]);
+    printf("fi = %6.6f, %6.6f, %6.6f\n", phi[ij]*rij[0]/dij + phi[ik]*rik[0]/dik + phi[il]*ril[0]/dil,
+                                            phi[ij]*rij[1]/dij + phi[ik]*rik[1]/dik + phi[il]*ril[1]/dil,
+                                            phi[ij]*rij[2]/dij + phi[ik]*rik[2]/dik + phi[il]*ril[2]/dil);
+
+    printf("fj = %6.6f, %6.6f, %6.6f\n", -phi[ij]*rij[0]/dij + phi[jk]*rjk[0]/djk + phi[jl]*rjl[0]/djl,
+                                            -phi[ij]*rij[1]/dij + phi[jk]*rjk[1]/djk + phi[jl]*rjl[1]/djl,
+                                            -phi[ij]*rij[2]/dij + phi[jk]*rjk[2]/djk + phi[jl]*rjl[2]/djl);
+
+    printf("fk = %6.6f, %6.6f, %6.6f\n", -phi[ik]*rik[0]/dik - phi[jk]*rjk[0]/djk + phi[kl]*rkl[0]/dkl,
+                                            -phi[ik]*rik[1]/dik - phi[jk]*rjk[1]/djk + phi[kl]*rkl[1]/dkl,
+                                            -phi[ik]*rik[2]/dik - phi[jk]*rjk[2]/djk + phi[kl]*rkl[2]/dkl);
+
+    printf("fl = %6.6f, %6.6f, %6.6f\n", -phi[il]*ril[0]/dil - phi[jl]*rjl[0]/djl - phi[kl]*rkl[0]/dkl,
+                                            -phi[il]*ril[1]/dil - phi[jl]*rjl[1]/djl - phi[kl]*rkl[1]/dkl,
+                                            -phi[il]*ril[2]/dil - phi[jl]*rjl[2]/djl - phi[kl]*rkl[2]/dkl);*/
+    printf("LS f_ij = %6.6f, %6.6f, %6.6f | ", phi[ij]*rij[0]/dij, phi[ij]*rij[1]/dij, phi[ij]*rij[2]/dij); //ij, ab
+    printf("f_jk = %6.6f, %6.6f, %6.6f | ", phi[jk]*rjk[0]/djk, phi[jk]*rjk[1]/djk, phi[jk]*rjk[2]/djk); //jk, bc
+    printf("f_ik = %6.6f, %6.6f, %6.6f | ", phi[ik]*rik[0]/dik, phi[ik]*rik[1]/dik, phi[ik]*rik[2]/dik); //ik, ac
+    printf("f_il = %6.6f, %6.6f, %6.6f | ", phi[il]*ril[0]/dil, phi[il]*ril[1]/dil, phi[il]*ril[2]/dil); //il, ad
+    printf("f_jl = %6.6f, %6.6f, %6.6f | ", phi[jl]*rjl[0]/djl, phi[jl]*rjl[1]/djl, phi[jl]*rjl[2]/djl); //jl, bd
+    printf("f_kl = %6.6f, %6.6f, %6.6f\n", phi[kl]*rkl[0]/dkl, phi[kl]*rkl[1]/dkl, phi[kl]*rkl[2]/dkl); //kl, cd
+}
+
+
 
 /*! \brief Morse potential bond
  *
@@ -335,7 +398,10 @@ real morse_bonds(int nbonds,
         double kappa = 2*be*be*cb*temp*(2*temp-1);
 
         /* begin stress tensor */
-        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, phi, kappa, locals_grid);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        {
+            locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, phi, kappa, locals_grid);
+        }
         /* end stress tensor */
     }                                         /*  83 TOTAL    */
     return vtot;
@@ -407,7 +473,10 @@ real cubic_bonds(int nbonds,
         double kappa = 2*kb + 6*kcub*kdist;
 
         /* begin stress tensor */
-        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, phi, kappa, locals_grid);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        {
+            locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, phi, kappa, locals_grid);
+        }
         /* end stress tensor */
     }                                         /*  54 TOTAL    */
     return vtot;
@@ -485,7 +554,10 @@ real FENE_bonds(int nbonds,
         double kappa = kb * (1+dr2/bm2)/omdr2obm2;
 
         /* begin stress tensor */
-        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, phi, kappa, locals_grid);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        {
+            locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, phi, kappa, locals_grid);
+        }
         /* end stress tensor */
     }                                         /*  58 TOTAL    */
     return vtot;
@@ -579,11 +651,14 @@ real bonds(int nbonds,
 
         /* begin stress tensor */
         //Calculate Phi and Kappa
-        double deltaR = dr - forceparams[type].harmonic.rA;
-        double spk = forceparams[type].harmonic.krA;
-        double phi = spk*(deltaR);
-        double kappa = spk;
-        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, phi, kappa, locals_grid);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        {
+            double deltaR = dr - forceparams[type].harmonic.rA;
+            double spk = forceparams[type].harmonic.krA;
+            double phi = spk*(deltaR);
+            double kappa = spk;
+            locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, phi, kappa, locals_grid);
+        }
         /* end stress tensor */
     }               /* 59 TOTAL    */
     return vtot;
@@ -687,7 +762,10 @@ real restraint_bonds(int nbonds,
             fshift[CENTRAL][m] -= fij;
         }
         /* begin stress tensor */
-        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, 0.0, 0.0, locals_grid);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        {
+            locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, 0.0, 0.0, locals_grid);
+        }
         /* end stress tensor */
     }                   /* 59 TOTAL    */
 
@@ -748,7 +826,10 @@ real polarize(int nbonds,
         }
         
         /* begin stress tensor */
-        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, 0.0, 0.0, locals_grid);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        {
+            locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, 0.0, 0.0, locals_grid);
+        }
         /* end stress tensor */
     }               /* 59 TOTAL    */
     return vtot;
@@ -817,7 +898,10 @@ real anharm_polarize(int nbonds,
         }
 
         /* begin stress tensor */
-        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, 0.0, 0.0, locals_grid);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        {
+            locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, 0.0, 0.0, locals_grid);
+        }
         /* end stress tensor */
     }               /* 72 TOTAL    */
     return vtot;
@@ -1135,21 +1219,23 @@ real angles(int nbonds,
 
             /* begin stress tensor */
             //Calculate Phi and Kappa
-            double distij = nrij2*nrij_1;
-            double distjk = nrkj2*nrkj_1;
-            rvec r_ik;
-            pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
-            real nrik2 = iprod(r_ik, r_ik);
-            double distik = nrik2*gmx::invsqrt(nrik2);
-            double delTheta = theta - forceparams[type].harmonic.rA*DEG2RAD;
-            double spk = forceparams[type].harmonic.krA;
-            mds::array3_ext phi;
-            mds::matrix3_ext kappa;
-            mds::zeroarray3(phi);
-            mds::zeromatrix3(kappa);
-            mds::HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, spk, phi, kappa);
-            locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
-            //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+            if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
+            {
+                double distij = nrij2*nrij_1;
+                double distjk = nrkj2*nrkj_1;
+                rvec r_ik;
+                pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
+                real nrik2 = iprod(r_ik, r_ik);
+                double distik = nrik2*gmx::invsqrt(nrik2);
+                double delTheta = theta - forceparams[type].harmonic.rA*DEG2RAD;
+                double spk = forceparams[type].harmonic.krA;
+                mds::array3_ext phi;
+                mds::matrix3_ext kappa;
+                mds::zeroarray3(phi);
+                mds::zeromatrix3(kappa);
+                mds::HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, spk, phi, kappa);
+                locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+            }
             /* end stress tensor */
             if (g != NULL)
             {
@@ -1371,7 +1457,8 @@ real linear_angles(int nbonds,
         vtot += va;
 
         /* begin stress tensor */
-        locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+        //if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
+        //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
         //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
@@ -1471,20 +1558,22 @@ real urey_bradley(int nbonds,
 
             /* begin stress tensor */
             //Calculate Phi and Kappa and pass them to distribute function to compute both stress and elasticity
-            double distij = nrij2*gmx::invsqrt(nrij2);
-            double distjk = nrkj2*gmx::invsqrt(nrkj2);
-            rvec r_ik;
-            pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
-            real nrik2 = iprod(r_ik, r_ik);
-            double distik = nrik2*gmx::invsqrt(nrik2);
-            double delTheta = theta - th0A;
-            mds::array3_ext phi;
-            mds::matrix3_ext kappa;
-            mds::zeroarray3(phi);
-            mds::zeromatrix3(kappa);
-            mds::HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, kthA, phi, kappa);
-            locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
-            //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+            if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
+            {
+                double distij = nrij2*gmx::invsqrt(nrij2);
+                double distjk = nrkj2*gmx::invsqrt(nrkj2);
+                rvec r_ik;
+                pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
+                real nrik2 = iprod(r_ik, r_ik);
+                double distik = nrik2*gmx::invsqrt(nrik2);
+                double delTheta = theta - th0A;
+                mds::array3_ext phi;
+                mds::matrix3_ext kappa;
+                mds::zeroarray3(phi);
+                mds::zeromatrix3(kappa);
+                mds::HarmonicAnglePhiKappa(distij, distjk, distik, cos_theta, delTheta, kthA, phi, kappa);
+                locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+            }
             /* end stress tensor */
 
             if (g)
@@ -1522,13 +1611,16 @@ real urey_bradley(int nbonds,
             fshift[ki][m]      += fik;
             fshift[CENTRAL][m] -= fik;
         }
-        
+
         /* begin stress tensor */
         //Calculate Phi and Kappa
-        double deltaR = dr - r13A;
-        double phi = kUBA*(deltaR);
-        double kappa = kUBA;
-        locals_bonds_distribute_stress_born(ai, ak, fbond, x, r_ik, phi, kappa, locals_grid);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        {
+            double deltaR = dr - r13A;
+            double phi = kUBA*(deltaR);
+            double kappa = kUBA;
+            locals_bonds_distribute_stress_born(ai, ak, fbond, x, r_ik, phi, kappa, locals_grid);
+        }
         /* end stress tensor */
     }
     return vtot;
@@ -1609,27 +1701,29 @@ real quartic_angles(int nbonds,
                 f[ak][m] += f_k[m];
             }
 
-            //Calculate Phi and Kappa
-            real distij = nrij2*gmx::invsqrt(nrij2);
-            real distjk = nrkj2*gmx::invsqrt(nrkj2);
-            rvec r_ik;
-            pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
-            real nrik2 = iprod(r_ik, r_ik);
-            //real nrik2 = nrij2 + nrkj2 - 2*distij*distjk*cos_theta;
-            real distik = nrik2*gmx::invsqrt(nrik2);
-            real coeff[5] = {0,0,0,0,0};
-            for(int i = 0; i < 5; i++){
-                coeff[i] = forceparams[type].qangle.c[i];
-            }
-            mds::array3_ext phi;
-            mds::matrix3_ext kappa;
-            mds::zeroarray3(phi);
-            mds::zeromatrix3(kappa);
-                        mds::QuarticAnglePhiKappa(distij, distjk, distik, cos_theta, dt, coeff, phi, kappa);
-
             /* begin stress tensor */
-            //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-            locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+            //Calculate Phi and Kappa
+            if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
+            {
+                real distij = nrij2*gmx::invsqrt(nrij2);
+                real distjk = nrkj2*gmx::invsqrt(nrkj2);
+                rvec r_ik;
+                pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
+                real nrik2 = iprod(r_ik, r_ik);
+                //real nrik2 = nrij2 + nrkj2 - 2*distij*distjk*cos_theta;
+                real distik = nrik2*gmx::invsqrt(nrik2);
+                real coeff[5] = {0,0,0,0,0};
+                for(int i = 0; i < 5; i++){
+                    coeff[i] = forceparams[type].qangle.c[i];
+                }
+                mds::array3_ext phi;
+                mds::matrix3_ext kappa;
+                mds::zeroarray3(phi);
+                mds::zeromatrix3(kappa);
+                mds::QuarticAnglePhiKappa(distij, distjk, distik, cos_theta, dt, coeff, phi, kappa);
+
+                locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+            }
             /* end stress tensor */
 
             if (g)
@@ -2812,7 +2906,8 @@ real restrangles(int nbonds,
         }
 
         /* begin stress tensor */
-        locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+        //if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
+        //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
         //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
         /* end stress tensor */
 
@@ -3053,34 +3148,49 @@ real cbtdihs(int nbonds,
         vtot += v;
 
         /* begin stress tensor */
+        int j;
         if (locals_grid != NULL)
         {
-            if (locals_grid->settings.contrib & (mds_all | mds_dio) )
+            if (locals_grid->settings.contrib & (mds_all | mds_dio))
             {
-                rvec Ri, Rj, Rk, Rl, dx;
-                rvec Fj, Fk;
-                rvec lpR[4], lpF[4];
-              
-                copy_rvec(x[ai], Ri);
+                std::vector<mds::real_ext> CBT_params;
+                for (j = 0; (j < NR_CBTDIHS); j++)
+                {
+                    CBT_params.push_back(forceparams[type].cbtdihs.cbtcA[j]);
+                }
+                real dij, dik, dil, djk, djl, dkl, dr2;
+                rvec dx;
+
                 pbc_rvec_sub(pbc, x[aj], x[ai], dx);
-                rvec_add(Ri, dx, Rj);
+                dr2  = iprod(dx, dx);
+                dij  = dr2*gmx::invsqrt(dr2);
+
                 pbc_rvec_sub(pbc, x[ak], x[ai], dx);
-                rvec_add(Ri, dx, Rk);
+                dr2  = iprod(dx, dx);
+                dik  = dr2*gmx::invsqrt(dr2);
+
                 pbc_rvec_sub(pbc, x[al], x[ai], dx);
-                rvec_add(Ri, dx, Rl);
-                /* fj and fk need to be inverted */
-                svmul(-1.0, f_j, Fj);
-                svmul(-1.0, f_k, Fk);
-              
-                lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
-                lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
-                lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
-                lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
-                lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
-                lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
-                lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
-                lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr);
+                dr2  = iprod(dx, dx);
+                dil  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[ak], x[aj], dx);
+                dr2  = iprod(dx, dx);
+                djk  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[al], x[aj], dx);
+                dr2  = iprod(dx, dx);
+                djl  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[al], x[ak], dx);
+                dr2  = iprod(dx, dx);
+                dkl  = dr2*gmx::invsqrt(dr2);
+
+                mds::array6_ext phi;
+                mds::matrix6_ext kappa;
+                mds::zeroarray6(phi);
+                mds::zeromatrix6(kappa);
+                mds::CBTDihPhiKappa(dij, djk, dik, dil, djl, dkl, CBT_params, phi, kappa);
+                locals_dihedrals_distribute_stress_born(ai, aj, ak, al, f_i, f_j, f_k, f_l, x, pbc, locals_grid, phi, kappa);
             }
         }
         /* end stress tensor */
@@ -3809,7 +3919,10 @@ real g96bonds(int nbonds,
         double kappa = spk*(3*dr2-dr02);
 
         /* begin stress tensor */
-        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, phi, kappa, locals_grid);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        {
+            locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, phi, kappa, locals_grid);
+        }
         /* end stress tensor */
     }               /* 44 TOTAL    */
     return vtot;
@@ -3884,27 +3997,28 @@ real g96angles(int nbonds,
             f[aj][m] += f_j[m];
             f[ak][m] += f_k[m];
         }
-        
+
         /* begin stress tensor */
         //Calculate Phi and Kappa
-        real r_ij2 = iprod(r_ij,r_ij);
-        real r_kj2 = iprod(r_kj, r_kj);
-        real distij = r_ij2*rij_1;
-        real distkj = r_kj2*rkj_1;
-        rvec r_ik;
-        pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
-        real r_ik2 = iprod(r_ik, r_ik);
-        real distik = r_ik2*gmx::invsqrt(r_ik2);
-        real deltacos = cos_theta - forceparams[type].harmonic.rA;
-        real spk = forceparams[type].harmonic.krA;
-        mds::array3_ext phi;
-        mds::matrix3_ext kappa;
-        mds::zeroarray3(phi);
-        mds::zeromatrix3(kappa);
-        mds::HarmonicCosPhiKappa(distij, distkj, distik, deltacos, spk, phi, kappa);
-        locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
-        //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-        //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
+        {
+            real r_ij2 = iprod(r_ij,r_ij);
+            real r_kj2 = iprod(r_kj, r_kj);
+            real distij = r_ij2*rij_1;
+            real distkj = r_kj2*rkj_1;
+            rvec r_ik;
+            pbc_rvec_sub(pbc, x[ai], x[ak], r_ik);
+            real r_ik2 = iprod(r_ik, r_ik);
+            real distik = r_ik2*gmx::invsqrt(r_ik2);
+            real deltacos = cos_theta - forceparams[type].harmonic.rA;
+            real spk = forceparams[type].harmonic.krA;
+            mds::array3_ext phi;
+            mds::matrix3_ext kappa;
+            mds::zeroarray3(phi);
+            mds::zeromatrix3(kappa);
+            mds::HarmonicCosPhiKappa(distij, distkj, distik, deltacos, spk, phi, kappa);
+            locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+        }
         /* end stress tensor */
 
         if (g)
@@ -3981,16 +4095,17 @@ real cross_bond_bond(int nbonds,
         }
         
         //Calculate Phi and Kappa
-        mds::array3_ext phi;
-        mds::matrix3_ext kappa;
-        mds::zeroarray3(phi);
-        mds::zeromatrix3(kappa);
-                mds::BondBondCrossPhiKappa(krr, s1, s2, phi, kappa);
-        
         /* begin stress tensor */
-        locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
-        //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-        //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
+        {
+            mds::array3_ext phi;
+            mds::matrix3_ext kappa;
+            mds::zeroarray3(phi);
+            mds::zeromatrix3(kappa);
+            mds::BondBondCrossPhiKappa(krr, s1, s2, phi, kappa);
+
+            locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+        }
         /* end stress tensor */
 
         /* Virial stuff */
@@ -4078,16 +4193,17 @@ real cross_bond_angle(int nbonds,
         }
         
         //Calculate Phi and Kappa
-        mds::array3_ext phi;
-        mds::matrix3_ext kappa;
-        mds::zeroarray3(phi);
-        mds::zeromatrix3(kappa);
-                mds::BondAngleCrossPhiKappa(krt, s1, s2, s3, phi, kappa);
-        
         /* begin stress tensor */
-        locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
-        //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-        //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
+        {
+            mds::array3_ext phi;
+            mds::matrix3_ext kappa;
+            mds::zeroarray3(phi);
+            mds::zeromatrix3(kappa);
+            mds::BondAngleCrossPhiKappa(krt, s1, s2, s3, phi, kappa);
+
+            locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+        }
         /* end stress tensor */
 
         /* Virial stuff */
@@ -4208,9 +4324,12 @@ real tab_bonds(int nbonds,
             fshift[ki][m]      += fij;
             fshift[CENTRAL][m] -= fij;
         }
-        
+
         /* begin stress tensor */
-        locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, 0.0, 0.0, locals_grid);
+        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        {
+            locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, 0.0, 0.0, locals_grid);
+        }
         /* end stress tensor */
     }               /* 62 TOTAL    */
     return vtot;
@@ -4285,7 +4404,8 @@ real tab_angles(int nbonds,
             }
             
             /* begin stress tensor */
-            locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
+            //if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
+            //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
             //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
             /* end stress tensor */
 

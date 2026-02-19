@@ -390,5 +390,4 @@ void compute_factors_cbtdihs(int type,  const t_iparams forceparams[],
                             torsion_coef[4] * (r2 * (r2 * r2)) + torsion_coef[5] * (r2 * (r2 * (r2 * r2)))) * sine_theta_ante_sq *
         sine_theta_ante * sine_theta_post_sq * sine_theta_post;
 
-
 }
