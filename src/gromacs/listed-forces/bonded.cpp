@@ -247,14 +247,27 @@ void locals_dihedrals_distribute_stress_born(
     lpF[2][0] = f_k[0]; lpF[2][1] = f_k[1]; lpF[2][2] = f_k[2];
     lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
 
-    locals_grid->DistributeInteraction(4, lpR, lpF, NULL, NULL);
+    //rab, rbg, rag, rae, rbe, rge
+    //ij, jk, ik, il, jl, kl
+
+    const mds::real_ext lpPhi[6] = {phi[ij], phi[jk], phi[ik], phi[il], phi[jl], phi[kl]};
+    const mds::real_ext lpKappa[36] = {
+        kappa[ij][ij], kappa[ij][jk], kappa[ij][ik], kappa[ij][il], kappa[ij][jl], kappa[ij][kl],
+        kappa[jk][ij], kappa[jk][jk], kappa[jk][ik], kappa[jk][il], kappa[jk][jl], kappa[jk][kl],
+        kappa[ik][ij], kappa[ik][jk], kappa[ik][ik], kappa[ik][il], kappa[ik][jl], kappa[ik][kl],
+        kappa[il][ij], kappa[il][jk], kappa[il][ik], kappa[il][il], kappa[il][jl], kappa[il][kl],
+        kappa[jl][ij], kappa[jl][jk], kappa[jl][ik], kappa[jl][il], kappa[jl][jl], kappa[jl][kl],
+        kappa[kl][ij], kappa[kl][jk], kappa[kl][ik], kappa[kl][il], kappa[kl][jl], kappa[kl][kl],
+    };
+
+    locals_grid->DistributeInteraction(4, lpR, lpF, lpPhi, lpKappa);
 
     /* Code below used for debugging
     // Fi = fij + fik + fil
     // Fj = -fij + fjk + fjl
     // Fk = -fik - fjk + fkl
     // Fl = -fil - fjl - fkl
-*/
+
     rvec rij, rjk, rik, ril, rjl, rkl;
     real dij, djk, dik, dil, djl, dkl, dr2;
 
@@ -281,7 +294,7 @@ void locals_dihedrals_distribute_stress_born(
     pbc_rvec_sub(pbc, x[al], x[ak], rkl);
     dr2  = iprod(rkl, rkl);
     dkl  = dr2*gmx::invsqrt(dr2);
-/*
+
     printf("Fi = %6.6f, %6.6f, %6.6f\n", f_i[0], f_i[1], f_i[2]);
     printf("Fj = %6.6f, %6.6f, %6.6f\n", f_j[0], f_j[1], f_j[2]);
     printf("Fk = %6.6f, %6.6f, %6.6f\n", f_k[0], f_k[1], f_k[2]);
@@ -300,13 +313,15 @@ void locals_dihedrals_distribute_stress_born(
 
     printf("fl = %6.6f, %6.6f, %6.6f\n", -phi[il]*ril[0]/dil - phi[jl]*rjl[0]/djl - phi[kl]*rkl[0]/dkl,
                                             -phi[il]*ril[1]/dil - phi[jl]*rjl[1]/djl - phi[kl]*rkl[1]/dkl,
-                                            -phi[il]*ril[2]/dil - phi[jl]*rjl[2]/djl - phi[kl]*rkl[2]/dkl);*/
-    printf("LS f_ij = %6.6f, %6.6f, %6.6f | ", phi[ij]*rij[0]/dij, phi[ij]*rij[1]/dij, phi[ij]*rij[2]/dij); //ij, ab
+                                            -phi[il]*ril[2]/dil - phi[jl]*rjl[2]/djl - phi[kl]*rkl[2]/dkl);
+
+    printf("f_ij = %6.6f, %6.6f, %6.6f | ", phi[ij]*rij[0]/dij, phi[ij]*rij[1]/dij, phi[ij]*rij[2]/dij); //ij, ab
     printf("f_jk = %6.6f, %6.6f, %6.6f | ", phi[jk]*rjk[0]/djk, phi[jk]*rjk[1]/djk, phi[jk]*rjk[2]/djk); //jk, bc
     printf("f_ik = %6.6f, %6.6f, %6.6f | ", phi[ik]*rik[0]/dik, phi[ik]*rik[1]/dik, phi[ik]*rik[2]/dik); //ik, ac
     printf("f_il = %6.6f, %6.6f, %6.6f | ", phi[il]*ril[0]/dil, phi[il]*ril[1]/dil, phi[il]*ril[2]/dil); //il, ad
     printf("f_jl = %6.6f, %6.6f, %6.6f | ", phi[jl]*rjl[0]/djl, phi[jl]*rjl[1]/djl, phi[jl]*rjl[2]/djl); //jl, bd
     printf("f_kl = %6.6f, %6.6f, %6.6f\n", phi[kl]*rkl[0]/dkl, phi[kl]*rkl[1]/dkl, phi[kl]*rkl[2]/dkl); //kl, cd
+    */
 }
 
 
@@ -1891,7 +1906,7 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
                 rvec m, rvec n, rvec4 f[], rvec fshift[],
                 const t_pbc *pbc, const t_graph *g,
                 const rvec x[], int t1, int t2, int t3,
-                mds::StressGrid *locals_grid, int locals_contrib)
+                mds::StressGrid *locals_grid, mds::array6_ext phi, mds::matrix6_ext kappa)
 {
     /* 143 FLOPS */
     rvec f_i, f_j, f_k, f_l;
@@ -1945,39 +1960,16 @@ void do_dih_fup(int i, int j, int k, int l, real ddphi,
         {
             t3 = CENTRAL;
         }
-        
+
         /* begin stress tensor */
-        if (locals_grid != NULL)
+
+        if (locals_grid != NULL && phi != NULL && kappa != NULL)
         {
-            real phi = std::abs(gmx_angle(m, n));
-            //printf("sin(phi) = %8.6f, mindihangle = %8.6f\n", std::sin(phi), locals_grid->settings.mindihangle);
-            if ( (locals_grid->settings.contrib & (mds_all | locals_contrib) ) && locals_grid->settings.mindihangle < std::sin(phi) )
-            {
-                rvec Ri, Rj, Rk, Rl, dx;
-                rvec Fj, Fk;
-                rvec lpR[4], lpF[4];
-              
-                copy_rvec(x[i], Ri);
-                pbc_rvec_sub(pbc, x[j], x[i], dx);
-                rvec_add(Ri, dx, Rj);
-                pbc_rvec_sub(pbc, x[k], x[i], dx);
-                rvec_add(Ri, dx, Rk);
-                pbc_rvec_sub(pbc, x[l], x[i], dx);
-                rvec_add(Ri, dx, Rl);
-                /* fj and fk need to be inverted */
-                svmul(-1.0, f_j, Fj);
-                svmul(-1.0, f_k, Fk);
-              
-                lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
-                lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
-                lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
-                lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
-                lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
-                lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
-                lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
-                lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr);
-            }
+            rvec Fj, Fk;
+            // fj and fk need to be inverted
+            svmul(-1.0, f_j, Fj);
+            svmul(-1.0, f_k, Fk);
+            locals_dihedrals_distribute_stress_born(i, j, k, l, f_i, Fj, Fk, f_l, x, pbc, locals_grid, phi, kappa);
         }
         /* end stress tensor */
 
@@ -1996,7 +1988,7 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
                     rvec m, rvec n, rvec4 f[],
                     const t_pbc *pbc, const t_graph *g,
                     const rvec x[], mds::StressGrid * locals_grid,
-                    int locals_contrib)
+                    mds::array6_ext phi, mds::matrix6_ext kappa)
 {
     rvec f_i, f_j, f_k, f_l;
     rvec uvec, vvec, svec;
@@ -2025,39 +2017,16 @@ do_dih_fup_noshiftf(int i, int j, int k, int l, real ddphi,
         rvec_sub(uvec, vvec, svec);   /*  3    */
         rvec_sub(f_i, svec, f_j);     /*  3    */
         rvec_add(f_l, svec, f_k);     /*  3    */
-        
+
         /* begin stress tensor */
-        if (locals_grid != NULL)
+
+        if (locals_grid != NULL && phi != NULL && kappa != NULL)
         {
-            real phi = std::abs(gmx_angle(m, n));
-            //printf("sin(phi) = %8.6f, mindihangle = %8.6f\n", std::sin(phi), locals_grid->settings.mindihangle);
-            if ((locals_grid->settings.contrib == mds_all || locals_grid->settings.contrib == locals_contrib) && locals_grid->settings.mindihangle < std::sin(phi))
-            {
-                rvec Ri, Rj, Rk, Rl, dx;
-                rvec Fj, Fk;
-                rvec lpR[4], lpF[4];
-              
-                copy_rvec(x[i], Ri);
-                pbc_rvec_sub(pbc, x[j], x[i], dx);
-                rvec_add(Ri, dx, Rj);
-                pbc_rvec_sub(pbc, x[k], x[i], dx);
-                rvec_add(Ri, dx, Rk);
-                pbc_rvec_sub(pbc, x[l], x[i], dx);
-                rvec_add(Ri, dx, Rl);
-                /* fj and fk need to be inverted */
-                svmul(-1.0, f_j, Fj);
-                svmul(-1.0, f_k, Fk);
-              
-                lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
-                lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
-                lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
-                lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
-                lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
-                lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
-                lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
-                lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr);
-            }
+            rvec Fj, Fk;
+            // fj and fk need to be inverted
+            svmul(-1.0, f_j, Fj);
+            svmul(-1.0, f_k, Fk);
+            locals_dihedrals_distribute_stress_born(i, j, k, l, f_i, Fj, Fk, f_l, x, pbc, locals_grid, phi, kappa);
         }
         /* end stress tensor */
 
@@ -2188,6 +2157,8 @@ real pdihs(int nbonds,
 
         phi = dih_angle(x[ai], x[aj], x[ak], x[al], pbc, r_ij, r_kj, r_kl, m, n,
                         &sign, &t1, &t2, &t3);  /*  84      */
+
+
         *dvdlambda += dopdihs(forceparams[type].pdihs.cpA,
                               forceparams[type].pdihs.cpB,
                               forceparams[type].pdihs.phiA,
@@ -2196,9 +2167,61 @@ real pdihs(int nbonds,
                               phi, lambda, &vpd, &ddphi);
 
         vtot += vpd;
-        do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
+
+        /* begin stress tensor */
+        if ( (locals_grid != NULL) &&
+             (locals_grid->settings.contrib & (mds_all | mds_dip))
+             && locals_grid->settings.mindihangle < std::sin(phi) )
+        {
+            //real phi = std::abs(gmx_angle(m, n));
+            //printf("sin(phi) = %8.6f, mindihangle = %8.6f\n", std::sin(phi), locals_grid->settings.mindihangle)
+            std::vector<mds::real_ext> dih_params;
+            dih_params.push_back(forceparams[type].pdihs.cpA);
+            dih_params.push_back(forceparams[type].pdihs.mult);
+            dih_params.push_back(forceparams[type].pdihs.phiA);
+
+            real dij, dik, dil, djk, djl, dkl, dr2;
+            rvec dx;
+
+            pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+            dr2  = iprod(dx, dx);
+            dij  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+            dr2  = iprod(dx, dx);
+            dik  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[al], x[ai], dx);
+            dr2  = iprod(dx, dx);
+            dil  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[ak], x[aj], dx);
+            dr2  = iprod(dx, dx);
+            djk  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[al], x[aj], dx);
+            dr2  = iprod(dx, dx);
+            djl  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[al], x[ak], dx);
+            dr2  = iprod(dx, dx);
+            dkl  = dr2*gmx::invsqrt(dr2);
+
+            mds::array6_ext phi;
+            mds::matrix6_ext kappa;
+            mds::zeroarray6(phi);
+            mds::zeromatrix6(kappa);
+            mds::ProperDihPhiKappa(dij, djk, dik, dil, djl, dkl, dih_params, phi, kappa);
+            do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
                        f, fshift, pbc, g, x, t1, t2, t3,
-                       locals_grid, mds_dip);/* 112        */
+                       locals_grid, phi, kappa);/* 112        */
+        } else {
+            do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
+                       f, fshift, pbc, g, x, t1, t2, t3,
+                       NULL, NULL, NULL);/* 112        */
+        }
+        /* end stress tensor */
+
 
 #ifdef DEBUG
         fprintf(debug, "pdih: (%d,%d,%d,%d) phi=%g\n",
@@ -2237,7 +2260,7 @@ pdihs_noener(int nbonds,
     int  t1, t2, t3;
     rvec r_ij, r_kj, r_kl, m, n;
     real phi, sign, ddphi_tot, ddphi;
-    
+
     for (i = 0; (i < nbonds); )
     {
         ai   = forceatoms[i+1];
@@ -2271,8 +2294,59 @@ pdihs_noener(int nbonds,
                forceatoms[i+2] == aj &&
                forceatoms[i+3] == ak &&
                forceatoms[i+4] == al);
+        {
+            /* begin stress tensor */
+            if ( (locals_grid != NULL) &&
+                 (locals_grid->settings.contrib & (mds_all | mds_dip)) &&
+                 locals_grid->settings.mindihangle < std::sin(phi) )
+            {
+                //real phi = std::abs(gmx_angle(m, n));
+                //printf("sin(phi) = %8.6f, mindihangle = %8.6f\n", std::sin(phi), locals_grid->settings.mindihangle)
+                std::vector<mds::real_ext> dih_params;
+                dih_params.push_back(forceparams[type].pdihs.cpA);
+                dih_params.push_back(forceparams[type].pdihs.mult);
+                dih_params.push_back(forceparams[type].pdihs.phiA);
 
-        do_dih_fup_noshiftf(ai, aj, ak, al, ddphi_tot, r_ij, r_kj, r_kl, m, n, f, pbc, g, x, locals_grid, mds_dio);
+                real dij, dik, dil, djk, djl, dkl, dr2;
+                rvec dx;
+
+                pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+                dr2  = iprod(dx, dx);
+                dij  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+                dr2  = iprod(dx, dx);
+                dik  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[al], x[ai], dx);
+                dr2  = iprod(dx, dx);
+                dil  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[ak], x[aj], dx);
+                dr2  = iprod(dx, dx);
+                djk  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[al], x[aj], dx);
+                dr2  = iprod(dx, dx);
+                djl  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[al], x[ak], dx);
+                dr2  = iprod(dx, dx);
+                dkl  = dr2*gmx::invsqrt(dr2);
+
+                mds::array6_ext phi;
+                mds::matrix6_ext kappa;
+                mds::zeroarray6(phi);
+                mds::zeromatrix6(kappa);
+                mds::ProperDihPhiKappa(dij, djk, dik, dil, djl, dkl, dih_params, phi, kappa);
+                do_dih_fup_noshiftf(ai, aj, ak, al, ddphi_tot, r_ij, r_kj, r_kl, m, n, f, pbc, g, x, locals_grid, phi, kappa);
+            } else {
+                do_dih_fup_noshiftf(ai, aj, ak, al, ddphi_tot, r_ij, r_kj, r_kl, m, n, f, pbc, g, x, NULL, NULL, NULL);
+            }
+            /* end stress tensor */
+
+        //do_dih_fup_noshiftf(ai, aj, ak, al, ddphi_tot, r_ij, r_kj, r_kl, m, n, f, pbc, g, x, locals_grid, mds_dio);
+        }
     }
 }
 
@@ -2583,10 +2657,66 @@ real idihs(int nbonds,
 
         dvdl_term += 0.5*(kB - kA)*dp2 - kk*dphi0*dp;
 
-        do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
-                   f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid, mds_dii);/* 112        */
+        //do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
+        //           f, fshift, pbc, g, x, t1, t2, t3,
+        //           locals_grid, NULL, NULL);/* 112        */
         /* 218 TOTAL    */
+
+        /* begin stress tensor */
+        if ( (locals_grid != NULL) &&
+             (locals_grid->settings.contrib & (mds_all | mds_dii))
+             && locals_grid->settings.mindihangle < std::sin(phi) )
+        {
+            //real phi = std::abs(gmx_angle(m, n));
+            //printf("sin(phi) = %8.6f, mindihangle = %8.6f\n", std::sin(phi), locals_grid->settings.mindihangle);
+            std::vector<mds::real_ext> dih_params;
+            dih_params.push_back(kk);
+            dih_params.push_back(phi0);
+            printf("kk = %8.6f, phi0 = %8.6f \n", kk, phi0);
+
+            real dij, dik, dil, djk, djl, dkl, dr2;
+            rvec dx;
+
+            pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+            dr2  = iprod(dx, dx);
+            dij  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+            dr2  = iprod(dx, dx);
+            dik  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[al], x[ai], dx);
+            dr2  = iprod(dx, dx);
+            dil  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[ak], x[aj], dx);
+            dr2  = iprod(dx, dx);
+            djk  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[al], x[aj], dx);
+            dr2  = iprod(dx, dx);
+            djl  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[al], x[ak], dx);
+            dr2  = iprod(dx, dx);
+            dkl  = dr2*gmx::invsqrt(dr2);
+
+            mds::array6_ext phi;
+            mds::matrix6_ext kappa;
+            mds::zeroarray6(phi);
+            mds::zeromatrix6(kappa);
+            mds::ImproperDihPhiKappa(dij, djk, dik, dil, djl, dkl, dih_params, phi, kappa);
+
+            do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
+                   f, fshift, pbc, g, x, t1, t2, t3,
+                   locals_grid, phi, kappa);/* 112        */
+        } else {
+            do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
+                   f, fshift, pbc, g, x, t1, t2, t3,
+                   locals_grid, NULL, NULL);/* 112        */
+        }
+        /* end stress tensor */
+
 #ifdef DEBUG
         if (debug)
         {
@@ -2812,7 +2942,7 @@ real dihres(int nbonds,
             }
             do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
                        f, fshift, pbc, g, x, t1, t2, t3,
-                       locals_grid, mds_dio);      /* 112        */
+                       locals_grid, NULL, NULL);      /* 112        */
         }
     }
     return vtot;
@@ -2905,15 +3035,45 @@ real restrangles(int nbonds,
             f_k[d] = prefactor * (delta_ante[d] - ratio_post * delta_post[d]);
         }
 
-        /* begin stress tensor */
-        //if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_ang)) )
-        //locals_angles_distribute_stress(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid);
-        //locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, 0, 0.0, 0.0);
-        /* end stress tensor */
 
         /*   Computation of potential energy   */
 
         vtot += v;
+
+        /* begin stress tensor */
+        int j;
+        if (locals_grid != NULL)
+        {
+            if ((locals_grid->settings.contrib & (mds_all | mds_ang)))
+            {
+                std::vector<mds::real_ext> ang_params;
+                ang_params.push_back(forceparams[type].harmonic.krA);
+                ang_params.push_back(std::cos(M_PI - forceparams[type].harmonic.rA*DEG2RAD));
+
+                real dij, djk, dik, dr2;
+                rvec dx;
+
+                pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+                dr2  = iprod(dx, dx);
+                dij  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[ak], x[aj], dx);
+                dr2  = iprod(dx, dx);
+                djk  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+                dr2  = iprod(dx, dx);
+                dik  = dr2*gmx::invsqrt(dr2);
+
+                mds::array3_ext phi;
+                mds::matrix3_ext kappa;
+                mds::zeroarray3(phi);
+                mds::zeromatrix3(kappa);
+                mds::RestrBendAnglePhiKappa(dij, djk, dik, ang_params, phi, kappa);
+                locals_angles_distribute_stress_born(ai, aj, ak, f_i, f_j, f_k, x, pbc, locals_grid, phi, kappa);
+            }
+        }
+        /* end stress tensor */
 
         /*   Update forces */
 
@@ -2954,7 +3114,7 @@ real restrdihs(int nbonds,
     rvec dx_jl;
     ivec jt, dt_ij, dt_kj, dt_lj;
     int  t1, t2, t3;
-    real v, vtot;
+    real v, vtot, sine_phi; //sine_phi is needed for localstress
     rvec delta_ante,  delta_crnt, delta_post, vec_temp;
     real factor_phi_ai_ante, factor_phi_ai_crnt, factor_phi_ai_post;
     real factor_phi_aj_ante, factor_phi_aj_crnt, factor_phi_aj_post;
@@ -2992,7 +3152,7 @@ real restrdihs(int nbonds,
                                   &factor_phi_aj_ante, &factor_phi_aj_crnt, &factor_phi_aj_post,
                                   &factor_phi_ak_ante, &factor_phi_ak_crnt, &factor_phi_ak_post,
                                   &factor_phi_al_ante, &factor_phi_al_crnt, &factor_phi_al_post,
-                                  &prefactor_phi, &v);
+                                  &prefactor_phi, &v, &sine_phi);
 
 
         /*      Computation of forces per component */
@@ -3008,34 +3168,48 @@ real restrdihs(int nbonds,
         vtot += v;
 
         /* begin stress tensor */
+        int j;
         if (locals_grid != NULL)
         {
-            if (locals_grid->settings.contrib & (mds_all | mds_dio) )
+            if ((locals_grid->settings.contrib & (mds_all | mds_dio)) && locals_grid->settings.mindihangle < sine_phi )
             {
-                rvec Ri, Rj, Rk, Rl, dx;
-                rvec Fj, Fk;
-                rvec lpR[4], lpF[4];
-              
-                copy_rvec(x[ai], Ri);
+                std::vector<mds::real_ext> dih_params;
+                dih_params.push_back(forceparams[type].pdihs.cpA);
+                dih_params.push_back(std::cos(forceparams[type].pdihs.phiA * DEG2RAD));
+
+                real dij, dik, dil, djk, djl, dkl, dr2;
+                rvec dx;
+
                 pbc_rvec_sub(pbc, x[aj], x[ai], dx);
-                rvec_add(Ri, dx, Rj);
+                dr2  = iprod(dx, dx);
+                dij  = dr2*gmx::invsqrt(dr2);
+
                 pbc_rvec_sub(pbc, x[ak], x[ai], dx);
-                rvec_add(Ri, dx, Rk);
+                dr2  = iprod(dx, dx);
+                dik  = dr2*gmx::invsqrt(dr2);
+
                 pbc_rvec_sub(pbc, x[al], x[ai], dx);
-                rvec_add(Ri, dx, Rl);
-                /* fj and fk need to be inverted */
-                svmul(-1.0, f_j, Fj);
-                svmul(-1.0, f_k, Fk);
-              
-                lpR[0][0] = Ri[0]; lpR[0][1] = Ri[1]; lpR[0][2] = Ri[2]; 
-                lpR[1][0] = Rj[0]; lpR[1][1] = Rj[1]; lpR[1][2] = Rj[2]; 
-                lpR[2][0] = Rk[0]; lpR[2][1] = Rk[1]; lpR[2][2] = Rk[2]; 
-                lpR[3][0] = Rl[0]; lpR[3][1] = Rl[1]; lpR[3][2] = Rl[2];
-                lpF[0][0] = f_i[0]; lpF[0][1] = f_i[1]; lpF[0][2] = f_i[2];
-                lpF[1][0] = Fj[0];  lpF[1][1] = Fj[1];  lpF[1][2] = Fj[2];
-                lpF[2][0] = Fk[0];  lpF[2][1] = Fk[1];  lpF[2][2] = Fk[2];
-                lpF[3][0] = f_l[0]; lpF[3][1] = f_l[1]; lpF[3][2] = f_l[2];
-                locals_grid->DistributeInteraction(4, lpR, lpF, nullptr, nullptr);
+                dr2  = iprod(dx, dx);
+                dil  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[ak], x[aj], dx);
+                dr2  = iprod(dx, dx);
+                djk  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[al], x[aj], dx);
+                dr2  = iprod(dx, dx);
+                djl  = dr2*gmx::invsqrt(dr2);
+
+                pbc_rvec_sub(pbc, x[al], x[ak], dx);
+                dr2  = iprod(dx, dx);
+                dkl  = dr2*gmx::invsqrt(dr2);
+
+                mds::array6_ext phi;
+                mds::matrix6_ext kappa;
+                mds::zeroarray6(phi);
+                mds::zeromatrix6(kappa);
+                mds::RestrTorsDihPhiKappa(dij, djk, dik, dil, djl, dkl, dih_params, phi, kappa);
+                locals_dihedrals_distribute_stress_born(ai, aj, ak, al, f_i, f_j, f_k, f_l, x, pbc, locals_grid, phi, kappa);
             }
         }
         /* end stress tensor */
@@ -3089,7 +3263,7 @@ real cbtdihs(int nbonds,
 {
     int  type, ai, aj, ak, al, i, d;
     int  t1, t2, t3;
-    real v, vtot;
+    real v, vtot, sine_phi; //sine_phi is need for localstress
     rvec vec_temp;
     rvec f_i, f_j, f_k, f_l;
     ivec jt, dt_ij, dt_kj, dt_lj;
@@ -3131,7 +3305,7 @@ real cbtdihs(int nbonds,
                                 f_phi_ai, f_phi_aj, f_phi_ak, f_phi_al,
                                 f_theta_ante_ai, f_theta_ante_aj, f_theta_ante_ak,
                                 f_theta_post_aj, f_theta_post_ak, f_theta_post_al,
-                                &v);
+                                &v, &sine_phi); //sine_phi is needed for localstress
 
 
         /*      Acumulate the resuts per beads */
@@ -3151,7 +3325,7 @@ real cbtdihs(int nbonds,
         int j;
         if (locals_grid != NULL)
         {
-            if (locals_grid->settings.contrib & (mds_all | mds_dio))
+            if ((locals_grid->settings.contrib & (mds_all | mds_dio)) && locals_grid->settings.mindihangle < sine_phi )
             {
                 std::vector<mds::real_ext> CBT_params;
                 for (j = 0; (j < NR_CBTDIHS); j++)
@@ -3326,9 +3500,64 @@ real rbdihs(int nbonds,
 
         ddphi = -ddphi*sin_phi;         /*  11        */
 
-        do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
-                   f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid, mds_drb); /* 112        */
+        /* begin stress tensor */
+        if ( (locals_grid != NULL) &&
+             (locals_grid->settings.contrib & (mds_all | mds_drb))
+             && locals_grid->settings.mindihangle < sin_phi )
+        {
+            //real phi = std::abs(gmx_angle(m, n));
+            //printf("sin(phi) = %8.6f, mindihangle = %8.6f\n", std::sin(phi), locals_grid->settings.mindihangle)
+            std::vector<mds::real_ext> dih_params;
+            for (j = 0; (j < NR_RBDIHS); j++)
+            {
+                dih_params.push_back(parm[j]);
+            }
+            real dij, dik, dil, djk, djl, dkl, dr2;
+            rvec dx;
+
+            pbc_rvec_sub(pbc, x[aj], x[ai], dx);
+            dr2  = iprod(dx, dx);
+            dij  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[ak], x[ai], dx);
+            dr2  = iprod(dx, dx);
+            dik  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[al], x[ai], dx);
+            dr2  = iprod(dx, dx);
+            dil  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[ak], x[aj], dx);
+            dr2  = iprod(dx, dx);
+            djk  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[al], x[aj], dx);
+            dr2  = iprod(dx, dx);
+            djl  = dr2*gmx::invsqrt(dr2);
+
+            pbc_rvec_sub(pbc, x[al], x[ak], dx);
+            dr2  = iprod(dx, dx);
+            dkl  = dr2*gmx::invsqrt(dr2);
+
+            mds::array6_ext phi;
+            mds::matrix6_ext kappa;
+            mds::zeroarray6(phi);
+            mds::zeromatrix6(kappa);
+            mds::RyckBelleDihPhiKappa(dij, djk, dik, dil, djl, dkl, dih_params, phi, kappa);
+            do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
+                       f, fshift, pbc, g, x, t1, t2, t3,
+                       locals_grid, phi, kappa);/* 112        */
+        } else {
+            do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
+                       f, fshift, pbc, g, x, t1, t2, t3,
+                       NULL, NULL, NULL);/* 112        */
+        }
+        /* end stress tensor */
+
+
+        //do_dih_fup(ai, aj, ak, al, ddphi, r_ij, r_kj, r_kl, m, n,
+        //           f, fshift, pbc, g, x, t1, t2, t3,
+        //           locals_grid, NULL, NULL); /* 112        */
         vtot += v;
     }
     *dvdlambda += dvdl_term;
@@ -4272,6 +4501,7 @@ real tab_bonds(int nbonds,
                const t_mdatoms gmx_unused *md, t_fcdata *fcd,
                int gmx_unused  *global_atom_index, mds::StressGrid *locals_grid)
 {
+    gmx_fatal(FARGS,"Cannot do local stress/elasticity with tabulated bonds");
     int  i, m, ki, ai, aj, type, table;
     real dr, dr2, fbond, vbond, fij, vtot;
     rvec dx;
@@ -4326,10 +4556,10 @@ real tab_bonds(int nbonds,
         }
 
         /* begin stress tensor */
-        if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
-        {
-            locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, 0.0, 0.0, locals_grid);
-        }
+        //if ( (locals_grid != NULL) && (locals_grid->settings.contrib & (mds_all | mds_bnd)) )
+        //{
+        //    locals_bonds_distribute_stress_born(ai, aj, fbond, x, dx, 0.0, 0.0, locals_grid);
+        //}
         /* end stress tensor */
     }               /* 62 TOTAL    */
     return vtot;
@@ -4343,6 +4573,7 @@ real tab_angles(int nbonds,
                 const t_mdatoms gmx_unused  *md, t_fcdata *fcd,
                 int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
+    gmx_fatal(FARGS,"Cannot do local stress/elasticity with tabulated dihedrals");
     int  i, ai, aj, ak, t1, t2, type, table;
     rvec r_ij, r_kj;
     real cos_theta, cos_theta2, theta, dVdt, va, vtot;
@@ -4434,6 +4665,7 @@ real tab_dihs(int nbonds,
               const t_mdatoms gmx_unused *md, t_fcdata *fcd,
               int gmx_unused *global_atom_index, mds::StressGrid *locals_grid)
 {
+    gmx_fatal(FARGS,"Cannot do local stress/elasticity with tabulated dihedrals");
     int  i, type, ai, aj, ak, al, table;
     int  t1, t2, t3;
     rvec r_ij, r_kj, r_kl, m, n;
@@ -4463,7 +4695,7 @@ real tab_dihs(int nbonds,
         vtot += vpd;
         do_dih_fup(ai, aj, ak, al, -ddphi, r_ij, r_kj, r_kl, m, n,
                    f, fshift, pbc, g, x, t1, t2, t3,
-                   locals_grid, mds_dio); /* 112    */
+                   locals_grid, NULL, NULL); /* 112    */
 
 #ifdef DEBUG
         fprintf(debug, "pdih: (%d,%d,%d,%d) phi=%g\n",

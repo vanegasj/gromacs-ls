@@ -124,7 +124,7 @@ void compute_factors_restrdihs(int type,  const t_iparams forceparams[],
                                real *factor_phi_aj_ante, real *factor_phi_aj_crnt, real *factor_phi_aj_post,
                                real *factor_phi_ak_ante, real *factor_phi_ak_crnt, real *factor_phi_ak_post,
                                real *factor_phi_al_ante, real *factor_phi_al_crnt, real *factor_phi_al_post,
-                               real *prefactor_phi, real *v);
+                               real *prefactor_phi, real *v, real *sine_phi);
 
 /*! \brief Compute factors for combined bending-torsion (CBT) potentials.
  *
@@ -169,6 +169,6 @@ void compute_factors_cbtdihs(int type,  const t_iparams forceparams[],
                              rvec f_phi_ai, rvec f_phi_aj, rvec f_phi_ak, rvec f_phi_al,
                              rvec f_theta_ante_ai, rvec f_theta_ante_aj, rvec f_theta_ante_ak,
                              rvec f_theta_post_aj, rvec f_theta_post_ak, rvec f_theta_post_al,
-                             real * v);
+                             real * v, real *sine_phi);
 
 #endif

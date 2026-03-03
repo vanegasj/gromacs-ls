@@ -428,7 +428,7 @@ int gmx_mdrun(int argc, char *argv[])
         { "-lsgridz", FALSE, etINT, {&localsgridz},
           "Set the local stress grid size in the z direction (default use box[ZZ][ZZ]/localsgrid)"},
         { "-lscont", FALSE, etSTR, {&localsenum},
-          "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, lincs, settle, shake, cmap, vel, none"},
+          "Select which contribution to write to output (default = all): all, vdw, coul, angles, bonds, dihp, dihi, dihrb, diho, lincs, settle, shake, cmap, vel, none"},
         { "-lsfd", FALSE, etSTR, {&localsfdenum},
           "Select the type of force decomposition to be used: ccfd (covariant central force decomposition, default), ncfd (non-covariant central force decomposition), or gld (Goetz-Lipowsky decomposition)"},
         { "-lsdispcor",  FALSE, etBOOL, {&localsdispcor},

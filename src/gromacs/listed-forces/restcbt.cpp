@@ -103,7 +103,7 @@ void compute_factors_restrdihs(int type,  const t_iparams forceparams[],
                                real *factor_phi_aj_ante, real *factor_phi_aj_crnt, real *factor_phi_aj_post,
                                real *factor_phi_ak_ante, real *factor_phi_ak_crnt, real *factor_phi_ak_post,
                                real *factor_phi_al_ante, real *factor_phi_al_crnt, real *factor_phi_al_post,
-                               real *prefactor_phi, real *v)
+                               real *prefactor_phi, real *v, real *sine_phi)
 {
 
     real phi0, cosine_phi0;
@@ -157,6 +157,9 @@ void compute_factors_restrdihs(int type,  const t_iparams forceparams[],
         sine_phi_sq = 0.0;
     }
 
+    //localstress needs the sin(phi)
+    *sine_phi = std::sqrt(sine_phi_sq);
+
     /* Computation of the differences of cosines (delta_cosine) and a term (term_phi_phi0)
      * that is part of the common prefactor_phi */
 
@@ -204,7 +207,7 @@ void compute_factors_cbtdihs(int type,  const t_iparams forceparams[],
                              rvec f_phi_ai, rvec f_phi_aj, rvec f_phi_ak, rvec f_phi_al,
                              rvec f_theta_ante_ai, rvec f_theta_ante_aj, rvec f_theta_ante_ak,
                              rvec f_theta_post_aj, rvec f_theta_post_ak, rvec f_theta_post_al,
-                             real * v)
+                             real * v, real *sine_phi)
 {
     int  j, d;
     real torsion_coef[NR_CBTDIHS];
@@ -281,6 +284,9 @@ void compute_factors_cbtdihs(int type,  const t_iparams forceparams[],
     cosine_theta_post  = c_cros_post * norm_theta_post;
     sine_theta_ante_sq = 1 - cosine_theta_ante * cosine_theta_ante;
     sine_theta_post_sq = 1 - cosine_theta_post * cosine_theta_post;
+
+    //localstress needs the sin(phi)
+    *sine_phi = std::sqrt(1 - cosine_phi*cosine_phi);
 
     /*	It is possible that cosine_theta is slightly bigger than 1.0 due to round-off errors. */
     if (sine_theta_ante_sq < 0.0)
